@@ -3,7 +3,7 @@
 A lightweight, offline phone app for people who work for Regenerating Sonora, Inc.: Community Health Workers and other roles, as contractors or employees. You log time against your role's funding sources, then create an invoice (contractors) or a timesheet (employees) as a PDF, a picture of its first page and two CSV files, to sign and email.
 
 - Live app: https://regensonora.github.io/regen-time-tracking/
-- Status: **0.11.0.** Roles, counts per task, employee timesheets and grant periods (decisions 0027–0034, [roles plan](docs/roles-plan.md)). Split from CHW Time Tracker Historic (decision 0020).
+- Status: **0.12.0.** Certified CHW (Employee) role, and CHW Trainee (Employee) on Regen General Operating with one raise over both sources (decisions 0035, 0036). Roles, counts per task, employee timesheets and grant periods came in 0.11.0 (decisions 0027–0034, [roles plan](docs/roles-plan.md)). Split from CHW Time Tracker Historic (decision 0020).
 - Product spec: [docs/SPEC.md](docs/SPEC.md). Build plans: [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md), [docs/roles-plan.md](docs/roles-plan.md). Decisions: [docs/decisions/](docs/decisions/).
 
 ## Using the app
