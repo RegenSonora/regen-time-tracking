@@ -14,6 +14,7 @@ export * from './stats';
 export * from './summary';
 export * from './task-split';
 export * from './time';
+export * from './timer';
 export * from './timesheet';
 export * from './work-hours';
 export type * from './types';

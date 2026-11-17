@@ -3,6 +3,7 @@ import {
   checkEntryTimes,
   checkRolePicks,
   duplicateCountLabel,
+  clipBreaks,
   emptyCounts,
   entryCountChoices,
   entryDateOf,
@@ -12,6 +13,7 @@ import {
   roleTaskIds,
   sharesMatch,
   type CountDef,
+  type Break,
   type Counts,
   type Entry,
   type FundingSourceConfig,
@@ -28,6 +30,7 @@ export function newTimerDraft(
   start: string,
   stop: string,
   budgetLineId: string | null,
+  breaks: Break[] = [],
 ): EntryDraft {
   return {
     kind: 'entry',
@@ -36,6 +39,7 @@ export function newTimerDraft(
     hand: null,
     start,
     stop,
+    breaks,
     source_id: sourceId,
     tasks: [],
     budget_line_id: budgetLineId,
@@ -63,6 +67,7 @@ export function editDraft(entry: Entry): EntryDraft {
     hand: { date: start.date, start: start.time, end: stop.time },
     start: entry.start,
     stop: entry.stop,
+    breaks: entry.breaks.map((b) => ({ ...b })),
     source_id: entry.source_id,
     tasks: entry.tasks.map((s) => ({ ...s })),
     budget_line_id: entry.budget_line_id,
@@ -71,14 +76,18 @@ export function editDraft(entry: Entry): EntryDraft {
   };
 }
 
-/** New hand-entered fields; raw times follow when they make a valid date and times. */
+/**
+ * New hand-entered fields; raw times follow when they make a valid date and times. A timed
+ * entry's breaks are clipped to the new times (decision 0037).
+ */
 export function withHand(
   draft: EntryDraft,
   hand: { date: string; start: string; end: string },
 ): EntryDraft {
   try {
     const times = resolveHandTimes(hand.date, hand.start, hand.end, phoneOffsetAt);
-    return { ...draft, hand, start: times.start, stop: times.stop };
+    const breaks = clipBreaks(draft.breaks, times.start, times.stop);
+    return { ...draft, hand, start: times.start, stop: times.stop, breaks };
   } catch {
     return { ...draft, hand, start: null, stop: null };
   }
@@ -88,12 +97,12 @@ export type TimesCheck =
   | { state: 'incomplete' }
   | { state: 'too_short' }
   | { state: 'overlap'; other: Entry }
-  | { state: 'ok'; seconds: number; quarters: number; next_day: boolean };
+  | { state: 'ok'; seconds: number; paused_seconds: number; quarters: number; next_day: boolean };
 
 /** Can the draft's times be saved? Overlap is checked on raw times across all sources. */
 export function checkDraftTimes(draft: EntryDraft, entries: readonly Entry[]): TimesCheck {
   if (!draft.start || !draft.stop) return { state: 'incomplete' };
-  const times = checkEntryTimes(draft.start, draft.stop);
+  const times = checkEntryTimes(draft.start, draft.stop, draft.breaks);
   if (!times.ok) return { state: times.reason === 'too_short' ? 'too_short' : 'incomplete' };
   const other = findOverlaps(
     { start: draft.start, stop: draft.stop },
@@ -102,7 +111,13 @@ export function checkDraftTimes(draft: EntryDraft, entries: readonly Entry[]): T
   )[0];
   if (other) return { state: 'overlap', other };
   const nextDay = entryDateOf(draft.start) !== entryDateOf(draft.stop);
-  return { state: 'ok', seconds: times.seconds, quarters: times.quarters, next_day: nextDay };
+  return {
+    state: 'ok',
+    seconds: times.seconds,
+    paused_seconds: times.paused_seconds,
+    quarters: times.quarters,
+    next_day: nextDay,
+  };
 }
 
 export type DraftProblem =
@@ -180,6 +195,7 @@ export function buildEntry(
       role_id: existing ? existing.role_id : (role?.id ?? null),
       start: draft.start,
       stop: draft.stop,
+      breaks: draft.breaks.map((b) => ({ ...b })),
       entry_date: entryDateOf(draft.start),
       tasks,
       budget_line_id: draft.budget_line_id,

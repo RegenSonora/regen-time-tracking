@@ -156,10 +156,35 @@ export const v3ToV4: UpgradeStep = (snapshot) => ({
   }),
 });
 
+/**
+ * v4 → v5 (decision 0037): entries, entry drafts and frozen invoice entries get no breaks; a
+ * running timer is running, not paused, with no breaks. Frozen invoices keep their canonical
+ * version, and forms v1 to v3 never read breaks, so they still verify.
+ */
+export const v4ToV5: UpgradeStep = (snapshot) => ({
+  ...snapshot,
+  entries: (snapshot['entries'] ?? []).map((record) => ({ ...record, breaks: [] })),
+  invoices: (snapshot['invoices'] ?? []).map((record) => {
+    const invoice = record as StoredRecord & { entries: object[] };
+    return { ...invoice, entries: invoice.entries.map((e) => ({ ...e, breaks: [] })) };
+  }),
+  app_state: (snapshot['app_state'] ?? []).map((record) => {
+    const state = record as StoredRecord & {
+      running_timer: object | null;
+      draft: { kind: string } | null;
+    };
+    return {
+      ...state,
+      running_timer: state.running_timer && { ...state.running_timer, paused_at: null, breaks: [] },
+      draft: state.draft?.kind === 'entry' ? { ...state.draft, breaks: [] } : state.draft,
+    };
+  }),
+});
+
 export const SCHEMA: Schema = {
   version: DATA_VERSION,
-  layouts: { 1: STORES_V1, 2: STORES_V1, 3: STORES_V1, 4: STORES_V1 },
-  steps: { 1: v1ToV2, 2: v2ToV3, 3: v3ToV4 },
+  layouts: { 1: STORES_V1, 2: STORES_V1, 3: STORES_V1, 4: STORES_V1, 5: STORES_V1 },
+  steps: { 1: v1ToV2, 2: v2ToV3, 3: v3ToV4, 4: v4ToV5 },
 };
 
 /** Run every step from `from` up to `to`. Throws if one is missing or fails. */

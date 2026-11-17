@@ -8,8 +8,9 @@ import type { StoreName, StoredRecord, Tx } from './types';
  * v3: an entry's `task_id` becomes `tasks`, a list of task shares (decision 0024).
  * v4: profiles and entries gain `role_id`, counts are kept by count id, invoices gain `kind`,
  * `role` and `count_defs` (roles plan R3).
+ * v5: entries and the running timer get `breaks`; the timer gets `paused_at` (decision 0037).
  */
-export const DATA_VERSION = 4;
+export const DATA_VERSION = 5;
 
 /** The stores of v1. Later versions keep the same stores. */
 export const STORES_V1: readonly StoreName[] = [

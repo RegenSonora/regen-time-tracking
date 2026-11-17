@@ -6,6 +6,7 @@ import {
   counts,
   findTestRole,
   makeEntry,
+  must,
   regen,
   splitSampleEntries,
   uuid,
@@ -31,7 +32,7 @@ describe('entry log CSV (SPEC §7, decisions 0001, 0024 and 0029)', () => {
   });
 
   it('has the fixed columns, then one per count in list order, for every invoice', async () => {
-    expect(COLUMNS.slice(0, 14)).toEqual([
+    expect(COLUMNS.slice(0, 15)).toEqual([
       'invoice_number',
       'fingerprint',
       'funding_source',
@@ -41,13 +42,14 @@ describe('entry log CSV (SPEC §7, decisions 0001, 0024 and 0029)', () => {
       'start',
       'stop',
       'raw_duration',
+      'paused',
       'billed_hours',
       'task',
       'core_competency',
       'budget_line',
       'rate',
     ]);
-    expect(COLUMNS.slice(14, -4)).toEqual(countDefs.map((c) => c.id));
+    expect(COLUMNS.slice(15, -4)).toEqual(countDefs.map((c) => c.id));
     expect(COLUMNS.slice(-4)).toEqual(['other_counts', 'notes', 'created_at', 'updated_at']);
     const one = await invoiceFrom({
       entries: [
@@ -149,6 +151,34 @@ describe('entry log CSV (SPEC §7, decisions 0001, 0024 and 0029)', () => {
     expect(durationText(36_059)).toBe('10:00:59');
   });
 
+  it('writes worked time as raw duration, then the paused time (decision 0037)', async () => {
+    const entry = makeEntry(
+      '2026-10-01',
+      '09:00:00',
+      '10:30:00',
+      'outreach',
+      'outreach-and-marketing',
+      {
+        breaks: [
+          { start: '2026-10-01T09:20:00-07:00', stop: '2026-10-01T09:30:00-07:00' },
+          { start: '2026-10-01T10:00:00-07:00', stop: '2026-10-01T10:10:00-07:00' },
+        ],
+      },
+    );
+    // 1 h 30 less 20 min = 1 h 10, which rounds to 1.25 h.
+    const invoice = await invoiceFrom({
+      entries: [{ ...entry, tasks: [{ task_id: 'outreach', quarters: 5 }] }],
+      prior_invoices: [],
+    });
+    const [row] = rowsOf(entriesCsv(invoice, countDefs));
+    const col = (name: string) => COLUMNS.indexOf(name);
+    expect(must(row)[col('start')]).toBe('2026-10-01T09:00:00-07:00');
+    expect(must(row)[col('stop')]).toBe('2026-10-01T10:30:00-07:00');
+    expect(must(row)[col('raw_duration')]).toBe('1:10:00');
+    expect(must(row)[col('paused')]).toBe('0:20:00');
+    expect(must(row)[col('billed_hours')]).toBe('1.25');
+  });
+
   it('leaves core competency blank for Domestic support and joins other counts', async () => {
     const invoice = await invoiceFrom({
       source: regen,
@@ -171,7 +201,7 @@ describe('entry log CSV (SPEC §7, decisions 0001, 0024 and 0029)', () => {
     expect(line.startsWith('CC-2026-004,')).toBe(true);
     expect(line).toContain(',REGEN-GO,');
     expect(line).toContain(
-      ',2026-10-01,2026-10-01T22:30:00-07:00,2026-10-02T00:15:00-07:00,1:45:00,1.75,',
+      ',2026-10-01,2026-10-01T22:30:00-07:00,2026-10-02T00:15:00-07:00,1:45:00,0:00:00,1.75,',
     );
     expect(line).toContain(
       `,Domestic support,,Domestic support,18.00,${','.repeat(countDefs.length)}Food boxes=2;`,

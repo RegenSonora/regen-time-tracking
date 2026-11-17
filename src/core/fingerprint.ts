@@ -5,9 +5,10 @@ import type { Counts, Invoice, InvoiceEntry, InvoiceTaskShare } from './types';
 
 /**
  * The version new invoices get. v2: several tasks per entry (decision 0024). v3: kind, role,
- * certification text and counts by id (roles plan R5, decisions 0029, 0031).
+ * certification text and counts by id (roles plan R5, decisions 0029, 0031). v4: breaks
+ * (decision 0037).
  */
-export const CANONICAL_VERSION = 3;
+export const CANONICAL_VERSION = 4;
 
 /** The fields an invoice is fingerprinted over: header, entries, lines, totals and rate. */
 export type FingerprintedInvoice = Omit<Invoice, 'fingerprint'>;
@@ -145,14 +146,11 @@ function countsFormV3(counts: Counts) {
   };
 }
 
-/**
- * Canonical form v3: as v2, plus the invoice's kind (invoice or timesheet), the role it was made
- * under, the certification text it prints, and each entry's counts by count id (roles plan R5).
- */
-export function canonicalFormV3(invoice: FingerprintedInvoice): string {
+/** Forms v3 and v4 differ only by v4's breaks; v3's output must never change. */
+function formWithRole(invoice: FingerprintedInvoice, v: 3 | 4): string {
   const role = invoice.role;
   return canonicalJson({
-    v: 3,
+    v,
     id: invoice.id,
     kind: invoice.kind,
     number: invoice.number,
@@ -186,6 +184,7 @@ export function canonicalFormV3(invoice: FingerprintedInvoice): string {
       id: e.id,
       start: e.start,
       stop: e.stop,
+      ...(v === 4 && { breaks: e.breaks.map((b) => ({ start: b.start, stop: b.stop })) }),
       entry_date: e.entry_date,
       quarters: e.quarters,
       tasks: e.tasks.map((t) => ({
@@ -211,10 +210,24 @@ export function canonicalFormV3(invoice: FingerprintedInvoice): string {
   });
 }
 
+/**
+ * Canonical form v3: as v2, plus the invoice's kind (invoice or timesheet), the role it was made
+ * under, the certification text it prints, and each entry's counts by count id (roles plan R5).
+ */
+export function canonicalFormV3(invoice: FingerprintedInvoice): string {
+  return formWithRole(invoice, 3);
+}
+
+/** Canonical form v4: as v3, plus each entry's breaks (decision 0037). */
+export function canonicalFormV4(invoice: FingerprintedInvoice): string {
+  return formWithRole(invoice, 4);
+}
+
 const FORMS: Record<number, (invoice: FingerprintedInvoice) => string> = {
   1: canonicalFormV1,
   2: canonicalFormV2,
   3: canonicalFormV3,
+  4: canonicalFormV4,
 };
 
 /** The canonical string for the invoice's own canonical version. */

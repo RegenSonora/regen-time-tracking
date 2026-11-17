@@ -1488,3 +1488,13 @@ p {
 .role-notice p {
   margin: 0;
 }
+
+/* Pause and Resume on the timer (decision 0037). */
+.btn-pause {
+  min-height: 64px;
+  font-size: 20px;
+}
+
+.timer-paused .dot {
+  background: var(--muted);
+}

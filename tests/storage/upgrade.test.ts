@@ -14,12 +14,14 @@ import {
   v1ToV2,
   v2ToV3,
   v3ToV4,
+  v4ToV5,
   type Schema,
   type Snapshot,
 } from '../../src/storage/upgrades';
 import { counts, must, sampleEntries, splitSampleEntries } from '../core/fixtures/wireframe-sample';
 import goldenV1 from '../core/golden/fingerprint-v1.json';
 import goldenV2 from '../core/golden/fingerprint-v2.json';
+import goldenV3 from '../core/golden/fingerprint-v3.json';
 import { NOW, profile, testIds } from './helpers';
 
 const NAME = 'upgrade-test';
@@ -166,9 +168,23 @@ function v3Counts(c: Entry['counts']) {
   };
 }
 
-/** An entry as data v3 stored it: no role, fixed counts. */
+/** What releases with data v4 (roles, counts by id) wrote and ran. */
+const releasedV4: Schema = {
+  version: 4,
+  layouts: { 1: STORES_V1, 2: STORES_V1, 3: STORES_V1, 4: STORES_V1 },
+  steps: { 1: v1ToV2, 2: v2ToV3, 3: v3ToV4 },
+};
+
+/** An entry as data v4 stored it: no breaks. */
+function v4Entry(e: Entry) {
+  const copy: Record<string, unknown> = { ...e };
+  delete copy['breaks'];
+  return copy;
+}
+
+/** An entry as data v3 stored it: no role, fixed counts, no breaks. */
 function v3Entry(e: Entry) {
-  const copy: Record<string, unknown> = { ...e, counts: v3Counts(e.counts) };
+  const copy: Record<string, unknown> = { ...v4Entry(e), counts: v3Counts(e.counts) };
   delete copy['role_id'];
   return copy;
 }
@@ -191,9 +207,9 @@ const v3Profile = {
 const byStart = (entries: readonly Entry[]) =>
   [...entries].sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
 
-describe('data format version 4', () => {
+describe('data format version 5', () => {
   it('is what this release writes', () => {
-    expect(DATA_VERSION).toBe(4);
+    expect(DATA_VERSION).toBe(5);
     expect(SCHEMA.version).toBe(DATA_VERSION);
     expect(SCHEMA.layouts[DATA_VERSION]).toEqual(STORES_V1);
   });
@@ -204,10 +220,10 @@ describe('data format version 4', () => {
     if (!opened.ok) throw new Error(opened.reason);
     opened.storage.close();
     const { version, data } = await rawDump(factory);
-    expect(version).toBe(4);
+    expect(version).toBe(5);
     expect(Object.keys(data).sort()).toEqual([...STORES_V1].sort());
     expect(data['meta']).toEqual([
-      { id: 'data', data_version: 4, created_at: NOW, updated_at: NOW },
+      { id: 'data', data_version: 5, created_at: NOW, updated_at: NOW },
     ]);
   });
 
@@ -273,7 +289,7 @@ describe('upgrading stored data', () => {
     expect(must(data['meta'])[0]).toMatchObject({ data_version: 2 });
   });
 
-  it('the current layout upgrades to a fake v5 and keeps its records', async () => {
+  it('the current layout upgrades to a fake v6 and keeps its records', async () => {
     const factory = new IDBFactory();
     const current = await open(factory);
     if (!current.ok) throw new Error(current.reason);
@@ -281,29 +297,29 @@ describe('upgrading stored data', () => {
     for (const e of sampleEntries) await current.storage.saveEntry(e);
     current.storage.close();
 
-    const v5: Schema = {
-      version: 5,
-      layouts: { 4: STORES_V1, 5: STORES_V1 },
+    const v6: Schema = {
+      version: 6,
+      layouts: { 5: STORES_V1, 6: STORES_V1 },
       steps: {
-        4: (s) => ({
+        5: (s) => ({
           ...s,
           entries: (s['entries'] ?? []).map((e) => ({
             ...e,
-            notes: `v5:${(e as StoredRecord & { notes: string }).notes}`,
+            notes: `v6:${(e as StoredRecord & { notes: string }).notes}`,
           })),
         }),
       },
     };
-    const opened = await open(factory, v5);
+    const opened = await open(factory, v6);
     if (!opened.ok) throw new Error(opened.reason);
     const entries = await opened.storage.listEntries();
     expect(entries).toHaveLength(sampleEntries.length);
-    expect(entries.every((e) => e.notes.startsWith('v5:'))).toBe(true);
+    expect(entries.every((e) => e.notes.startsWith('v6:'))).toBe(true);
     expect(await opened.storage.getProfile()).toEqual(profile);
     opened.storage.close();
 
     const meta = must(must((await rawDump(factory)).data['meta'])[0]);
-    expect(meta).toMatchObject({ data_version: 5, created_at: NOW });
+    expect(meta).toMatchObject({ data_version: 6, created_at: NOW });
   });
 
   it('a failed upgrade leaves the old data and version untouched', async () => {
@@ -337,7 +353,7 @@ describe('upgrading stored data', () => {
 
   it('data from a newer app version is refused, never rewritten', async () => {
     const factory = new IDBFactory();
-    const newer: Schema = { version: 6, layouts: { 6: STORES_V1 }, steps: {} };
+    const newer: Schema = { version: 7, layouts: { 7: STORES_V1 }, steps: {} };
     const n = await open(factory, newer);
     if (!n.ok) throw new Error(n.reason);
     await n.storage.saveProfile({ ...profile });
@@ -381,6 +397,8 @@ describe('v1 → v2: app state gains draft', () => {
     if (!opened.ok) throw new Error(opened.reason);
     expect(await opened.storage.getAppState()).toEqual({
       ...v1State,
+      // v4 → v5 gives the timer no pause and no breaks (decision 0037).
+      running_timer: { ...v1State.running_timer, paused_at: null, breaks: [] },
       draft: null,
       role_notice: null,
     });
@@ -389,8 +407,8 @@ describe('v1 → v2: app state gains draft', () => {
     opened.storage.close();
 
     const { version, data } = await rawDump(factory);
-    expect(version).toBe(4);
-    expect(must(data['meta'])[0]).toMatchObject({ data_version: 4 });
+    expect(version).toBe(5);
+    expect(must(data['meta'])[0]).toMatchObject({ data_version: 5 });
   });
 
   it('a phone with no v1 app state upgrades cleanly', async () => {
@@ -458,7 +476,7 @@ describe('v2 → v3: one task becomes a list of task shares (decision 0024)', ()
     const [invoice] = await opened.storage.listInvoices();
     expect(await verifyFingerprint(must(invoice))).toBe(true);
     opened.storage.close();
-    expect((await rawDump(factory)).version).toBe(4);
+    expect((await rawDump(factory)).version).toBe(5);
   });
 
   it('a failed v2 → v3 upgrade leaves the v2 data untouched', async () => {
@@ -506,7 +524,7 @@ describe('v3 → v4: roles, counts by id, invoice kind (roles plan R3)', () => {
       counter: [{ id: 'c' }],
     });
     expect(after['profile']).toEqual([{ ...profileRecord, role_id: null }]);
-    expect(after['entries']).toEqual([withCounts]);
+    expect(after['entries']).toEqual([v4Entry(withCounts)]);
     expect(must(after['entries'])[0]).toMatchObject({
       role_id: null,
       tasks: split.tasks,
@@ -592,7 +610,7 @@ describe('v3 → v4: roles, counts by id, invoice kind (roles plan R3)', () => {
     expect(must(invoice).kind).toBe('invoice');
     expect(await verifyFingerprint(must(invoice))).toBe(true);
     opened.storage.close();
-    expect((await rawDump(factory)).version).toBe(4);
+    expect((await rawDump(factory)).version).toBe(5);
   });
 
   it('a failed v3 → v4 upgrade leaves the v3 data untouched', async () => {
@@ -610,6 +628,100 @@ describe('v3 → v4: roles, counts by id, invoice kind (roles plan R3)', () => {
         ...SCHEMA.steps,
         3: (s) => {
           v3ToV4(s);
+          throw new Error('bad step');
+        },
+      },
+    };
+    expect(await open(factory, broken)).toMatchObject({ ok: false, reason: 'upgrade_failed' });
+    expect(await rawDump(factory)).toEqual(before);
+  });
+});
+
+describe('v4 → v5: entries and the timer get breaks (decision 0037)', () => {
+  const v3Invoice = must(goldenV3[0]).invoice as unknown as StoredRecord;
+  const v4State = {
+    id: 'state-1',
+    created_at: NOW,
+    updated_at: NOW,
+    running_timer: { start: NOW, source_id: 'tisupp' },
+    selected_source_id: 'tisupp',
+    per_source: {},
+    draft: null,
+    role_notice: null,
+  };
+
+  it('gives entries, entry drafts and frozen invoice entries no breaks, and the timer no pause', () => {
+    const base = { id: 's', created_at: NOW, updated_at: NOW, per_source: {}, role_notice: null };
+    const after = v4ToV5({
+      entries: [{ id: 'e1', start: 'a' } as StoredRecord],
+      invoices: [{ id: 'i1', entries: [{ id: 'e1' }] } as StoredRecord],
+      app_state: [
+        { ...base, running_timer: { start: NOW, source_id: 'tisupp' }, draft: { kind: 'entry' } },
+        { ...base, id: 't', running_timer: null, draft: { kind: 'setup' } },
+        { ...base, id: 'u', running_timer: null, draft: null },
+      ] as unknown as StoredRecord[],
+      counter: [{ id: 'c' }],
+    });
+    expect(after['entries']).toEqual([{ id: 'e1', start: 'a', breaks: [] }]);
+    expect(after['invoices']).toEqual([{ id: 'i1', entries: [{ id: 'e1', breaks: [] }] }]);
+    expect(after['app_state']).toEqual([
+      {
+        ...base,
+        running_timer: { start: NOW, source_id: 'tisupp', paused_at: null, breaks: [] },
+        draft: { kind: 'entry', breaks: [] },
+      },
+      { ...base, id: 't', running_timer: null, draft: { kind: 'setup' } },
+      { ...base, id: 'u', running_timer: null, draft: null },
+    ]);
+    expect(after['counter']).toEqual([{ id: 'c' }]);
+  });
+
+  it('frozen v3 invoices keep their canonical version and still verify', async () => {
+    const after = must(v4ToV5({ invoices: [v3Invoice] })['invoices']?.[0]) as unknown as Invoice;
+    expect(after.canonical_version).toBe(3);
+    expect(after.entries.every((e) => e.breaks.length === 0)).toBe(true);
+    expect(await verifyFingerprint(after)).toBe(true);
+  });
+
+  it('a phone with released v4 data and a running timer opens with it still running', async () => {
+    const factory = new IDBFactory();
+    const v4 = await open(factory, releasedV4);
+    if (!v4.ok) throw new Error(v4.reason);
+    v4.storage.close();
+    await rawPut(factory, 'entries', splitSampleEntries.map(v4Entry));
+    await rawPut(factory, 'invoices', [v3Invoice]);
+    await rawPut(factory, 'app_state', [v4State]);
+
+    const opened = await open(factory);
+    if (!opened.ok) throw new Error(opened.reason);
+    expect(await opened.storage.listEntries()).toEqual(byStart(splitSampleEntries));
+    expect((await opened.storage.getAppState()).running_timer).toEqual({
+      start: NOW,
+      source_id: 'tisupp',
+      paused_at: null,
+      breaks: [],
+    });
+    const [invoice] = await opened.storage.listInvoices();
+    expect(await verifyFingerprint(must(invoice))).toBe(true);
+    opened.storage.close();
+    expect((await rawDump(factory)).version).toBe(5);
+  });
+
+  it('a failed v4 → v5 upgrade leaves the v4 data untouched', async () => {
+    const factory = new IDBFactory();
+    const v4 = await open(factory, releasedV4);
+    if (!v4.ok) throw new Error(v4.reason);
+    v4.storage.close();
+    await rawPut(factory, 'entries', sampleEntries.map(v4Entry));
+    await rawPut(factory, 'app_state', [v4State]);
+    const before = await rawDump(factory);
+    expect(before.version).toBe(4);
+    const broken: Schema = {
+      ...SCHEMA,
+      steps: {
+        ...SCHEMA.steps,
+        4: (s) => {
+          v4ToV5(s);
           throw new Error('bad step');
         },
       },

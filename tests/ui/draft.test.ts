@@ -17,6 +17,7 @@ function draft(patch: Partial<EntryDraft> = {}): EntryDraft {
     hand: null,
     start: at('2026-11-02', '09:00:00'),
     stop: at('2026-11-02', '10:00:00'),
+    breaks: [],
     source_id: regen.id,
     tasks: [{ task_id: 'dump-runs', quarters: 4 }],
     budget_line_id: 'fire-risk-reduction-work',

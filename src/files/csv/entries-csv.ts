@@ -2,7 +2,7 @@
 // of each entry, the same columns for every invoice and timesheet so files combine. One column per
 // count in the roles file, in list order. No per-entry dollar amount.
 import { formatCentsPlain, formatQuarters } from '../../core/money';
-import { rawSeconds } from '../../core/time';
+import { pausedSeconds, rawSeconds } from '../../core/time';
 import type { CountDef, Invoice } from '../../core/types';
 import { csvFile } from './csv';
 
@@ -17,6 +17,7 @@ const LEADING_COLUMNS = [
   'start',
   'stop',
   'raw_duration',
+  'paused',
   'billed_hours',
   'task',
   'core_competency',
@@ -69,7 +70,9 @@ export function entriesCsv(
         e.entry_date,
         e.start,
         e.stop,
-        durationText(rawSeconds(e.start, e.stop)),
+        // Worked time before rounding, then the pauses (decision 0037).
+        durationText(rawSeconds(e.start, e.stop) - pausedSeconds(e.breaks)),
+        durationText(pausedSeconds(e.breaks)),
         formatQuarters(t.quarters),
         t.task_name,
         t.core_competency ?? '',
