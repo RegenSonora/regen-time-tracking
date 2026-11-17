@@ -3,7 +3,7 @@
   "id": "tisupp",
   "code": "TISUPP",
   "name": "Trauma-Informed Substance Use Prevention Program",
-  "version": 5,
+  "version": 6,
   "has_nte": true,
   "default_rate_cents": 2000,
   "period_start": "2026-10-01",
@@ -124,6 +124,61 @@
       "id": "training-continuing-education",
       "name": "Training / continuing education",
       "core_competency": "Professional Skills & Conduct"
+    },
+    {
+      "id": "planning-meeting",
+      "name": "Planning meeting",
+      "core_competency": null
+    },
+    {
+      "id": "quarterly-partnership-meeting",
+      "name": "Quarterly partnership meeting",
+      "core_competency": null
+    },
+    {
+      "id": "chw-referral-services",
+      "name": "CHW referral services",
+      "core_competency": null
+    },
+    {
+      "id": "training-hours",
+      "name": "Training hours",
+      "core_competency": null
+    },
+    {
+      "id": "developing-materials",
+      "name": "Developing materials",
+      "core_competency": null
+    },
+    {
+      "id": "listening-sessions",
+      "name": "Listening sessions",
+      "core_competency": null
+    },
+    {
+      "id": "marketing-and-outreach",
+      "name": "Marketing and outreach",
+      "core_competency": null
+    },
+    {
+      "id": "family-workshop-facilitation",
+      "name": "Family workshop facilitation",
+      "core_competency": null
+    },
+    {
+      "id": "full-moon-garden-party-support",
+      "name": "Full Moon Garden Party support",
+      "core_competency": null
+    },
+    {
+      "id": "youth-academy-support",
+      "name": "Youth Academy support",
+      "core_competency": null
+    },
+    {
+      "id": "green-thumb-warriors-support",
+      "name": "Green Thumb Warriors support",
+      "core_competency": null
     }
   ],
   "budget_lines": [
@@ -178,6 +233,10 @@
     {
       "id": "chw-experience-hours",
       "name": "CHW experience hours"
+    },
+    {
+      "id": "tisupp-grant",
+      "name": "TISUPP Grant"
     }
   ]
 }

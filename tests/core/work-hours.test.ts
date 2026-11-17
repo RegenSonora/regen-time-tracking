@@ -45,7 +45,10 @@ describe('the ADHS form layout (src/reports/adhs-chw-attestation.json)', () => {
   });
 
   it('maps every core competency of the shipped TISUPP file to exactly one row', () => {
-    const competencies = new Set(shipped.tasks.map((t) => t.core_competency));
+    // Certified CHW tasks have none (decision 0035).
+    const competencies = new Set(
+      shipped.tasks.flatMap((t) => (t.core_competency === null ? [] : [t.core_competency])),
+    );
     for (const c of competencies) {
       expect(
         form.rows.filter((r) => r.competencies.includes(c)),

@@ -328,7 +328,7 @@ function footerTopAt(k: number): number {
   return BOTTOM - 26 - 76 * k;
 }
 
-const SCALES = [1, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6];
+const SCALES = [1, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6, 0.55];
 
 /**
  * Draw page 1 on `page`. Returns the scale used and the space left above the footer

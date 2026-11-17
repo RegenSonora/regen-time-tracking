@@ -43,11 +43,11 @@ describe('funding source files', () => {
     }
   });
 
-  it('TISUPP has 21 tasks, 13 budget lines, an NTE and a $20.00 default rate (SPEC §3, §4)', () => {
+  it('TISUPP has 32 tasks, 14 budget lines, an NTE and a $20.00 default rate (SPEC §3, §4)', () => {
     expect(tisupp['code']).toBe('TISUPP');
-    expect(tisupp['version']).toBe(5);
-    expect(tisupp.tasks).toHaveLength(21);
-    expect(tisupp.budget_lines).toHaveLength(13);
+    expect(tisupp['version']).toBe(6);
+    expect(tisupp.tasks).toHaveLength(32);
+    expect(tisupp.budget_lines).toHaveLength(14);
     expect(tisupp['has_nte']).toBe(true);
     expect(tisupp['default_rate_cents']).toBe(2000);
   });
@@ -64,7 +64,7 @@ describe('funding source files', () => {
     const regen = readSource('regen-general-operating');
     expect(regen['code']).toBe('REGEN-GO');
     expect(regen['has_nte']).toBe(false);
-    expect(regen.tasks.slice(0, 21)).toEqual(tisupp.tasks);
+    expect(regen.tasks.slice(0, 21)).toEqual(tisupp.tasks.slice(0, 21));
     expect(regen.budget_lines.slice(0, 12)).toEqual(tisupp.budget_lines.slice(0, 12));
     expect(regen.tasks[21]).toEqual({
       id: 'domestic-support',
@@ -93,18 +93,16 @@ describe('grant periods and the Resilience Team Lead (roles plan R1, decisions 0
     );
   });
 
-  it('Regen General Operating has no start or end date, at version 3', () => {
-    expect(regen['version']).toBe(3);
+  it('Regen General Operating has no start or end date, at version 4', () => {
+    expect(regen['version']).toBe(4);
     expect(regen['period_start']).toBeNull();
     expect(regen['period_end']).toBeNull();
   });
 
   it('Regen General Operating keeps its 22 tasks and 13 lines, then adds 15 tasks and 5 lines', () => {
-    expect(regen.tasks).toHaveLength(37);
-    expect(regen.budget_lines).toHaveLength(18);
     expect(regen.tasks[21]).toMatchObject({ id: 'domestic-support' });
     expect(regen.budget_lines[12]).toMatchObject({ id: 'domestic-support' });
-    expect(regen.tasks.slice(22)).toEqual(
+    expect(regen.tasks.slice(22, 37)).toEqual(
       [
         ['firewise-assessing', 'Firewise assessing'],
         ['residential-fuel-reduction', 'Residential fuel reduction'],
@@ -123,12 +121,76 @@ describe('grant periods and the Resilience Team Lead (roles plan R1, decisions 0
         ['other', 'Other'],
       ].map(([id, name]) => ({ id, name, core_competency: null })),
     );
-    expect(regen.budget_lines.slice(13)).toEqual([
+    expect(regen.budget_lines.slice(13, 18)).toEqual([
       { id: 'fire-risk-reduction-work', name: 'Fire risk reduction work' },
       { id: 'maintenance-labor', name: 'Maintenance labor' },
       { id: 'resilient-home-services-contracting', name: 'Resilient Home Services contracting' },
       { id: 'team-development', name: 'Team development' },
       { id: 'other-contractors', name: 'Other contractors', display_name: 'Other' },
+    ]);
+  });
+
+  it('then adds 26 tasks, 5 lines and an employee certification for Certified CHWs (decision 0035)', () => {
+    expect(regen.tasks).toHaveLength(63);
+    expect(regen.budget_lines).toHaveLength(23);
+    expect(regen.budget_lines.slice(18)).toEqual([
+      { id: 'community-health-work', name: 'Community Health Work' },
+      { id: 'leos', name: "Leo's" },
+      { id: 'eat-local-network', name: 'Eat Local Network' },
+      { id: 'admin', name: 'Admin' },
+      { id: 'other', name: 'Other' },
+    ]);
+    const added = regen.tasks.slice(37);
+    expect(added.every((t) => t['core_competency'] === null)).toBe(true);
+    expect(added.map((t) => t['name'])).toEqual([
+      'Transportation service',
+      'Social support',
+      "Leo's CHW support",
+      'CHW partnership building',
+      'Marketing and outreach',
+      'CHW internal meetings',
+      'Hosting open hours',
+      'Cooking Monday breakfast',
+      'Hosting Monday breakfast',
+      'Serving Monday dinner',
+      'Cooking Wednesday dinner',
+      'Serving Wednesday dinner',
+      'Hosting Wednesday dinner',
+      'Hosting special event',
+      "Leo's internal meetings",
+      "Leo's maintenance",
+      "Leo's marketing",
+      "Leo's other",
+      'Eat Local meetings',
+      'Eat Local Forum event assistance',
+      'Full Moon Garden Party event support',
+      'Green Thumb Warriors event support',
+      'Green Thumb Warriors planning',
+      'Eat Local Network: other',
+      'Admin: marketing',
+      'Admin: staffing',
+    ]);
+    expect(regen['employee_certification_text']).toBe(
+      'I certify that the hours shown on this timesheet were worked on the dates listed, the hours are accurate, no participant names are included, and these hours have not been reported under any other funding source.',
+    );
+  });
+
+  it('TISUPP adds the TISUPP Grant line and 11 tasks for Certified CHWs (decision 0035)', () => {
+    expect(tisupp.budget_lines[13]).toEqual({ id: 'tisupp-grant', name: 'TISUPP Grant' });
+    const added = tisupp.tasks.slice(21);
+    expect(added.every((t) => t['core_competency'] === null)).toBe(true);
+    expect(added.map((t) => t['name'])).toEqual([
+      'Planning meeting',
+      'Quarterly partnership meeting',
+      'CHW referral services',
+      'Training hours',
+      'Developing materials',
+      'Listening sessions',
+      'Marketing and outreach',
+      'Family workshop facilitation',
+      'Full Moon Garden Party support',
+      'Youth Academy support',
+      'Green Thumb Warriors support',
     ]);
   });
 });

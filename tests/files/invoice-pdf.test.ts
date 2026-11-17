@@ -187,7 +187,10 @@ describe('long invoices still fit', () => {
     expect(result.spare).toBeGreaterThanOrEqual(0);
     const text = (await pdfOf(invoice, regen))[0]?.text ?? '';
     for (const line of regen.budget_lines) expect(text).toContain(line.name);
-    expect(text).toContain('9 more in the entry log CSV');
+    // Contacts plus one custom count per line, 10 shown.
+    expect(text).toContain(
+      `${String(regen.budget_lines.length + 1 - 10)} more in the entry log CSV`,
+    );
   });
 
   it('keeps 7 dates on one sheet and cuts long notes, while the CSV keeps them (decision 0013)', async () => {
@@ -227,7 +230,8 @@ describe('long invoices still fit', () => {
 
   it('shrinks below 7 pt rather than cut hours when there are very many rows', async () => {
     const entries: Entry[] = [];
-    tisupp.tasks.forEach((task, t) => {
+    // The 21 CHW tasks on two lines: 42 rows on one page.
+    tisupp.tasks.slice(0, 21).forEach((task, t) => {
       ['new-chws', 'chw-referrals'].forEach((line, l) => {
         const minute = String((t * 2 + l) % 60).padStart(2, '0');
         const hour = String(Math.floor((t * 2 + l) / 60) + 6).padStart(2, '0');
