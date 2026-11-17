@@ -191,11 +191,34 @@ describe('several tasks per entry (decision 0024)', () => {
     }
   });
 
-  it('new invoices use the current canonical form (v3) and verify', async () => {
+  it('new invoices use the current canonical form (v4) and verify', async () => {
     const result = await createInvoice(splitSampleInput());
     if (!result.ok) throw new Error(result.reason);
-    expect(result.invoice.canonical_version).toBe(3);
+    expect(result.invoice.canonical_version).toBe(4);
     expect(await verifyFingerprint(result.invoice)).toBe(true);
+  });
+});
+
+describe('breaks (decision 0037)', () => {
+  it('bills worked time and freezes the breaks', () => {
+    const entry = makeEntry('2026-10-01', '09:00:00', '10:30:00', 'outreach', 'chw-referrals', {
+      breaks: [{ start: '2026-10-01T09:40:00-07:00', stop: '2026-10-01T10:00:00-07:00' }],
+    });
+    // 1 h 30 less 20 min = 1 h 10, which rounds to 1.25 h.
+    const fixed = { ...entry, tasks: [{ task_id: 'outreach', quarters: 5 }] };
+    const { invoice } = draft(sampleInput({ entries: [fixed] }));
+    expect(invoice.total_quarters).toBe(5);
+    expect(must(invoice.entries[0]).breaks).toEqual(entry.breaks);
+  });
+
+  it('refuses an entry whose breaks fall outside its times', () => {
+    const entry = makeEntry('2026-10-01', '09:00:00', '10:00:00', 'outreach', 'chw-referrals', {
+      breaks: [{ start: '2026-10-01T09:50:00-07:00', stop: '2026-10-01T10:10:00-07:00' }],
+    });
+    expect(buildInvoiceDraft(sampleInput({ entries: [entry] }))).toMatchObject({
+      ok: false,
+      reason: 'bad_entry',
+    });
   });
 });
 
@@ -519,11 +542,11 @@ describe('certification text by role (decision 0031)', () => {
     expect(result.invoice.nte).toEqual({ state: 'none' });
   });
 
-  it('a new timesheet freezes the employee text and seals it with form v3', async () => {
+  it('a new timesheet freezes the employee text and seals it with form v4', async () => {
     const result = await createInvoice(sampleInput({ role: employee }));
     if (!result.ok) throw new Error(result.reason);
     expect(result.invoice.source.certification_text).toBe(tisupp.employee_certification_text);
-    expect(result.invoice.canonical_version).toBe(3);
+    expect(result.invoice.canonical_version).toBe(4);
   });
 });
 

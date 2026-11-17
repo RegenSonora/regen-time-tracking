@@ -62,12 +62,13 @@ describe('page 1 as shapes, for the picture (decision 0018)', () => {
     // Re-pinned for decision 0024: the fingerprint (canonical v2) and the entry log's part column.
     // Re-pinned for roles plan R5: canonical v3, counts by id, "Contractor".
     // Re-pinned for decision 0035: the entry log's new count columns.
+    // Re-pinned for decision 0037: canonical v4 and the entry log's paused column.
     const invoice = await invoiceFrom({ source: { ...tisupp, version: 1 } });
     const files = buildInvoiceFiles(invoice, tisupp, countDefs);
     expect(await Promise.all(files.map((f) => sha256(f.bytes)))).toEqual([
-      '8af15813b953a98a4bf66627af80a128afcb3fd633dd6f31d83d47b315b135ff',
-      'ccb797314ac06b0ed91c3c1f0717fe9e580ecf003805726564075ca9b06327b7',
-      'f09c20b379d3f9b0c7ffae2e8836f6fd9749516bce59df7a8a6aa06bea3b2d2c',
+      '20f4f05b29cecf203d9ac87b7432937e47ae2f293ec46af4f518fe25b85b2f0e',
+      '4f7fde8d41df146a2b47a701041386616426b6d19ffd917be9ad300847e40641',
+      'abac3eb96e575d8e31aa2a4ac7c3de9f6476abd5a2e05826ddc11e890333d060',
     ]);
   });
 });
