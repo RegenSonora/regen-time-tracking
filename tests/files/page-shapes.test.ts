@@ -61,12 +61,13 @@ describe('page 1 as shapes, for the picture (decision 0018)', () => {
     // Pinned at TISUPP version 1, so a later edit to the source file doesn't move the hashes.
     // Re-pinned for decision 0024: the fingerprint (canonical v2) and the entry log's part column.
     // Re-pinned for roles plan R5: canonical v3, counts by id, "Contractor".
+    // Re-pinned for decision 0035: the entry log's new count columns.
     const invoice = await invoiceFrom({ source: { ...tisupp, version: 1 } });
     const files = buildInvoiceFiles(invoice, tisupp, countDefs);
     expect(await Promise.all(files.map((f) => sha256(f.bytes)))).toEqual([
       '8af15813b953a98a4bf66627af80a128afcb3fd633dd6f31d83d47b315b135ff',
       'ccb797314ac06b0ed91c3c1f0717fe9e580ecf003805726564075ca9b06327b7',
-      '7df37ec5cfd89437e1aadf99c71a7f81a622b57b7bc3903353281aad887b1282',
+      'f09c20b379d3f9b0c7ffae2e8836f6fd9749516bce59df7a8a6aa06bea3b2d2c',
     ]);
   });
 });

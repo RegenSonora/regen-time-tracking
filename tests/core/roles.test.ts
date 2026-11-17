@@ -27,12 +27,18 @@ const role = (id: string) => must(file.roles.find((r) => r.id === id));
 const trainee = role('chw-tc01');
 const employee = role('chw-te01');
 const lead = role('r-tl01');
+const certified = role('chw-ce01');
 const funding = (r: Role, sourceId: string) =>
   must(r.funding.find((f) => f.source_id === sourceId));
 
 describe('roleChoices', () => {
   it('lists the shipped roles in file order', () => {
-    expect(roleChoices(file.roles).map((r) => r.code)).toEqual(['CHW-TC01', 'CHW-TE01', 'R-TL01']);
+    expect(roleChoices(file.roles).map((r) => r.code)).toEqual([
+      'CHW-TC01',
+      'CHW-TE01',
+      'CHW-CE01',
+      'R-TL01',
+    ]);
   });
 
   it('leaves out retired roles', () => {
@@ -245,9 +251,11 @@ describe('prefillRate (decision 0030)', () => {
     expect(prefillRate(lead, bare, regen)).toBeNull();
   });
 
-  it('gives the shipped roles $20.00, $20.00 and $22.00', () => {
+  it('gives the shipped roles $20.00, $20.00, $25.00 and $22.00', () => {
     expect(prefillRate(trainee, funding(trainee, 'tisupp'), tisupp)).toBe(2000);
     expect(prefillRate(employee, funding(employee, 'tisupp'), tisupp)).toBe(2000);
+    expect(prefillRate(certified, funding(certified, 'tisupp'), tisupp)).toBe(2500);
+    expect(prefillRate(certified, funding(certified, 'regen-general-operating'), regen)).toBe(2500);
     expect(prefillRate(lead, entry, regen)).toBe(2200);
   });
 });
@@ -456,5 +464,70 @@ describe('roleUpdate (decision 0027, roles plan R7)', () => {
       state: 'inactive',
       role: null,
     });
+  });
+});
+
+describe('Certified CHW (Employee) (decision 0035)', () => {
+  it('is an employee with no core competencies, raise or certification', () => {
+    expect(certified).toMatchObject({
+      code: 'CHW-CE01',
+      name: 'Certified CHW (Employee)',
+      employment: 'employee',
+      chw: false,
+    });
+    expect(certified.certification_step).toBeUndefined();
+    expect(certified.funding.some((f) => f.rate_step)).toBe(false);
+  });
+
+  it('bills Regen General Operating and the one TISUPP source', () => {
+    expect(fundingChoices(certified, sources, '2026-11-16').map((c) => c.source.id)).toEqual([
+      'regen-general-operating',
+      'tisupp',
+    ]);
+  });
+
+  it('has no CHW experience hours line', () => {
+    const lines = certified.funding.flatMap((f) => f.budget_lines.map((l) => l.id));
+    expect(lines).not.toContain('chw-experience-hours');
+  });
+
+  it('puts every TISUPP task under TISUPP Grant', () => {
+    expect(budgetLineChoices(certified, tisupp).map((l) => l.name)).toEqual(['TISUPP Grant']);
+    expect(taskChoices(certified, tisupp, 'tisupp-grant', []).all.map((t) => t.name)).toEqual([
+      'Planning meeting',
+      'Quarterly partnership meeting',
+      'CHW referral services',
+      'Training hours',
+      'Developing materials',
+      'Listening sessions',
+      'Marketing and outreach',
+      'Family workshop facilitation',
+      'Full Moon Garden Party support',
+      'Youth Academy support',
+      'Green Thumb Warriors support',
+    ]);
+  });
+
+  it("lists Regen General Operating's five lines, with Other named Other on the files", () => {
+    expect(budgetLineChoices(certified, regen).map((l) => l.name)).toEqual([
+      'Community Health Work',
+      "Leo's",
+      'Eat Local Network',
+      'Admin',
+      'Other',
+    ]);
+  });
+
+  it('shows the counts drawn for a task, in list order with units', () => {
+    const shown = countChoices(file.counts, certified, regen, 'community-health-work', [
+      'transportation-service',
+    ]);
+    expect(shown.map((c) => [c.label, c.unit ?? null])).toEqual([
+      ['Rides provided', null],
+      ['Medical appointments driven to', null],
+      ['Miles driven', 'mi'],
+      ['Resource appointments driven to', null],
+      ['Rides dispatched', null],
+    ]);
   });
 });

@@ -227,15 +227,18 @@ describe('roles file (roles plan Part 2, decisions 0027, 0029)', () => {
     expect(units).toEqual([
       ['water_capacity_added', 'gal'],
       ['grow_space_added', 'sq ft'],
+      ['miles_driven', 'mi'],
+      ['resource_value_unlocked', 'dollars'],
     ]);
   });
 
-  it('ships three active roles: two CHW Trainees and the Resilience Team Lead', () => {
+  it('ships four active roles: two CHW Trainees, a Certified CHW and the Resilience Team Lead', () => {
     expect(
       rolesFile.roles.map((r) => [r.id, r.code, r.name, r.employment, r.chw, r.retired ?? false]),
     ).toEqual([
       ['chw-tc01', 'CHW-TC01', 'CHW Trainee (Contractor)', 'contractor', true, false],
       ['chw-te01', 'CHW-TE01', 'CHW Trainee (Employee)', 'employee', true, false],
+      ['chw-ce01', 'CHW-CE01', 'Certified CHW (Employee)', 'employee', false, false],
       ['r-tl01', 'R-TL01', 'Resilience Team Lead', 'contractor', false, false],
     ]);
   });
@@ -334,9 +337,10 @@ describe('build checks against the source files (roles plan R1)', () => {
     change(copy, sourceCopies);
     return checkRolesData(copy, sourceCopies, rolesSchema);
   }
-  const tc = (f: RolesFile) => f.roles[0] as Role;
-  const te = (f: RolesFile) => f.roles[1] as Role;
-  const tl = (f: RolesFile) => f.roles[2] as Role;
+  const byId = (f: RolesFile, id: string) => f.roles.find((r) => r.id === id) as Role;
+  const tc = (f: RolesFile) => byId(f, 'chw-tc01');
+  const te = (f: RolesFile) => byId(f, 'chw-te01');
+  const tl = (f: RolesFile) => byId(f, 'r-tl01');
   const funding = (r: Role) => r.funding[0] as Funding;
   const line = (r: Role) => funding(r).budget_lines[0] as RoleLine;
   const task = (r: Role) => line(r).tasks[0] as RoleTask;
@@ -491,13 +495,24 @@ describe('build checks against the source files (roles plan R1)', () => {
 
   it('rejects an employee role on a source with no employee certification (decision 0031)', () => {
     const missing = `has no employee_certification_text and the role doesn't set one`;
-    expect(broken((f) => (tl(f).employment = 'employee'))).toContain(
+    const noRegenText = (s: SourceFile[]) => {
+      delete source(s, 'regen-general-operating')['employee_certification_text'];
+    };
+    expect(
+      broken((f, s) => {
+        noRegenText(s);
+        tl(f).employment = 'employee';
+      }),
+    ).toContain(
       `role R-TL01, funding regen-general-operating: employee role, but REGEN-GO ${missing}`,
     );
     expect(
-      broken((f) => {
-        tl(f).employment = 'employee';
-        (tl(f) as unknown as Record<string, unknown>)['employee_certification_text'] = 'I certify.';
+      broken((f, s) => {
+        noRegenText(s);
+        for (const r of [tl(f), byId(f, 'chw-ce01')]) {
+          r.employment = 'employee';
+          (r as unknown as Record<string, unknown>)['employee_certification_text'] = 'I certify.';
+        }
       }),
     ).toEqual([]);
     expect(

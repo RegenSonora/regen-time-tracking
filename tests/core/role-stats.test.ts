@@ -156,4 +156,27 @@ describe('myStats (decision 0032)', () => {
     const stats = myStats(file.counts, lead, {}, [billed(1, 4, regen, counts({ contacts: 5 }))], 0);
     expect(stats.counts).toEqual([]);
   });
+
+  it('has no raise or certification row for a Certified CHW, only hours and counts', () => {
+    const certified = role('chw-ce01');
+    const stats = myStats(
+      file.counts,
+      certified,
+      { tisupp: 2500, 'regen-general-operating': 2500 },
+      [
+        billed(1, 8, regen, counts({}, { meals_cooked: 40, rides_provided: 2 })),
+        billed(2, 4, tisupp, counts({}, { workshop_attendees: 12 })),
+      ],
+      4,
+    );
+    expect(stats.invoiced_quarters).toBe(48);
+    expect(stats.waiting_quarters).toBe(4);
+    expect(stats.pay).toBeNull();
+    expect(stats.certification).toBeNull();
+    expect(stats.counts.map((c) => [c.id, c.total])).toEqual([
+      ['rides_provided', 2],
+      ['meals_cooked', 40],
+      ['workshop_attendees', 12],
+    ]);
+  });
 });
