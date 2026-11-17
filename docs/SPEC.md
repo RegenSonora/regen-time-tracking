@@ -130,8 +130,9 @@ Each funding source is a JSON file in the repo, validated against a JSON Schema 
 
 - **Funding source:** a chip in the header picks the source for new entries, from the role's sources. The chip is locked while a timer runs. The task screen shows the source with **Change**, offering only sources that take time on the entry's date (decision 0033).
 - **Timer:** Start → large running clock with the largest button, **Stop**. The timer survives closing the app (the start time is stored). **Discard timer** needs a confirmation or Undo.
+- **Pause (decision 0037):** **Pause** stops the clock; **Resume** goes on. A pause can last any length and survives closing the app. On Stop, one entry is saved with its real start and stop plus its breaks; Stop while paused ends the entry at the pause.
 - **Record time** (decision 0025): date, start, end. An end earlier than the start means the next day.
-- **Rounding:** each entry rounds to the nearest 0.25 h. Chris accepted that per-entry rounding can bill slightly more than raw time.
+- **Rounding:** each entry rounds to the nearest 0.25 h, from its worked time (start to stop less any breaks). Chris accepted that per-entry rounding can bill slightly more than raw time.
 - **Too short:** an entry that rounds to 0 h (under 7.5 minutes) is blocked with a plain message; it is never saved.
 - **Overlaps:** blocked, compared on raw start and stop times.
 - **Entry date:** an entry belongs to its start date, including entries that cross midnight.
@@ -141,7 +142,7 @@ Each funding source is a JSON file in the repo, validated against a JSON Schema 
 - **Several tasks (decision 0024):** tasks are check boxes. With two or more checked, "Split your time" gives each a share in 0.25 h steps, starting with all hours on the first checked task, and shows what is left ("0.50 h left", "0.25 h too many", "All 1.50 h assigned"). Next is blocked until the shares add up to the entry's billed hours. A task left at 0 h is dropped. One checked task gets all the hours and skips the step.
 - **Counts (all optional, default 0; decision 0029):** the counts of the checked tasks, in the shared list's order, with units, plus any count that already has a value, plus "Add another count" (label + number). An added label that matches one of the entry's counts, ignoring case and spaces, is refused: "Trees planted is already a count above. Use that one." Phones with no role show the five CHW counts.
 - **Notes:** optional, with the warning "Don't include client names. Notes appear on the timesheet."
-- **Editing:** entries can be edited or deleted until invoiced, then are locked. Save and delete show Undo. If the billed hours change, a one-task entry follows them; a split entry must be split again before saving.
+- **Editing:** entries can be edited or deleted until invoiced, then are locked. Save and delete show Undo. If the billed hours change, a one-task entry follows them; a split entry must be split again before saving. Changing the times clips an entry's breaks to them; **Remove breaks** clears them (decision 0037).
 - **Home:** "Not yet invoiced" ("Not yet submitted" for employees) list for the selected funding source with entry count, hours and amount. With nothing waiting it says "Start timer and start working or record time." Below it, **My stats**, then Past invoices (Past timesheets), then Generate Regen Invoice (Submit timesheet) (decisions 0026, 0031). Hour amounts read "hrs" ("4.5 hrs").
 - **Raise reminder (decision 0030):** at 240 hours, "You've reached 240 hours. Generate your invoice now (Submit your timesheet now), then change your rate to $23.00 in Settings."; once billed, "Your rate is now $23.00. Change it in Settings before your next invoice (timesheet)."
 - **My stats (decision 0032):** combined across the role's sources: hours invoiced or submitted with the hours still waiting; hrs needed for pay increase (roles with a raise); hrs needed for CHW Cert eligibility and the Eligible button (roles with certification); all-time totals of the role's counts above 0, or "No counts yet."; "Counts invoices and timesheets made on this phone." Phones with no role keep the source-based card of decision 0026.
@@ -232,7 +233,8 @@ Total hours,,,1.50,1.50,
 | `entry_date` | 2026-10-30 | Start date |
 | `start` | 2026-10-30T09:12:04-07:00 | ISO 8601 with offset |
 | `stop` | 2026-10-30T10:37:10-07:00 | |
-| `raw_duration` | 1:25:06 | h:mm:ss before rounding, for the whole entry |
+| `raw_duration` | 1:25:06 | Worked time, h:mm:ss before rounding, for the whole entry (start to stop less breaks) |
+| `paused` | 0:20:00 | Total of the entry's breaks, h:mm:ss (decision 0037) |
 | `billed_hours` | 1.00 | This row's task share, in 0.25 h; the column adds up to the invoice hours |
 | `task` | Client check in | |
 | `core_competency` | Interpersonal & Relationship-Building | Blank for Domestic support |
@@ -245,12 +247,12 @@ Total hours,,,1.50,1.50,
 | `updated_at` | ISO 8601 with offset | |
 
 - No per-entry dollar amount: amounts are rounded once per budget line on the invoice.
-- Start, stop and `raw_duration` repeat on every part of an entry. Counts, other counts and notes are on part 1 only, so the columns add up.
+- Start, stop, `raw_duration` and `paused` repeat on every part of an entry. Counts, other counts and notes are on part 1 only, so the columns add up.
 - Columns are the same for every invoice and timesheet, so files can be combined. New counts are added at the end of the count columns; past invoices shared again get the current columns.
 
 ### Fingerprint and QR code
 
-- **Fingerprint:** SHA-256 over a canonical JSON form of the invoice (header, entries, lines, totals, rate). Shown short on the PDF (`3F9A-21C7`), full in both CSVs and the QR code. The canonical form is versioned and must never change silently. v1 has one task per entry; v2 (decision 0024) lists each entry's task shares; v3 (decision 0031) adds the kind, the role, the certification text and counts by id. Invoices keep the version they were made with.
+- **Fingerprint:** SHA-256 over a canonical JSON form of the invoice (header, entries, lines, totals, rate). Shown short on the PDF (`3F9A-21C7`), full in both CSVs and the QR code. The canonical form is versioned and must never change silently. v1 has one task per entry; v2 (decision 0024) lists each entry's task shares; v3 (decision 0031) adds the kind, the role, the certification text and counts by id; v4 (decision 0037) adds each entry's breaks. Invoices keep the version they were made with.
 - **QR code:** invoice #, period, hours and amount by budget line, fingerprint. Readable after printing or scanning so a later system can match paper to data.
 
 ## 8. Signatures (outside the app)

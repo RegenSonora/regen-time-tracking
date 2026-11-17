@@ -33,6 +33,7 @@ Your role can't be changed later on the phone. If you picked the wrong one, invo
 ### Every day
 
 - Tap **Start timer** when you begin and **Stop** when you finish. The timer keeps running if you close the app.
+- Stepping away? Tap **Pause**, then **Resume** when you start again. Paused time isn't billed, and the pause survives closing the app. Stopping while paused ends the entry at the pause.
 - Forgot the timer? Tap **Record time** and type the date, start and end.
 - Pick the budget line (when your role has more than one) and check every task you did. With two or more tasks, split your time between them.
 - Add counts if you like: the app shows the counts for the tasks you checked. Add notes if you like; notes appear on the timesheet: **don't include client names.** Then **Save**.
