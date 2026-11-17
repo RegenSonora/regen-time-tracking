@@ -12,7 +12,7 @@ describe('sourceTaskChoices (SPEC §5 "recent tasks first")', () => {
     const { recent, all } = sourceTaskChoices(tisupp, ['client-check-in', 'client-follow-up']);
     expect(recent.map((t) => t.id)).toEqual(['client-check-in', 'client-follow-up']);
     expect(all).toEqual(tisupp.tasks);
-    expect(all).toHaveLength(21);
+    expect(all).toHaveLength(32);
   });
 
   it(`shows at most ${String(RECENT_TASKS_SHOWN)} recent tasks`, () => {
@@ -34,7 +34,7 @@ describe('sourceTaskChoices (SPEC §5 "recent tasks first")', () => {
 
   it('has no recent group the first time', () => {
     expect(sourceTaskChoices(regen, []).recent).toEqual([]);
-    expect(sourceTaskChoices(regen, []).all).toHaveLength(37);
+    expect(sourceTaskChoices(regen, []).all).toHaveLength(63);
   });
 });
 

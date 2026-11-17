@@ -6,6 +6,7 @@ import {
   formatDollars,
   fundingChoices,
   myStats,
+  raiseSourceIds,
   raiseStatus,
   sourceMyStats,
   rateStepReminder,
@@ -288,9 +289,16 @@ export function Home() {
   const summary = uninvoicedSummary(data.entries, selectedSource.id, rate);
   const employee = role?.employment === 'employee';
   const funding = role?.funding.find((f) => f.source_id === selectedSource.id);
+  // The raise adds waiting hours over the role's raise sources (decision 0036).
+  const raiseWaiting = role
+    ? raiseSourceIds(role).reduce(
+        (sum, id) => sum + uninvoicedSummary(data.entries, id, null).quarters,
+        0,
+      )
+    : 0;
   const reminder = role
     ? funding
-      ? raiseStatus(funding, rate, data.invoices, summary.quarters)
+      ? raiseStatus(role, funding, rate, data.invoices, raiseWaiting)
       : null
     : rateStepReminder(selectedSource, rate, data.invoices, summary.quarters);
   const reminderText = reminder

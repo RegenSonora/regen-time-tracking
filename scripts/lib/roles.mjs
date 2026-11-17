@@ -9,7 +9,9 @@ import { readJson } from './json.mjs';
 /**
  * @typedef {{ id: string, count_ids: string[] }} RoleTask
  * @typedef {{ id: string, tasks: RoleTask[] }} RoleLine
- * @typedef {{ source_id: string, nte_cents?: number, ends?: string, budget_lines: RoleLine[] }} Funding
+ * @typedef {{ after_quarters: number, rate_cents: number }} RateStep
+ * @typedef {{ source_id: string, nte_cents?: number, rate_step?: RateStep, ends?: string,
+ *   budget_lines: RoleLine[] }} Funding
  * @typedef {{ id: string, code: string, employment: string, chw: boolean,
  *   certification_step?: object, employee_certification_text?: string,
  *   retired?: true, replaced_by?: string, funding: Funding[] }} Role
@@ -122,6 +124,17 @@ export function checkRolesData(data, sourceFiles, schema) {
       'funding',
       role.funding.map((f) => f.source_id),
     );
+    // One raise per role, counted over every source that has it (decision 0036).
+    const steps = role.funding.filter((f) => f.rate_step);
+    const firstStep = steps[0]?.rate_step;
+    for (const f of steps.slice(1)) {
+      if (
+        f.rate_step?.after_quarters !== firstStep?.after_quarters ||
+        f.rate_step?.rate_cents !== firstStep?.rate_cents
+      ) {
+        problems.push(`${at}: every rate_step must match; funding ${f.source_id} differs`);
+      }
+    }
     for (const funding of role.funding) {
       const source = sources.get(funding.source_id);
       if (!source) {

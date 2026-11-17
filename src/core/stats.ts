@@ -12,6 +12,16 @@ export function invoicedQuarters(
     .reduce((sum, i) => sum + i.total_quarters, 0);
 }
 
+/** Invoiced (or submitted) quarter-hours on any of `sourceIds`. */
+export function invoicedQuartersIn(
+  sourceIds: readonly string[],
+  invoices: readonly Invoice[],
+): number {
+  return invoices
+    .filter((i) => sourceIds.includes(i.source.id))
+    .reduce((sum, i) => sum + i.total_quarters, 0);
+}
+
 export type PayStat =
   | { state: 'counting'; left_quarters: number; after_quarters: number; rate_cents: number }
   /** The hours are reached but the rate in Settings is still lower. */

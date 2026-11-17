@@ -9,8 +9,11 @@ const file = shipped as RolesFile;
 const role = (id: string) => must(file.roles.find((r) => r.id === id));
 const trainee = role('chw-tc01');
 const lead = role('r-tl01');
+const employee = role('chw-te01');
 const traineeTisupp = must(trainee.funding[0]);
 const leadRegen = must(lead.funding[0]);
+const employeeTisupp = must(employee.funding.find((f) => f.source_id === 'tisupp'));
+const employeeRegen = must(employee.funding.find((f) => f.source_id === 'regen-general-operating'));
 
 /** An invoice of `hours` hours (priorInvoice takes cents at $20/h). */
 const billed = (n: number, hours: number, from: FundingSourceConfig = tisupp, c = counts()) =>
@@ -18,15 +21,15 @@ const billed = (n: number, hours: number, from: FundingSourceConfig = tisupp, c 
 
 describe('raiseStatus (decision 0030)', () => {
   it('is null for a funding entry with no raise', () => {
-    expect(raiseStatus(leadRegen, 2200, [billed(1, 500, regen)], 0)).toBeNull();
+    expect(raiseStatus(lead, leadRegen, 2200, [billed(1, 500, regen)], 0)).toBeNull();
   });
 
   it('is null under 240 hours, billed plus waiting', () => {
-    expect(raiseStatus(traineeTisupp, 2000, [billed(1, 200)], 159)).toBeNull();
+    expect(raiseStatus(trainee, traineeTisupp, 2000, [billed(1, 200)], 159)).toBeNull();
   });
 
   it('asks to invoice first while the hours reaching 240 are still waiting', () => {
-    expect(raiseStatus(traineeTisupp, 2000, [billed(1, 200)], 160)).toEqual({
+    expect(raiseStatus(trainee, traineeTisupp, 2000, [billed(1, 200)], 160)).toEqual({
       invoice_first: true,
       after_quarters: 960,
       rate_cents: 2300,
@@ -34,7 +37,7 @@ describe('raiseStatus (decision 0030)', () => {
   });
 
   it('asks only for the rate change once 240 hours are invoiced', () => {
-    expect(raiseStatus(traineeTisupp, 2000, [billed(1, 240)], 0)).toEqual({
+    expect(raiseStatus(trainee, traineeTisupp, 2000, [billed(1, 240)], 0)).toEqual({
       invoice_first: false,
       after_quarters: 960,
       rate_cents: 2300,
@@ -42,13 +45,31 @@ describe('raiseStatus (decision 0030)', () => {
   });
 
   it('is null once the rate is $23.00 or more, or not set', () => {
-    expect(raiseStatus(traineeTisupp, 2300, [billed(1, 300)], 0)).toBeNull();
-    expect(raiseStatus(traineeTisupp, 2500, [billed(1, 300)], 0)).toBeNull();
-    expect(raiseStatus(traineeTisupp, null, [billed(1, 300)], 0)).toBeNull();
+    expect(raiseStatus(trainee, traineeTisupp, 2300, [billed(1, 300)], 0)).toBeNull();
+    expect(raiseStatus(trainee, traineeTisupp, 2500, [billed(1, 300)], 0)).toBeNull();
+    expect(raiseStatus(trainee, traineeTisupp, null, [billed(1, 300)], 0)).toBeNull();
   });
 
-  it("counts only this source's invoices", () => {
-    expect(raiseStatus(traineeTisupp, 2000, [billed(1, 239), billed(2, 50, regen)], 0)).toBeNull();
+  it("counts only the role's raise sources: Regen hours don't count for CHW-TC01", () => {
+    expect(
+      raiseStatus(trainee, traineeTisupp, 2000, [billed(1, 239), billed(2, 50, regen)], 0),
+    ).toBeNull();
+  });
+
+  it('adds TISUPP and Regen GO hours for CHW-TE01 (decision 0036)', () => {
+    const invoices = [billed(1, 200), billed(2, 40, regen)];
+    const reached = { invoice_first: false, after_quarters: 960, rate_cents: 2300 };
+    expect(raiseStatus(employee, employeeTisupp, 2000, invoices, 0)).toEqual(reached);
+    expect(raiseStatus(employee, employeeRegen, 2000, invoices, 0)).toEqual(reached);
+    // Each source asks until its own rate is $23.00.
+    expect(raiseStatus(employee, employeeRegen, 2300, invoices, 0)).toBeNull();
+    expect(raiseStatus(employee, employeeTisupp, 2000, [billed(1, 239)], 0)).toBeNull();
+  });
+
+  it('counts waiting hours on both sources for CHW-TE01 (decision 0036)', () => {
+    expect(
+      raiseStatus(employee, employeeTisupp, 2000, [billed(1, 200), billed(2, 39, regen)], 4),
+    ).toEqual({ invoice_first: true, after_quarters: 960, rate_cents: 2300 });
   });
 });
 
@@ -87,7 +108,7 @@ describe('myStats (decision 0032)', () => {
     );
     expect(stats.invoiced_quarters).toBe(600);
     expect(stats.waiting_quarters).toBe(12);
-    // The raise still counts TISUPP hours only.
+    // The raise counts only sources whose funding entry has it: here, TISUPP.
     expect(stats.pay).toEqual({
       state: 'counting',
       left_quarters: 560,
@@ -111,6 +132,28 @@ describe('myStats (decision 0032)', () => {
       rate_cents: 2300,
     });
     expect(myStats(file.counts, trainee, { tisupp: 2300 }, invoices, 0).pay).toBeNull();
+  });
+
+  it('counts the raise over TISUPP and Regen GO for CHW-TE01 (decision 0036)', () => {
+    const rates = { tisupp: 2000, 'regen-general-operating': 2000 };
+    const stats = myStats(file.counts, employee, rates, [billed(1, 100), billed(2, 50, regen)], 0);
+    expect(stats.pay).toEqual({
+      state: 'counting',
+      left_quarters: 360,
+      after_quarters: 960,
+      rate_cents: 2300,
+    });
+    const invoices = [billed(1, 200), billed(2, 40, regen)];
+    const reached = { state: 'reached', after_quarters: 960, rate_cents: 2300 };
+    expect(myStats(file.counts, employee, rates, invoices, 0).pay).toEqual(reached);
+    // Reached until every raise source's rate is changed.
+    expect(myStats(file.counts, employee, { ...rates, tisupp: 2300 }, invoices, 0).pay).toEqual(
+      reached,
+    );
+    expect(
+      myStats(file.counts, employee, { tisupp: 2300, 'regen-general-operating': 2300 }, invoices, 0)
+        .pay,
+    ).toBeNull();
   });
 
   it('has no raise or certification row for the Team Lead', () => {
@@ -155,5 +198,28 @@ describe('myStats (decision 0032)', () => {
   it('leaves out a count the role does not use, even with a total', () => {
     const stats = myStats(file.counts, lead, {}, [billed(1, 4, regen, counts({ contacts: 5 }))], 0);
     expect(stats.counts).toEqual([]);
+  });
+
+  it('has no raise or certification row for a Certified CHW, only hours and counts', () => {
+    const certified = role('chw-ce01');
+    const stats = myStats(
+      file.counts,
+      certified,
+      { tisupp: 2500, 'regen-general-operating': 2500 },
+      [
+        billed(1, 8, regen, counts({}, { meals_cooked: 40, rides_provided: 2 })),
+        billed(2, 4, tisupp, counts({}, { workshop_attendees: 12 })),
+      ],
+      4,
+    );
+    expect(stats.invoiced_quarters).toBe(48);
+    expect(stats.waiting_quarters).toBe(4);
+    expect(stats.pay).toBeNull();
+    expect(stats.certification).toBeNull();
+    expect(stats.counts.map((c) => [c.id, c.total])).toEqual([
+      ['rides_provided', 2],
+      ['meals_cooked', 40],
+      ['workshop_attendees', 12],
+    ]);
   });
 });

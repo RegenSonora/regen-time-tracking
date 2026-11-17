@@ -79,7 +79,8 @@ Each funding source is a JSON file in the repo, validated against a JSON Schema 
 | 20 | Meetings | Professional Skills & Conduct |
 | 21 | Training / continuing education | Professional Skills & Conduct |
 
-- **Budget lines (13):** New CHWs: training, stipends, field hours · CHW referrals · Outreach and marketing · Listening sessions · Community Atlas · Family Tree · Family Resilience Workshops · Youth Leadership Academy · Green Thumb Warriors · Full Moon Garden Parties · Youth and family field trips · Quarterly partnership meetings · CHW experience hours (from the Gila port)
+- **Certified CHW tasks (decision 0035):** 11 more, with no core competency, all on the TISUPP Grant line: Planning meeting, Quarterly partnership meeting, CHW referral services, Training hours, Developing materials, Listening sessions, Marketing and outreach, Family workshop facilitation, Full Moon Garden Party support, Youth Academy support, Green Thumb Warriors support.
+- **Budget lines (14):** New CHWs: training, stipends, field hours · CHW referrals · Outreach and marketing · Listening sessions · Community Atlas · Family Tree · Family Resilience Workshops · Youth Leadership Academy · Green Thumb Warriors · Full Moon Garden Parties · Youth and family field trips · Quarterly partnership meetings · CHW experience hours (from the Gila port) · TISUPP Grant (decision 0035)
 
 (The source spreadsheet combines "CHW referrals, outreach, marketing" into one line; Chris split it.)
 
@@ -87,22 +88,31 @@ Each funding source is a JSON file in the repo, validated against a JSON Schema 
 
 - **Grant period:** none.
 - **NTE:** none. No contract tracking box on its invoices.
-- **Tasks (37):** the 21 TISUPP tasks plus **Domestic support**, which have core competencies (Domestic support blank), plus 15 Resilience Team Lead tasks with none: Firewise assessing, Residential fuel reduction, Municipal fuel reduction, Dump runs, LEHR maintenance, Pinal garden maintenance, Regen lot clean and maintenance, Transport and supply runs, Plant propagation, Tree planting, Tree removal, Water harvesting, Garden support, Paid training, Other.
-- **Budget lines (18):** the 12 TISUPP lines plus **Domestic support**, plus Fire risk reduction work, Maintenance labor, Resilient Home Services contracting, Team development, and Other contractors (shown in the app as "Other").
+- **Tasks (63):** the first 21 TISUPP tasks plus **Domestic support**, which have core competencies (Domestic support blank), plus 15 Resilience Team Lead tasks with none: Firewise assessing, Residential fuel reduction, Municipal fuel reduction, Dump runs, LEHR maintenance, Pinal garden maintenance, Regen lot clean and maintenance, Transport and supply runs, Plant propagation, Tree planting, Tree removal, Water harvesting, Garden support, Paid training, Other. Then 26 Certified CHW tasks with none (decision 0035), listed under their lines below.
+- **Budget lines (24):** the 12 TISUPP lines plus **Domestic support**, plus Fire risk reduction work, Maintenance labor, Resilient Home Services contracting, Team development, and Other contractors (shown in the app as "Other"), plus the Certified CHW lines (decision 0035):
+  - **Community Health Work:** 13 existing tasks (Interview and intake, Screening and referrals, Resource research, Resource acquisition, Application assistance, Advocacy, Technical assistance, Client check in, Client follow up, Domestic support, Documentation, Developing tools/processes, Other), plus Transportation service, Social support, Leo's CHW support, CHW partnership building, Marketing and outreach, CHW internal meetings.
+  - **Leo's:** Hosting open hours, Cooking Monday breakfast, Hosting Monday breakfast, Serving Monday dinner, Cooking Wednesday dinner, Serving Wednesday dinner, Hosting Wednesday dinner, Hosting special event, Leo's internal meetings, Leo's maintenance, Leo's marketing, Leo's other.
+  - **Eat Local Network:** Eat Local meetings, Eat Local Forum event assistance, Full Moon Garden Party event support, Green Thumb Warriors event support, Green Thumb Warriors planning, Eat Local Network: other.
+  - **Admin:** Admin: marketing, Admin: staffing.
+  - **Other:** Other.
+- **CHW experience hours (decision 0036):** the same line as TISUPP's, for CHW Trainee (Employee). Its tasks are the 21 trainee tasks above.
 - **Certification text:** "I certify that the services listed were performed on the dates shown on the attached timesheet pages, the hours are accurate, and no participant names are included." The CHW always signs and certifies.
+- **Employee certification text (decision 0035):** "I certify that the hours shown on this timesheet were worked on the dates listed, the hours are accurate, no participant names are included, and these hours have not been reported under any other funding source."
 
 ### Roles (decision 0027)
 
 `src/roles/roles.json`, checked at build time against the funding sources. Each role lists its funding sources, the budget lines under each, and the tasks under each line with the counts each task shows (decision 0029). Roles never name a person.
 
-- **Shared count list (decision 0029):** Contacts, Referrals given, Referral follow-ups, Rides provided, Applications completed, Client goals achieved, Quick wins provided, Screenings conducted, Applications approved (CHW Trainees); Trailer loads removed, Assessments completed, LEHR resets completed, Plants propagated, Trees planted, Trees removed, Water capacity added (gal), Grow space added (sq ft), Certifications earned (Resilience Team Lead). Ids never change; a count taken out of use is retired, not deleted.
+- **Shared count list (decision 0029):** Contacts, Referrals given, Referral follow-ups, Rides provided, Applications completed, Client goals achieved, Quick wins provided, Screenings conducted, Applications approved (CHW Trainees); Trailer loads removed, Assessments completed, LEHR resets completed, Plants propagated, Trees planted, Trees removed, Water capacity added (gal), Grow space added (sq ft), Certifications earned (Resilience Team Lead); 38 for the Certified CHW (decision 0035), from Homes cleaned to Green Thumb Warriors sessions supported, including Miles driven (mi) and Value of resources unlocked (dollars). Ids never change; a count taken out of use is retired, not deleted.
 
 | Code | Name | Type | `chw` | Funding | Rate | NTE | Raise | Certification |
 |---|---|---|---|---|---|---|---|---|
 | CHW-TC01 | CHW Trainee (Contractor) | Contractor | true | TISUPP · CHW experience hours, all 21 tasks | $20.00 | $10,320.00 | $23.00 after 240 hrs | 480 hrs |
-| CHW-TE01 | CHW Trainee (Employee) | Employee | true | TISUPP · CHW experience hours, all 21 tasks | $20.00 | none | $23.00 after 240 hrs | 480 hrs |
+| CHW-TE01 | CHW Trainee (Employee) | Employee | true | TISUPP and Regen General Operating · CHW experience hours, all 21 tasks on each (decision 0036) | $20.00 on each | none | $23.00 after 240 hrs, added over both sources | 480 hrs |
+| CHW-CE01 | Certified CHW (Employee) | Employee | false | Regen General Operating · Community Health Work, Leo's, Eat Local Network, Admin, Other; TISUPP · TISUPP Grant (decision 0035) | $25.00 | none | none | none |
 | R-TL01 | Resilience Team Lead | Contractor | false | Regen General Operating · the 5 Team Lead lines and 15 tasks | $22.00 | none | none | none |
 
+- **One raise per role (decision 0036):** the raise counts hours invoiced or submitted (and waiting) on every source of the role that has the raise, added together. The reminder shows on each of those sources until that source's rate is changed. My stats shows the raise reached until every one of them is changed. Every raise on a role must match, which the build checks. CHW Certification and the Work Hours Report already add up every source of the role.
 - **Office changes:** editing a role changes what everyone in it sees after the update; retiring it with `replaced_by` moves everyone in it; retiring it with no replacement stops new time (§5, decision 0027).
 
 ## 4. Profile and settings

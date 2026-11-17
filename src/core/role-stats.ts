@@ -3,23 +3,34 @@
 import { sumCounts } from './counts';
 import type { RateStepReminder } from './rate-change';
 import type { CertificationStat, PayStat } from './stats';
-import { invoicedQuarters } from './stats';
+import { invoicedQuartersIn } from './stats';
 import type { CountDef, Invoice, Role, RoleFunding } from './types';
 
 /**
- * A reminder once this source's billed plus waiting hours reach the funding entry's rate step,
- * until the rate is at least the new rate. The app never changes the rate itself (decision 0030).
+ * The sources whose hours count toward the role's raise: every funding entry with a `rate_step`.
+ * A role has one raise; the build check keeps its steps equal (decision 0036).
+ */
+export function raiseSourceIds(role: Role): string[] {
+  return role.funding.filter((f) => f.rate_step).map((f) => f.source_id);
+}
+
+/**
+ * A reminder on this funding entry once the role's billed plus waiting hours, added over its
+ * raise sources, reach the rate step, until this source's rate is at least the new rate.
+ * `waitingQuarters` is the waiting hours on those same sources. The app never changes the rate
+ * itself (decisions 0030, 0036).
  */
 export function raiseStatus(
+  role: Role,
   funding: RoleFunding,
   rateCents: number | null,
   invoices: readonly Invoice[],
-  openQuarters: number,
+  waitingQuarters: number,
 ): RateStepReminder | null {
   const step = funding.rate_step;
   if (!step || rateCents === null || rateCents >= step.rate_cents) return null;
-  const billed = invoicedQuarters({ id: funding.source_id }, invoices);
-  if (billed + openQuarters < step.after_quarters) return null;
+  const billed = invoicedQuartersIn(raiseSourceIds(role), invoices);
+  if (billed + waitingQuarters < step.after_quarters) return null;
   return {
     invoice_first: billed < step.after_quarters,
     after_quarters: step.after_quarters,
@@ -81,12 +92,15 @@ export function myStats(
   const invoiced = invoices.reduce((sum, i) => sum + i.total_quarters, 0);
 
   let pay: PayStat | null = null;
-  const funding = role.funding.find((f) => f.rate_step);
-  const step = funding?.rate_step;
-  if (funding && step) {
-    const rate = rates[funding.source_id];
-    const raised = rate !== undefined && rate >= step.rate_cents;
-    const billed = invoicedQuarters({ id: funding.source_id }, invoices);
+  const raiseIds = raiseSourceIds(role);
+  const step = role.funding.find((f) => f.rate_step)?.rate_step;
+  if (step) {
+    // Raised once every raise source's rate is at least the new rate (decision 0036).
+    const raised = raiseIds.every((id) => {
+      const rate = rates[id];
+      return rate !== undefined && rate >= step.rate_cents;
+    });
+    const billed = invoicedQuartersIn(raiseIds, invoices);
     if (billed < step.after_quarters) {
       pay = {
         state: 'counting',

@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "version": 1,
+  "version": 2,
   "counts": [
     {
       "id": "contacts",
@@ -75,6 +75,160 @@
     {
       "id": "certifications_earned",
       "label": "Certifications earned"
+    },
+    {
+      "id": "homes_cleaned",
+      "label": "Homes cleaned"
+    },
+    {
+      "id": "in_home_meals_made",
+      "label": "In-home meals made"
+    },
+    {
+      "id": "people_helped_domestic_support",
+      "label": "People helped with domestic support"
+    },
+    {
+      "id": "medical_appointments_driven",
+      "label": "Medical appointments driven to"
+    },
+    {
+      "id": "miles_driven",
+      "label": "Miles driven",
+      "unit": "mi"
+    },
+    {
+      "id": "resource_appointments_driven",
+      "label": "Resource appointments driven to"
+    },
+    {
+      "id": "rides_dispatched",
+      "label": "Rides dispatched"
+    },
+    {
+      "id": "client_followups_made",
+      "label": "Client follow-ups made"
+    },
+    {
+      "id": "applications_submitted",
+      "label": "Applications submitted"
+    },
+    {
+      "id": "people_helped_applying",
+      "label": "People helped with applying"
+    },
+    {
+      "id": "chw_resources_unlocked",
+      "label": "CHW resources unlocked"
+    },
+    {
+      "id": "client_intake_conversations",
+      "label": "Client intake conversations"
+    },
+    {
+      "id": "check_ins_made",
+      "label": "Check-ins made"
+    },
+    {
+      "id": "people_given_social_support",
+      "label": "People given social support"
+    },
+    {
+      "id": "people_helped_technical_assistance",
+      "label": "People helped with technical assistance"
+    },
+    {
+      "id": "people_helped_acquire_resources",
+      "label": "People helped acquire resources"
+    },
+    {
+      "id": "resource_value_unlocked",
+      "label": "Value of resources unlocked",
+      "unit": "dollars"
+    },
+    {
+      "id": "people_served_at_leos",
+      "label": "People served as CHW at Leo's"
+    },
+    {
+      "id": "chw_partners_engaged",
+      "label": "CHW partners engaged"
+    },
+    {
+      "id": "tools_developed",
+      "label": "Tools developed"
+    },
+    {
+      "id": "processes_developed",
+      "label": "Processes developed"
+    },
+    {
+      "id": "people_helped_open_hours",
+      "label": "People helped at open hours"
+    },
+    {
+      "id": "meals_cooked",
+      "label": "Meals cooked"
+    },
+    {
+      "id": "meals_served",
+      "label": "Meals served"
+    },
+    {
+      "id": "people_at_events_hosted",
+      "label": "People at events hosted"
+    },
+    {
+      "id": "special_events_hosted",
+      "label": "Special events hosted"
+    },
+    {
+      "id": "event_attendees",
+      "label": "Event attendees"
+    },
+    {
+      "id": "tisupp_referrals_given",
+      "label": "TISUPP referrals given"
+    },
+    {
+      "id": "trainings_completed",
+      "label": "Trainings completed"
+    },
+    {
+      "id": "materials_completed",
+      "label": "Materials completed"
+    },
+    {
+      "id": "listening_sessions_conducted",
+      "label": "Listening sessions conducted"
+    },
+    {
+      "id": "workshops_facilitated",
+      "label": "Workshops facilitated"
+    },
+    {
+      "id": "workshop_attendees",
+      "label": "Workshop attendees"
+    },
+    {
+      "id": "full_moon_garden_parties_supported",
+      "label": "Full Moon Garden Parties supported"
+    },
+    {
+      "id": "full_moon_garden_party_attendees",
+      "label": "Full Moon Garden Party attendees"
+    },
+    {
+      "id": "leadership_academy_attendees",
+      "label": "Leadership academy attendees"
+    },
+    {
+      "id": "green_thumb_warriors_youth_participants",
+      "label": "Green Thumb Warriors youth participants"
+    },
+    {
+      "id": "green_thumb_warriors_sessions_supported",
+      "label": "Green Thumb Warriors sessions supported"
     }
   ],
   "roles": [
@@ -398,6 +552,428 @@
                 {
                   "id": "training-continuing-education",
                   "count_ids": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "source_id": "regen-general-operating",
+          "rate_cents": 2000,
+          "rate_step": {
+            "after_quarters": 960,
+            "rate_cents": 2300
+          },
+          "budget_lines": [
+            {
+              "id": "chw-experience-hours",
+              "tasks": [
+                {
+                  "id": "outreach",
+                  "count_ids": ["contacts"]
+                },
+                {
+                  "id": "interview-and-intake",
+                  "count_ids": ["applications_completed", "screenings_conducted"]
+                },
+                {
+                  "id": "screening-and-referrals",
+                  "count_ids": [
+                    "referrals_given",
+                    "referral_followups",
+                    "applications_completed",
+                    "screenings_conducted"
+                  ]
+                },
+                {
+                  "id": "resource-research",
+                  "count_ids": ["contacts", "referral_followups"]
+                },
+                {
+                  "id": "resource-acquisition",
+                  "count_ids": [
+                    "contacts",
+                    "referrals_given",
+                    "referral_followups",
+                    "rides_provided",
+                    "applications_completed",
+                    "client_goals_achieved",
+                    "quick_wins_provided",
+                    "applications_approved"
+                  ]
+                },
+                {
+                  "id": "application-assistance",
+                  "count_ids": [
+                    "referrals_given",
+                    "applications_completed",
+                    "client_goals_achieved",
+                    "quick_wins_provided",
+                    "applications_approved"
+                  ]
+                },
+                {
+                  "id": "transportation",
+                  "count_ids": [
+                    "rides_provided",
+                    "applications_completed",
+                    "client_goals_achieved",
+                    "quick_wins_provided"
+                  ]
+                },
+                {
+                  "id": "advocacy",
+                  "count_ids": [
+                    "referrals_given",
+                    "referral_followups",
+                    "client_goals_achieved",
+                    "quick_wins_provided",
+                    "screenings_conducted",
+                    "applications_approved"
+                  ]
+                },
+                {
+                  "id": "conversational-support",
+                  "count_ids": ["contacts", "referrals_given", "quick_wins_provided"]
+                },
+                {
+                  "id": "supporting-client-self-efficacy",
+                  "count_ids": [
+                    "referrals_given",
+                    "applications_completed",
+                    "client_goals_achieved",
+                    "quick_wins_provided",
+                    "applications_approved"
+                  ]
+                },
+                {
+                  "id": "technical-assistance",
+                  "count_ids": ["client_goals_achieved", "quick_wins_provided"]
+                },
+                {
+                  "id": "client-or-community-workshops",
+                  "count_ids": ["contacts"]
+                },
+                {
+                  "id": "client-check-in",
+                  "count_ids": [
+                    "referrals_given",
+                    "referral_followups",
+                    "applications_completed",
+                    "client_goals_achieved",
+                    "quick_wins_provided"
+                  ]
+                },
+                {
+                  "id": "client-follow-up",
+                  "count_ids": [
+                    "referrals_given",
+                    "referral_followups",
+                    "applications_completed",
+                    "client_goals_achieved",
+                    "quick_wins_provided",
+                    "applications_approved"
+                  ]
+                },
+                {
+                  "id": "re-screening",
+                  "count_ids": ["contacts", "referrals_given", "screenings_conducted"]
+                },
+                {
+                  "id": "planning-and-conducting-surveys",
+                  "count_ids": ["contacts", "referrals_given", "screenings_conducted"]
+                },
+                {
+                  "id": "documentation",
+                  "count_ids": []
+                },
+                {
+                  "id": "data-analysis-and-reporting",
+                  "count_ids": []
+                },
+                {
+                  "id": "developing-tools-processes",
+                  "count_ids": []
+                },
+                {
+                  "id": "meetings",
+                  "count_ids": []
+                },
+                {
+                  "id": "training-continuing-education",
+                  "count_ids": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chw-ce01",
+      "code": "CHW-CE01",
+      "name": "Certified CHW (Employee)",
+      "employment": "employee",
+      "chw": false,
+      "suggested_rate_cents": 2500,
+      "funding": [
+        {
+          "source_id": "regen-general-operating",
+          "rate_cents": 2500,
+          "budget_lines": [
+            {
+              "id": "community-health-work",
+              "tasks": [
+                {
+                  "id": "interview-and-intake",
+                  "count_ids": ["client_intake_conversations"]
+                },
+                {
+                  "id": "screening-and-referrals",
+                  "count_ids": ["referrals_given", "screenings_conducted"]
+                },
+                {
+                  "id": "resource-research",
+                  "count_ids": ["chw_resources_unlocked"]
+                },
+                {
+                  "id": "resource-acquisition",
+                  "count_ids": ["people_helped_acquire_resources", "resource_value_unlocked"]
+                },
+                {
+                  "id": "application-assistance",
+                  "count_ids": ["applications_submitted", "people_helped_applying"]
+                },
+                {
+                  "id": "transportation-service",
+                  "count_ids": [
+                    "rides_provided",
+                    "medical_appointments_driven",
+                    "miles_driven",
+                    "resource_appointments_driven",
+                    "rides_dispatched"
+                  ]
+                },
+                {
+                  "id": "advocacy",
+                  "count_ids": []
+                },
+                {
+                  "id": "social-support",
+                  "count_ids": ["people_given_social_support"]
+                },
+                {
+                  "id": "technical-assistance",
+                  "count_ids": ["people_helped_technical_assistance"]
+                },
+                {
+                  "id": "client-check-in",
+                  "count_ids": ["check_ins_made"]
+                },
+                {
+                  "id": "client-follow-up",
+                  "count_ids": ["client_followups_made"]
+                },
+                {
+                  "id": "domestic-support",
+                  "count_ids": [
+                    "homes_cleaned",
+                    "in_home_meals_made",
+                    "people_helped_domestic_support"
+                  ]
+                },
+                {
+                  "id": "leos-chw-support",
+                  "count_ids": ["people_served_at_leos"]
+                },
+                {
+                  "id": "chw-partnership-building",
+                  "count_ids": ["chw_partners_engaged"]
+                },
+                {
+                  "id": "marketing-and-outreach",
+                  "count_ids": []
+                },
+                {
+                  "id": "chw-internal-meetings",
+                  "count_ids": []
+                },
+                {
+                  "id": "documentation",
+                  "count_ids": []
+                },
+                {
+                  "id": "developing-tools-processes",
+                  "count_ids": ["tools_developed", "processes_developed"]
+                },
+                {
+                  "id": "other",
+                  "count_ids": []
+                }
+              ]
+            },
+            {
+              "id": "leos",
+              "tasks": [
+                {
+                  "id": "hosting-open-hours",
+                  "count_ids": ["people_helped_open_hours"]
+                },
+                {
+                  "id": "cooking-monday-breakfast",
+                  "count_ids": ["meals_cooked"]
+                },
+                {
+                  "id": "hosting-monday-breakfast",
+                  "count_ids": ["people_at_events_hosted"]
+                },
+                {
+                  "id": "serving-monday-dinner",
+                  "count_ids": ["meals_served"]
+                },
+                {
+                  "id": "cooking-wednesday-dinner",
+                  "count_ids": ["meals_cooked"]
+                },
+                {
+                  "id": "serving-wednesday-dinner",
+                  "count_ids": ["meals_served"]
+                },
+                {
+                  "id": "hosting-wednesday-dinner",
+                  "count_ids": ["people_at_events_hosted"]
+                },
+                {
+                  "id": "hosting-special-event",
+                  "count_ids": ["special_events_hosted", "people_at_events_hosted"]
+                },
+                {
+                  "id": "leos-internal-meetings",
+                  "count_ids": []
+                },
+                {
+                  "id": "leos-maintenance",
+                  "count_ids": []
+                },
+                {
+                  "id": "leos-marketing",
+                  "count_ids": []
+                },
+                {
+                  "id": "leos-other",
+                  "count_ids": []
+                }
+              ]
+            },
+            {
+              "id": "eat-local-network",
+              "tasks": [
+                {
+                  "id": "eat-local-meetings",
+                  "count_ids": []
+                },
+                {
+                  "id": "eat-local-forum-event-assistance",
+                  "count_ids": ["event_attendees"]
+                },
+                {
+                  "id": "full-moon-garden-party-event-support",
+                  "count_ids": ["event_attendees"]
+                },
+                {
+                  "id": "green-thumb-warriors-event-support",
+                  "count_ids": ["event_attendees"]
+                },
+                {
+                  "id": "green-thumb-warriors-planning",
+                  "count_ids": []
+                },
+                {
+                  "id": "eat-local-network-other",
+                  "count_ids": []
+                }
+              ]
+            },
+            {
+              "id": "admin",
+              "tasks": [
+                {
+                  "id": "admin-marketing",
+                  "count_ids": []
+                },
+                {
+                  "id": "admin-staffing",
+                  "count_ids": []
+                }
+              ]
+            },
+            {
+              "id": "other",
+              "tasks": [
+                {
+                  "id": "other",
+                  "count_ids": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "source_id": "tisupp",
+          "rate_cents": 2500,
+          "budget_lines": [
+            {
+              "id": "tisupp-grant",
+              "tasks": [
+                {
+                  "id": "planning-meeting",
+                  "count_ids": []
+                },
+                {
+                  "id": "quarterly-partnership-meeting",
+                  "count_ids": []
+                },
+                {
+                  "id": "chw-referral-services",
+                  "count_ids": ["tisupp_referrals_given"]
+                },
+                {
+                  "id": "training-hours",
+                  "count_ids": ["trainings_completed"]
+                },
+                {
+                  "id": "developing-materials",
+                  "count_ids": ["materials_completed"]
+                },
+                {
+                  "id": "listening-sessions",
+                  "count_ids": ["listening_sessions_conducted"]
+                },
+                {
+                  "id": "marketing-and-outreach",
+                  "count_ids": []
+                },
+                {
+                  "id": "family-workshop-facilitation",
+                  "count_ids": ["workshops_facilitated", "workshop_attendees"]
+                },
+                {
+                  "id": "full-moon-garden-party-support",
+                  "count_ids": [
+                    "full_moon_garden_parties_supported",
+                    "full_moon_garden_party_attendees"
+                  ]
+                },
+                {
+                  "id": "youth-academy-support",
+                  "count_ids": ["leadership_academy_attendees"]
+                },
+                {
+                  "id": "green-thumb-warriors-support",
+                  "count_ids": [
+                    "green_thumb_warriors_youth_participants",
+                    "green_thumb_warriors_sessions_supported"
+                  ]
                 }
               ]
             }

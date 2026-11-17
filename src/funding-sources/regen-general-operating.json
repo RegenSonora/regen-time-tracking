@@ -3,12 +3,13 @@
   "id": "regen-general-operating",
   "code": "REGEN-GO",
   "name": "Regen General Operating",
-  "version": 3,
+  "version": 4,
   "has_nte": false,
   "default_rate_cents": null,
   "period_start": null,
   "period_end": null,
   "certification_text": "I certify that the services listed were performed on the dates shown on the attached timesheet pages, the hours are accurate, and no participant names are included.",
+  "employee_certification_text": "I certify that the hours shown on this timesheet were worked on the dates listed, the hours are accurate, no participant names are included, and these hours have not been reported under any other funding source.",
   "tasks": [
     {
       "id": "outreach",
@@ -194,6 +195,136 @@
       "id": "other",
       "name": "Other",
       "core_competency": null
+    },
+    {
+      "id": "transportation-service",
+      "name": "Transportation service",
+      "core_competency": null
+    },
+    {
+      "id": "social-support",
+      "name": "Social support",
+      "core_competency": null
+    },
+    {
+      "id": "leos-chw-support",
+      "name": "Leo's CHW support",
+      "core_competency": null
+    },
+    {
+      "id": "chw-partnership-building",
+      "name": "CHW partnership building",
+      "core_competency": null
+    },
+    {
+      "id": "marketing-and-outreach",
+      "name": "Marketing and outreach",
+      "core_competency": null
+    },
+    {
+      "id": "chw-internal-meetings",
+      "name": "CHW internal meetings",
+      "core_competency": null
+    },
+    {
+      "id": "hosting-open-hours",
+      "name": "Hosting open hours",
+      "core_competency": null
+    },
+    {
+      "id": "cooking-monday-breakfast",
+      "name": "Cooking Monday breakfast",
+      "core_competency": null
+    },
+    {
+      "id": "hosting-monday-breakfast",
+      "name": "Hosting Monday breakfast",
+      "core_competency": null
+    },
+    {
+      "id": "serving-monday-dinner",
+      "name": "Serving Monday dinner",
+      "core_competency": null
+    },
+    {
+      "id": "cooking-wednesday-dinner",
+      "name": "Cooking Wednesday dinner",
+      "core_competency": null
+    },
+    {
+      "id": "serving-wednesday-dinner",
+      "name": "Serving Wednesday dinner",
+      "core_competency": null
+    },
+    {
+      "id": "hosting-wednesday-dinner",
+      "name": "Hosting Wednesday dinner",
+      "core_competency": null
+    },
+    {
+      "id": "hosting-special-event",
+      "name": "Hosting special event",
+      "core_competency": null
+    },
+    {
+      "id": "leos-internal-meetings",
+      "name": "Leo's internal meetings",
+      "core_competency": null
+    },
+    {
+      "id": "leos-maintenance",
+      "name": "Leo's maintenance",
+      "core_competency": null
+    },
+    {
+      "id": "leos-marketing",
+      "name": "Leo's marketing",
+      "core_competency": null
+    },
+    {
+      "id": "leos-other",
+      "name": "Leo's other",
+      "core_competency": null
+    },
+    {
+      "id": "eat-local-meetings",
+      "name": "Eat Local meetings",
+      "core_competency": null
+    },
+    {
+      "id": "eat-local-forum-event-assistance",
+      "name": "Eat Local Forum event assistance",
+      "core_competency": null
+    },
+    {
+      "id": "full-moon-garden-party-event-support",
+      "name": "Full Moon Garden Party event support",
+      "core_competency": null
+    },
+    {
+      "id": "green-thumb-warriors-event-support",
+      "name": "Green Thumb Warriors event support",
+      "core_competency": null
+    },
+    {
+      "id": "green-thumb-warriors-planning",
+      "name": "Green Thumb Warriors planning",
+      "core_competency": null
+    },
+    {
+      "id": "eat-local-network-other",
+      "name": "Eat Local Network: other",
+      "core_competency": null
+    },
+    {
+      "id": "admin-marketing",
+      "name": "Admin: marketing",
+      "core_competency": null
+    },
+    {
+      "id": "admin-staffing",
+      "name": "Admin: staffing",
+      "core_competency": null
     }
   ],
   "budget_lines": [
@@ -269,6 +400,30 @@
       "id": "other-contractors",
       "name": "Other contractors",
       "display_name": "Other"
+    },
+    {
+      "id": "community-health-work",
+      "name": "Community Health Work"
+    },
+    {
+      "id": "leos",
+      "name": "Leo's"
+    },
+    {
+      "id": "eat-local-network",
+      "name": "Eat Local Network"
+    },
+    {
+      "id": "admin",
+      "name": "Admin"
+    },
+    {
+      "id": "other",
+      "name": "Other"
+    },
+    {
+      "id": "chw-experience-hours",
+      "name": "CHW experience hours"
     }
   ]
 }

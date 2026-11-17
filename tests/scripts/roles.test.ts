@@ -227,33 +227,42 @@ describe('roles file (roles plan Part 2, decisions 0027, 0029)', () => {
     expect(units).toEqual([
       ['water_capacity_added', 'gal'],
       ['grow_space_added', 'sq ft'],
+      ['miles_driven', 'mi'],
+      ['resource_value_unlocked', 'dollars'],
     ]);
   });
 
-  it('ships three active roles: two CHW Trainees and the Resilience Team Lead', () => {
+  it('ships four active roles: two CHW Trainees, a Certified CHW and the Resilience Team Lead', () => {
     expect(
       rolesFile.roles.map((r) => [r.id, r.code, r.name, r.employment, r.chw, r.retired ?? false]),
     ).toEqual([
       ['chw-tc01', 'CHW-TC01', 'CHW Trainee (Contractor)', 'contractor', true, false],
       ['chw-te01', 'CHW-TE01', 'CHW Trainee (Employee)', 'employee', true, false],
+      ['chw-ce01', 'CHW-CE01', 'Certified CHW (Employee)', 'employee', false, false],
       ['r-tl01', 'R-TL01', 'Resilience Team Lead', 'contractor', false, false],
     ]);
   });
 
   it('CHW Trainees bill TISUPP at $20.00, $23.00 after 240 hrs, cert at 480 hrs (0030, 0032)', () => {
+    const step = {
+      rate_cents: 2000,
+      rate_step: { after_quarters: 960, rate_cents: 2300 },
+    };
     for (const code of ['CHW-TC01', 'CHW-TE01']) {
       const r = role(code);
       expect(r.certification_step).toEqual({ after_quarters: 1920, name: 'CHW Cert' });
-      expect(r.funding).toHaveLength(1);
-      expect(r.funding[0]).toMatchObject({
-        source_id: 'tisupp',
-        rate_cents: 2000,
-        rate_step: { after_quarters: 960, rate_cents: 2300 },
-      });
+      expect(r.funding[0]).toMatchObject({ source_id: 'tisupp', ...step });
     }
+    expect(role('CHW-TC01').funding).toHaveLength(1);
     expect(role('CHW-TC01').funding[0]?.nte_cents).toBe(1032000);
+    // CHW-TE01 also bills Regen General Operating, with the same raise (decision 0036).
+    expect(role('CHW-TE01').funding).toHaveLength(2);
+    expect(role('CHW-TE01').funding[1]).toMatchObject({
+      source_id: 'regen-general-operating',
+      ...step,
+    });
     // Employee roles leave the NTE blank (decision 0031).
-    expect(role('CHW-TE01').funding[0]?.nte_cents).toBeUndefined();
+    for (const f of role('CHW-TE01').funding) expect(f.nte_cents).toBeUndefined();
   });
 
   it('CHW Trainees: all 21 TISUPP tasks on CHW experience hours, with their counts', () => {
@@ -265,6 +274,8 @@ describe('roles file (roles plan Part 2, decisions 0027, 0029)', () => {
     ];
     expect(role('CHW-TC01').funding[0]?.budget_lines).toEqual(expected);
     expect(role('CHW-TE01').funding[0]?.budget_lines).toEqual(expected);
+    // The same line and tasks on Regen General Operating (decision 0036).
+    expect(role('CHW-TE01').funding[1]?.budget_lines).toEqual(expected);
   });
 
   it('Resilience Team Lead bills Regen General Operating at $22.00 with no raise or NTE', () => {
@@ -334,9 +345,10 @@ describe('build checks against the source files (roles plan R1)', () => {
     change(copy, sourceCopies);
     return checkRolesData(copy, sourceCopies, rolesSchema);
   }
-  const tc = (f: RolesFile) => f.roles[0] as Role;
-  const te = (f: RolesFile) => f.roles[1] as Role;
-  const tl = (f: RolesFile) => f.roles[2] as Role;
+  const byId = (f: RolesFile, id: string) => f.roles.find((r) => r.id === id) as Role;
+  const tc = (f: RolesFile) => byId(f, 'chw-tc01');
+  const te = (f: RolesFile) => byId(f, 'chw-te01');
+  const tl = (f: RolesFile) => byId(f, 'r-tl01');
   const funding = (r: Role) => r.funding[0] as Funding;
   const line = (r: Role) => funding(r).budget_lines[0] as RoleLine;
   const task = (r: Role) => line(r).tasks[0] as RoleTask;
@@ -491,13 +503,24 @@ describe('build checks against the source files (roles plan R1)', () => {
 
   it('rejects an employee role on a source with no employee certification (decision 0031)', () => {
     const missing = `has no employee_certification_text and the role doesn't set one`;
-    expect(broken((f) => (tl(f).employment = 'employee'))).toContain(
+    const noRegenText = (s: SourceFile[]) => {
+      delete source(s, 'regen-general-operating')['employee_certification_text'];
+    };
+    expect(
+      broken((f, s) => {
+        noRegenText(s);
+        tl(f).employment = 'employee';
+      }),
+    ).toContain(
       `role R-TL01, funding regen-general-operating: employee role, but REGEN-GO ${missing}`,
     );
     expect(
-      broken((f) => {
-        tl(f).employment = 'employee';
-        (tl(f) as unknown as Record<string, unknown>)['employee_certification_text'] = 'I certify.';
+      broken((f, s) => {
+        noRegenText(s);
+        for (const r of [tl(f), te(f), byId(f, 'chw-ce01')]) {
+          r.employment = 'employee';
+          (r as unknown as Record<string, unknown>)['employee_certification_text'] = 'I certify.';
+        }
       }),
     ).toEqual([]);
     expect(
@@ -505,5 +528,28 @@ describe('build checks against the source files (roles plan R1)', () => {
         delete source(s, 'tisupp')['employee_certification_text'];
       }),
     ).toContain(`role CHW-TE01, funding tisupp: employee role, but TISUPP ${missing}`);
+  });
+
+  it('keeps one raise per role: every rate_step on a role must match (decision 0036)', () => {
+    const regenOf = (r: Role) => r.funding[1] as Funding;
+    expect(
+      broken((f) => {
+        regenOf(te(f)).rate_step = { after_quarters: 960, rate_cents: 2400 };
+      }),
+    ).toContain(
+      'role CHW-TE01: every rate_step must match; funding regen-general-operating differs',
+    );
+    expect(
+      broken((f) => {
+        regenOf(te(f)).rate_step = { after_quarters: 800, rate_cents: 2300 };
+      }),
+    ).toContain(
+      'role CHW-TE01: every rate_step must match; funding regen-general-operating differs',
+    );
+    expect(
+      broken((f) => {
+        delete regenOf(te(f)).rate_step;
+      }),
+    ).toEqual([]);
   });
 });

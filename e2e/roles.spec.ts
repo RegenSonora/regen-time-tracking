@@ -6,6 +6,7 @@ import {
   fillDetails,
   heading,
   parseCsv,
+  pickLine,
   readPng,
   setUp,
   sharedFiles,
@@ -304,6 +305,67 @@ test('an employee submits a timesheet: summary page, no amounts, supervisor line
   await expect(stat(page, 'Contacts')).toContainText('1');
   await page.getByRole('button', { name: /Past timesheets 1 timesheet/ }).click();
   await expect(page.getByRole('button', { name: /CC-2026-001/ })).toContainText('1.5 hrs');
+});
+
+test("a Certified CHW: both sources, Leo's tasks, a timesheet with no core competencies", async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await page.clock.install({ time: new Date('2026-11-16T09:00:00-07:00') });
+  await stubShare(page);
+  await page.goto('./');
+  await fillDetails(page);
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: /^CHW-CE01/ }).click();
+  await expect(heading(page, 'Your role')).toBeVisible();
+  await expect(page.getByText('TISUPP Grant')).toBeVisible();
+  await expect(page.getByText("Leo's", { exact: true })).toBeVisible();
+  await expect(page.getByText('CHW experience hours')).toHaveCount(0);
+  await expect(page.getByRole('textbox', { name: /rate/i }).first()).toHaveValue('25.00');
+  await page.getByRole('button', { name: 'This is my role' }).click();
+  await expect(heading(page, 'Regen Time Tracking')).toBeVisible();
+
+  // No raise or certification for a Certified CHW (decision 0035).
+  await expect(stat(page, /pay increase/)).toHaveCount(0);
+  await expect(stat(page, /CHW Cert/)).toHaveCount(0);
+
+  await recordTime(page, '2026-11-16', '07:00', '09:00');
+  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(heading(page, 'What did you do?')).toBeVisible();
+  await pickLine(page, "Leo's");
+  await taskBox(page, 'Cooking Monday breakfast').check();
+  await expect(taskBox(page, 'Outreach')).toHaveCount(0);
+  await expectAccessible(page, 'certified chw task step');
+  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(heading(page, 'Counts and notes')).toBeVisible();
+  await page.getByRole('button', { name: 'More meals cooked' }).click();
+  await expect(page.getByText('Contacts')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Save entry' }).click();
+  await expect(heading(page, 'Regen Time Tracking')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Submit timesheet' }).click();
+  await expect(heading(page, 'New timesheet')).toBeVisible();
+  await page.getByRole('button', { name: 'Create timesheet files' }).click();
+  await expect(heading(page, 'Timesheet created')).toBeVisible();
+  await page.getByRole('button', { name: 'Share files' }).click();
+  await expect(page.getByRole('status')).toHaveText('Files shared.');
+  const [files] = await sharedFiles(page);
+  const pdf = await readPdf(new Uint8Array(files?.[0]?.bytes ?? []));
+  const page1 = pdf[0]?.text ?? '';
+  expect(page1).toContain('Pay rate $25.00/hr');
+  expect(page1).toContain("Leo's 2.00");
+  expect(page1).toContain('hours have not been reported under any other funding source');
+  expect(pdf[1]?.text).toContain('Cooking Monday breakfast');
+  expect(pdf[1]?.text).not.toContain('CORE COMPETENCY');
+  const log = parseCsv(files?.[3]?.bytes ?? []);
+  const header = log[0] ?? [];
+  expect(log[1]?.[header.indexOf('meals_cooked')]).toBe('1');
+  await page.getByRole('button', { name: 'Done' }).click();
+  await expect(stat(page, 'Meals cooked')).toContainText('1');
+
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await expect(page.getByText('CHW-CE01 · Certified CHW (Employee)')).toBeVisible();
+  await expect(page.getByText('Work Hours Report')).toHaveCount(0);
 });
 
 /** Point the stored profile at another role id, as if the office's roles file changed. */
