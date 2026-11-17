@@ -556,6 +556,156 @@
               ]
             }
           ]
+        },
+        {
+          "source_id": "regen-general-operating",
+          "rate_cents": 2000,
+          "rate_step": {
+            "after_quarters": 960,
+            "rate_cents": 2300
+          },
+          "budget_lines": [
+            {
+              "id": "chw-experience-hours",
+              "tasks": [
+                {
+                  "id": "outreach",
+                  "count_ids": ["contacts"]
+                },
+                {
+                  "id": "interview-and-intake",
+                  "count_ids": ["applications_completed", "screenings_conducted"]
+                },
+                {
+                  "id": "screening-and-referrals",
+                  "count_ids": [
+                    "referrals_given",
+                    "referral_followups",
+                    "applications_completed",
+                    "screenings_conducted"
+                  ]
+                },
+                {
+                  "id": "resource-research",
+                  "count_ids": ["contacts", "referral_followups"]
+                },
+                {
+                  "id": "resource-acquisition",
+                  "count_ids": [
+                    "contacts",
+                    "referrals_given",
+                    "referral_followups",
+                    "rides_provided",
+                    "applications_completed",
+                    "client_goals_achieved",
+                    "quick_wins_provided",
+                    "applications_approved"
+                  ]
+                },
+                {
+                  "id": "application-assistance",
+                  "count_ids": [
+                    "referrals_given",
+                    "applications_completed",
+                    "client_goals_achieved",
+                    "quick_wins_provided",
+                    "applications_approved"
+                  ]
+                },
+                {
+                  "id": "transportation",
+                  "count_ids": [
+                    "rides_provided",
+                    "applications_completed",
+                    "client_goals_achieved",
+                    "quick_wins_provided"
+                  ]
+                },
+                {
+                  "id": "advocacy",
+                  "count_ids": [
+                    "referrals_given",
+                    "referral_followups",
+                    "client_goals_achieved",
+                    "quick_wins_provided",
+                    "screenings_conducted",
+                    "applications_approved"
+                  ]
+                },
+                {
+                  "id": "conversational-support",
+                  "count_ids": ["contacts", "referrals_given", "quick_wins_provided"]
+                },
+                {
+                  "id": "supporting-client-self-efficacy",
+                  "count_ids": [
+                    "referrals_given",
+                    "applications_completed",
+                    "client_goals_achieved",
+                    "quick_wins_provided",
+                    "applications_approved"
+                  ]
+                },
+                {
+                  "id": "technical-assistance",
+                  "count_ids": ["client_goals_achieved", "quick_wins_provided"]
+                },
+                {
+                  "id": "client-or-community-workshops",
+                  "count_ids": ["contacts"]
+                },
+                {
+                  "id": "client-check-in",
+                  "count_ids": [
+                    "referrals_given",
+                    "referral_followups",
+                    "applications_completed",
+                    "client_goals_achieved",
+                    "quick_wins_provided"
+                  ]
+                },
+                {
+                  "id": "client-follow-up",
+                  "count_ids": [
+                    "referrals_given",
+                    "referral_followups",
+                    "applications_completed",
+                    "client_goals_achieved",
+                    "quick_wins_provided",
+                    "applications_approved"
+                  ]
+                },
+                {
+                  "id": "re-screening",
+                  "count_ids": ["contacts", "referrals_given", "screenings_conducted"]
+                },
+                {
+                  "id": "planning-and-conducting-surveys",
+                  "count_ids": ["contacts", "referrals_given", "screenings_conducted"]
+                },
+                {
+                  "id": "documentation",
+                  "count_ids": []
+                },
+                {
+                  "id": "data-analysis-and-reporting",
+                  "count_ids": []
+                },
+                {
+                  "id": "developing-tools-processes",
+                  "count_ids": []
+                },
+                {
+                  "id": "meetings",
+                  "count_ids": []
+                },
+                {
+                  "id": "training-continuing-education",
+                  "count_ids": []
+                }
+              ]
+            }
+          ]
         }
       ]
     },

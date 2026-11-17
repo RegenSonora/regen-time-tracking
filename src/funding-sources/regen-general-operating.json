@@ -420,6 +420,10 @@
     {
       "id": "other",
       "name": "Other"
+    },
+    {
+      "id": "chw-experience-hours",
+      "name": "CHW experience hours"
     }
   ]
 }

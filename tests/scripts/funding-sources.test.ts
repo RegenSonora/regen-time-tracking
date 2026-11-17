@@ -132,8 +132,7 @@ describe('grant periods and the Resilience Team Lead (roles plan R1, decisions 0
 
   it('then adds 26 tasks, 5 lines and an employee certification for Certified CHWs (decision 0035)', () => {
     expect(regen.tasks).toHaveLength(63);
-    expect(regen.budget_lines).toHaveLength(23);
-    expect(regen.budget_lines.slice(18)).toEqual([
+    expect(regen.budget_lines.slice(18, 23)).toEqual([
       { id: 'community-health-work', name: 'Community Health Work' },
       { id: 'leos', name: "Leo's" },
       { id: 'eat-local-network', name: 'Eat Local Network' },
@@ -173,6 +172,15 @@ describe('grant periods and the Resilience Team Lead (roles plan R1, decisions 0
     expect(regen['employee_certification_text']).toBe(
       'I certify that the hours shown on this timesheet were worked on the dates listed, the hours are accurate, no participant names are included, and these hours have not been reported under any other funding source.',
     );
+  });
+
+  it('then adds CHW experience hours for CHW Trainee (Employee) (decision 0036)', () => {
+    expect(regen.budget_lines).toHaveLength(24);
+    expect(regen.budget_lines[23]).toEqual(tisupp.budget_lines[12]);
+    expect(regen.budget_lines[23]).toEqual({
+      id: 'chw-experience-hours',
+      name: 'CHW experience hours',
+    });
   });
 
   it('TISUPP adds the TISUPP Grant line and 11 tasks for Certified CHWs (decision 0035)', () => {
