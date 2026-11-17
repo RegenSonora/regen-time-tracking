@@ -1,6 +1,7 @@
 # 0037 — Pause and Resume on the running timer
 
-- **Status:** Proposed, November 17, 2026. Brought over unchanged from the Gila River contractors app, where Chris accepted it as its decision 0027 on November 16, 2026. Needs Chris's acceptance for the Regen app before merging.
+- **Status:** Accepted by Chris, November 17, 2026
+- **Source:** brought over unchanged from the Gila River contractors app, where Chris accepted it as its decision 0027 on November 16, 2026
 - **Spec:** SPEC §5 (timer, rounding, editing), §7 (entry log, fingerprint); data version 5, fingerprint canonical form v4
 
 ## Decision
