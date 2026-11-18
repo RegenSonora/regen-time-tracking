@@ -298,6 +298,27 @@ export interface InvoiceFlatLine {
   amount_cents: number;
 }
 
+/** A trip-fee task's trips in one tier on an invoice: trips × the tier's fee (decision 0045). */
+export interface InvoiceTripLine {
+  budget_line_id: string;
+  budget_line_name: string;
+  task_id: string;
+  task_name: string;
+  from_miles: number;
+  /** Null for the last, open tier. */
+  to_miles: number | null;
+  trips: number;
+  fee_cents: number;
+  amount_cents: number;
+}
+
+/** The gas reimbursement of a line's trips, added up, with no tier (decision 0045). */
+export interface InvoiceGasLine {
+  budget_line_id: string;
+  budget_line_name: string;
+  amount_cents: number;
+}
+
 /** Contract tracking box (SPEC §6). Warning only, never a block. */
 export type NteStatus =
   | { state: 'none' }
@@ -346,11 +367,15 @@ export interface Invoice {
   flat_lines?: InvoiceFlatLine[];
   /** Service-fee rows, in budget line order. Absent on invoices made before decision 0043. */
   fee_lines?: InvoiceFeeLine[];
+  /** Trip rows by tier, in budget line order. Absent on invoices made before decision 0045. */
+  trip_lines?: InvoiceTripLine[];
+  /** Gas reimbursement rows, one per line. Absent on invoices made before decision 0045. */
+  gas_lines?: InvoiceGasLine[];
   /** Billed quarter-hours: the sum of the hourly rows. */
   total_quarters: number;
   /** Hours of flat-rate tasks, tracked, not billed. Absent before decision 0039. */
   unbilled_quarters?: number;
-  /** Hourly rows plus flat rows plus fee rows. */
+  /** Hourly rows plus flat, fee, trip and gas rows. */
   total_cents: number;
   counts_period: Counts;
   /** This source on this phone, including this invoice. */

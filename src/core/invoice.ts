@@ -3,7 +3,7 @@ import { quarterUnitsText, sumCounts } from './counts';
 import { CANONICAL_VERSION, fingerprintOf, type FingerprintedInvoice } from './fingerprint';
 import { formatInvoiceNumber, normalizeInitials, takeNumber } from './invoice-number';
 import { flatAmountCents, formatDollars, formatQuarters, lineAmountCents, sumCents } from './money';
-import { entryFees, flatRates } from './roles';
+import { entryFees, entryTrip, flatRates, tierLabel, tripFees } from './roles';
 import { sharesMatch } from './task-split';
 import { checkEntryTimes, entryDateOf, parseIso } from './time';
 import type {
@@ -15,7 +15,9 @@ import type {
   InvoiceEntry,
   InvoiceFeeLine,
   InvoiceFlatLine,
+  InvoiceGasLine,
   InvoiceLine,
+  InvoiceTripLine,
   NteStatus,
   Profile,
   Role,
@@ -113,12 +115,15 @@ export function buildInvoiceDraft(input: InvoiceInput): InvoiceDraftResult {
   );
   if (billed.length === 0) return { ok: false, reason: 'no_entries' };
 
-  // Flat-rate and service-fee tasks: hours tracked, not billed; the count or the fee is billed
-  // instead (decisions 0039, 0043).
+  // Flat-rate, service-fee and trip-fee tasks: hours tracked, not billed; the count, the fee or
+  // the trip is billed instead (decisions 0039, 0043, 0045).
   const flat = flatRates(input.role, source.id);
   const fees = entryFees(input.role, source.id);
+  const trips = tripFees(input.role, source.id);
   const isUnbilled = (lineId: string, taskId: string) =>
-    flat.get(lineId)?.has(taskId) === true || fees.get(lineId)?.has(taskId) === true;
+    flat.get(lineId)?.has(taskId) === true ||
+    fees.get(lineId)?.has(taskId) === true ||
+    trips.get(lineId)?.has(taskId) === true;
 
   const frozen: InvoiceEntry[] = [];
   for (const e of billed) {
@@ -170,6 +175,8 @@ export function buildInvoiceDraft(input: InvoiceInput): InvoiceDraftResult {
   const invoiceLines: InvoiceLine[] = [];
   const flatLines: InvoiceFlatLine[] = [];
   const feeLines: InvoiceFeeLine[] = [];
+  const tripLines: InvoiceTripLine[] = [];
+  const gasLines: InvoiceGasLine[] = [];
   let unbilledQuarters = 0;
   for (const line of source.budget_lines) {
     const shares = sharesOf(line.id);
@@ -179,6 +186,11 @@ export function buildInvoiceDraft(input: InvoiceInput): InvoiceDraftResult {
       .reduce((n, t) => n + t.quarters, 0);
     feeLines.push(...feeLinesOf(line, fees.get(line.id), frozen, tasks));
     flatLines.push(...flatLinesOf(line, flat.get(line.id), frozen, tasks, input.count_defs));
+    if (trips.has(line.id)) {
+      const lineTrips = tripLinesOf(line, input.role, source.id, frozen, tasks);
+      tripLines.push(...lineTrips.trips);
+      if (lineTrips.gas) gasLines.push(lineTrips.gas);
+    }
     if (quarters === 0) continue;
     invoiceLines.push({
       budget_line_id: line.id,
@@ -192,6 +204,8 @@ export function buildInvoiceDraft(input: InvoiceInput): InvoiceDraftResult {
     ...invoiceLines.map((l) => l.amount_cents),
     ...flatLines.map((l) => l.amount_cents),
     ...feeLines.map((l) => l.amount_cents),
+    ...tripLines.map((l) => l.amount_cents),
+    ...gasLines.map((l) => l.amount_cents),
   ]);
   const totalQuarters = invoiceLines.reduce((sum, l) => sum + l.quarters, 0);
 
@@ -249,6 +263,8 @@ export function buildInvoiceDraft(input: InvoiceInput): InvoiceDraftResult {
       lines: invoiceLines,
       flat_lines: flatLines,
       fee_lines: feeLines,
+      trip_lines: tripLines,
+      gas_lines: gasLines,
       total_quarters: totalQuarters,
       unbilled_quarters: unbilledQuarters,
       total_cents: totalCents,
@@ -291,6 +307,56 @@ function feeLinesOf(
     });
   }
   return rows;
+}
+
+/**
+ * The line's trips (decision 0045): each entry with a trip-fee task is one trip, in the tier of
+ * its miles. One row per task and tier with trips, in tier order, and one gas row with the gas
+ * added up when any trip has gas. A trip with no miles bills nothing (Save needs them).
+ */
+function tripLinesOf(
+  line: { id: string; name: string },
+  role: Role | null,
+  sourceId: string,
+  frozen: readonly InvoiceEntry[],
+  tasks: ReadonlyMap<string, { name: string }>,
+): { trips: InvoiceTripLine[]; gas: InvoiceGasLine | null } {
+  const byTier = new Map<string, InvoiceTripLine>();
+  const gas: number[] = [];
+  for (const e of frozen) {
+    if (e.budget_line_id !== line.id) continue;
+    const ids = e.tasks.map((t) => t.task_id);
+    const trip = entryTrip(role, sourceId, line.id, ids, e.counts.values);
+    if (trip.state !== 'trip') continue;
+    const { tier } = trip;
+    const key = `${trip.task_id}|${String(tier.from_miles)}`;
+    const row = byTier.get(key) ?? {
+      budget_line_id: line.id,
+      budget_line_name: line.name,
+      task_id: trip.task_id,
+      task_name: tasks.get(trip.task_id)?.name ?? '',
+      from_miles: tier.from_miles,
+      to_miles: tier.to_miles ?? null,
+      trips: 0,
+      fee_cents: tier.fee_cents,
+      amount_cents: 0,
+    };
+    row.trips += 1;
+    row.amount_cents = sumCents([row.amount_cents, tier.fee_cents]);
+    byTier.set(key, row);
+    if (tier.gas_cents !== undefined) gas.push(tier.gas_cents);
+  }
+  const trips = [...byTier.values()].sort(
+    (a, b) =>
+      (a.task_id < b.task_id ? -1 : a.task_id > b.task_id ? 1 : 0) || a.from_miles - b.from_miles,
+  );
+  return {
+    trips,
+    gas:
+      gas.length === 0
+        ? null
+        : { budget_line_id: line.id, budget_line_name: line.name, amount_cents: sumCents(gas) },
+  };
 }
 
 /**
@@ -375,21 +441,28 @@ export async function createInvoice(input: InvoiceInput): Promise<InvoiceResult>
   return { ...draft, invoice: { ...draft.invoice, fingerprint } };
 }
 
-/** One row of an invoice's lines table: hours, a service fee (0043) or a flat-rate fee (0039). */
+/**
+ * One row of an invoice's lines table: hours, a service fee (0043), a flat-rate fee (0039), the
+ * trips of one tier or the gas reimbursement (0045).
+ */
 export type InvoiceRow =
   | { kind: 'hours'; line: InvoiceLine }
   | { kind: 'fee'; fee: InvoiceFeeLine }
-  | { kind: 'flat'; flat: InvoiceFlatLine };
+  | { kind: 'flat'; flat: InvoiceFlatLine }
+  | { kind: 'trip'; trip: InvoiceTripLine }
+  | { kind: 'gas'; gas: InvoiceGasLine };
 
 /**
- * The lines table in order: each budget line's hourly row, then its fee rows, then its flat-rate
- * rows. Lines with no billed hours follow, each with its fee and flat rows (decisions 0039, 0043).
+ * The lines table in order: each budget line's hourly row, then its fee, flat-rate, trip and gas
+ * rows. Lines with no billed hours follow, each with its other rows (decisions 0039, 0043, 0045).
  */
 export function invoiceRows(
-  invoice: Pick<Invoice, 'lines' | 'flat_lines' | 'fee_lines'>,
+  invoice: Pick<Invoice, 'lines' | 'flat_lines' | 'fee_lines' | 'trip_lines' | 'gas_lines'>,
 ): InvoiceRow[] {
   const flat = invoice.flat_lines ?? [];
   const fee = invoice.fee_lines ?? [];
+  const trip = invoice.trip_lines ?? [];
+  const gas = invoice.gas_lines ?? [];
   const extras = (lineId: string): InvoiceRow[] => [
     ...fee
       .filter((f) => f.budget_line_id === lineId)
@@ -397,10 +470,20 @@ export function invoiceRows(
     ...flat
       .filter((f) => f.budget_line_id === lineId)
       .map((f): InvoiceRow => ({ kind: 'flat', flat: f })),
+    ...trip
+      .filter((t) => t.budget_line_id === lineId)
+      .map((t): InvoiceRow => ({ kind: 'trip', trip: t })),
+    ...gas
+      .filter((g) => g.budget_line_id === lineId)
+      .map((g): InvoiceRow => ({ kind: 'gas', gas: g })),
   ];
   const hourly = new Set(invoice.lines.map((l) => l.budget_line_id));
   const others = [
-    ...new Set([...fee, ...flat].map((f) => f.budget_line_id).filter((id) => !hourly.has(id))),
+    ...new Set(
+      [...fee, ...flat, ...trip, ...gas]
+        .map((f) => f.budget_line_id)
+        .filter((id) => !hourly.has(id)),
+    ),
   ];
   return [
     ...invoice.lines.flatMap((line): InvoiceRow[] => [
@@ -414,6 +497,21 @@ export function invoiceRows(
 /** "Leo's: Wednesday dinner service ×2", the fee row's name on the page and preview. */
 export function feeRowName(fee: InvoiceFeeLine): string {
   return `${fee.budget_line_name}: ${fee.task_name} ×${String(fee.entries)}`;
+}
+
+/** "Community Care Work: Transportation service, 2 trips 1–30 mi", the trip row's name. */
+export function tripRowName(trip: InvoiceTripLine): string {
+  const tier = tierLabel({
+    from_miles: trip.from_miles,
+    ...(trip.to_miles !== null && { to_miles: trip.to_miles }),
+  });
+  const trips = `${String(trip.trips)} ${trip.trips === 1 ? 'trip' : 'trips'}`;
+  return `${trip.budget_line_name}: ${trip.task_name}, ${trips} ${tier}`;
+}
+
+/** "Community Care Work: Gas reimbursement", the gas row's name: no tier (decision 0045). */
+export function gasRowName(gas: InvoiceGasLine): string {
+  return `${gas.budget_line_name}: Gas reimbursement`;
 }
 
 /** "Eat Local Network: 2.5 LEHRs reset", the flat row's name on the page and preview. */
@@ -462,6 +560,22 @@ export function invoiceRowCells(row: InvoiceRow): {
       quarters: null,
       rate: `up to ${formatDollars(row.fee.max_cents)}`,
       amount_cents: row.fee.amount_cents,
+    };
+  }
+  if (row.kind === 'trip') {
+    return {
+      name: tripRowName(row.trip),
+      quarters: null,
+      rate: formatDollars(row.trip.fee_cents),
+      amount_cents: row.trip.amount_cents,
+    };
+  }
+  if (row.kind === 'gas') {
+    return {
+      name: gasRowName(row.gas),
+      quarters: null,
+      rate: '',
+      amount_cents: row.gas.amount_cents,
     };
   }
   return {

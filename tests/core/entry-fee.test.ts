@@ -199,7 +199,9 @@ describe('invoice with service fees (decision 0043)', () => {
           ? `${r.line.budget_line_id} hours`
           : r.kind === 'fee'
             ? `${r.fee.budget_line_id} fee ${r.fee.task_id}`
-            : `${r.flat.budget_line_id} flat ${r.flat.count_id}`,
+            : r.kind === 'flat'
+              ? `${r.flat.budget_line_id} flat ${r.flat.count_id}`
+              : r.kind,
       ),
     ).toEqual([
       'leos hours',
@@ -222,10 +224,10 @@ describe('invoice with service fees (decision 0043)', () => {
     expect(free.total_cents).toBe(0);
   });
 
-  it('fingerprints and verifies at canonical v6; a changed fee breaks it', async () => {
+  it('fingerprints and verifies at the current canonical version; a changed fee breaks it', async () => {
     const result = await createInvoice(ccInput([dinner, dinnerLowered, party]));
     if (!result.ok) throw new Error(result.reason);
-    expect(result.invoice.canonical_version).toBe(6);
+    expect(result.invoice.canonical_version).toBe(7);
     expect(await verifyFingerprint(result.invoice)).toBe(true);
     const tampered = structuredClone(result.invoice);
     const lowered = must(tampered.entries.find((e) => e.entry_date === '2026-11-11'));

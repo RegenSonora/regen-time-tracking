@@ -67,12 +67,13 @@ describe('page 1 as shapes, for the picture (decision 0018)', () => {
     // Re-pinned for decision 0039: canonical v5 and the entry log's unbilled_hours column.
     // Re-pinned for decision 0042: the entry log's new count columns.
     // Re-pinned for decision 0043: canonical v6 and the entry log's fee column.
+    // Re-pinned for decision 0045: canonical v7.
     const invoice = await invoiceFrom({ source: { ...tisupp, version: 1 } });
     const files = buildInvoiceFiles(invoice, tisupp, countDefs);
     expect(await Promise.all(files.map((f) => sha256(f.bytes)))).toEqual([
-      '4a2d2b0bc96af4707d52e93656b3b1ce113d579d992e986362bf7af38c614111',
-      'cf9e18912b41808b32315c017743e005b420b9246d6f59d6a58d9f1f4f568990',
-      '9de0ccdfaaa44b1acd27365add46bfa35a95f7071dd8b6f49ee3b8a18f277453',
+      '1947f8dcbf218a97dbc6b439700568117200abc6809dbb8afc2805a592a6812c',
+      '4f2de60ee747d777fd34496e28c454e508cf195e0df6d3fcad9b9f2dcbea570a',
+      '8ff8e0345ad1e84621a1fecb49a36d146d73cee203881c906d18a166ff048ca1',
     ]);
   });
 });

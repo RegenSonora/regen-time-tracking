@@ -15,6 +15,8 @@ import type {
   RolesFile,
   SourceSettings,
   Task,
+  TripFee,
+  TripTier,
 } from './types';
 
 /** The roles setup offers: active ones, in file order. */
@@ -391,9 +393,93 @@ export function entryFees(
   return out;
 }
 
+/** The role's trip-fee tasks on a source, by budget line id, then task id (decision 0045). */
+export function tripFees(
+  role: Pick<Role, 'funding'> | null | undefined,
+  sourceId: string,
+): Map<string, Map<string, TripFee>> {
+  const out = new Map<string, Map<string, TripFee>>();
+  const funding = role?.funding.find((f) => f.source_id === sourceId);
+  for (const line of funding?.budget_lines ?? []) {
+    for (const task of line.tasks) {
+      if (!task.trip_fee) continue;
+      const tasks = out.get(line.id) ?? new Map<string, TripFee>();
+      tasks.set(task.id, structuredClone(task.trip_fee));
+      out.set(line.id, tasks);
+    }
+  }
+  return out;
+}
+
+/** The tier a trip of whole miles falls in; null for no miles or miles that aren't whole. */
+export function tripTier(trip: TripFee, miles: number): TripTier | null {
+  if (!Number.isSafeInteger(miles) || miles < 1) return null;
+  return (
+    trip.tiers.find(
+      (t) => miles >= t.from_miles && (t.to_miles === undefined || miles <= t.to_miles),
+    ) ?? null
+  );
+}
+
+/** "31–60 mi", or "161+ mi" for the open tier. */
+export function tierLabel(tier: Pick<TripTier, 'from_miles' | 'to_miles'>): string {
+  return tier.to_miles === undefined
+    ? `${String(tier.from_miles)}+ mi`
+    : `${String(tier.from_miles)}–${String(tier.to_miles)} mi`;
+}
+
+export type EntryTrip =
+  | { state: 'none' }
+  | { state: 'missing'; task_id: string }
+  | { state: 'trip'; task_id: string; tier: TripTier };
+
 /**
- * Tasks of a line whose hours are tracked, not billed: those paid by a count or by a service fee
- * (decisions 0039, 0043).
+ * The trip on an entry (decision 0045): none when no trip-fee task is checked; missing when its
+ * miles aren't a whole number of at least 1 (Save needs them); otherwise its tier. One entry is
+ * one trip, so the first checked trip-fee task is the one paid.
+ */
+export function entryTrip(
+  role: Pick<Role, 'funding'> | null | undefined,
+  sourceId: string,
+  lineId: string,
+  taskIds: readonly string[],
+  values: Readonly<Record<string, number>>,
+): EntryTrip {
+  const fees = tripFees(role, sourceId).get(lineId);
+  const taskId = taskIds.find((id) => fees?.has(id) === true);
+  const trip = taskId === undefined ? undefined : fees?.get(taskId);
+  if (taskId === undefined || !trip) return { state: 'none' };
+  const tier = tripTier(trip, values[trip.miles_count_id] ?? 0);
+  return tier ? { state: 'trip', task_id: taskId, tier } : { state: 'missing', task_id: taskId };
+}
+
+/**
+ * How the role's trip-fee tasks on a source are paid, for Settings: "Transportation service:
+ * $20.00 a trip for 1–30 mi, $40.00 + $20.00 gas for 31–60 mi, …" (decision 0045).
+ */
+export function tripFeeNotes(
+  role: Pick<Role, 'funding'> | null | undefined,
+  source: Pick<FundingSourceConfig, 'id' | 'tasks'>,
+): string[] {
+  const notes = new Set<string>();
+  for (const tasks of tripFees(role, source.id).values()) {
+    for (const [taskId, trip] of tasks) {
+      const task = source.tasks.find((t) => t.id === taskId)?.name ?? taskId;
+      const tiers = trip.tiers.map((t, i) => {
+        const gas = t.gas_cents === undefined ? '' : ` + ${formatDollars(t.gas_cents)} gas`;
+        return `${formatDollars(t.fee_cents)}${i === 0 ? ' a trip' : ''}${gas} for ${tierLabel(t)}`;
+      });
+      notes.add(
+        `${task}: ${tiers.join(', ')}. One entry is one trip, by its miles driven. Its hours are tracked, not billed.`,
+      );
+    }
+  }
+  return [...notes];
+}
+
+/**
+ * Tasks of a line whose hours are tracked, not billed: those paid by a count, by a service fee or
+ * by the trip (decisions 0039, 0043, 0045).
  */
 export function unbilledTaskIds(
   role: Pick<Role, 'funding'> | null | undefined,
@@ -403,6 +489,7 @@ export function unbilledTaskIds(
   return new Set([
     ...(flatRates(role, sourceId).get(lineId)?.keys() ?? []),
     ...(entryFees(role, sourceId).get(lineId)?.keys() ?? []),
+    ...(tripFees(role, sourceId).get(lineId)?.keys() ?? []),
   ]);
 }
 
