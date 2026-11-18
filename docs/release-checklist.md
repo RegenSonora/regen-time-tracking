@@ -98,6 +98,7 @@ Safari may erase website data after 7 days without use; an app opened from the H
 
 Use a clean install for each role: remove the app between roles (this erases its test data).
 
+- [ ] **Pick your role** shows three bold headings in order (Community Care Team, Community Resilience, Other Roles), each with its roles.
 - [ ] **Setup with each role:** CHW-TC01, CHW-TE01, R-TL01, R-GC01, R-C01 and R-CC01. Each review screen shows the role's sources, budget lines and tasks, and the rate filled in ($20.00, $20.00, $22.00); R-GC01's and R-C01's rates are blank until typed. **Pick a different role** goes back to the list. Settings shows the role read-only.
 - [ ] **A split entry with counts** (R-TL01): budget line Resilient Home Services contracting, check Water harvesting and Tree planting, split the time, then the counts step shows Water capacity added (gal) and Trees planted, nothing else. Typing "trees planted" in **+ Add another count** says it is already a count above.
 - [ ] **LEHR resets** (R-GC01; then R-C01 on Maintenance labor): an Eat Local Network entry with LEHR reset and Garden maintenance; the split marks LEHR reset "(tracked, not billed)"; LEHRs reset steps 0.25 at a time to 2.5. The invoice shows "Eat Local Network: 2.5 LEHRs reset $140.00 $350.00" after the hourly row, the unbilled hours note, and "LEHR reset (not billed)" on the timesheet page; the QR code scans.

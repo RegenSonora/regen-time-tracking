@@ -123,7 +123,7 @@ Each funding source is a JSON file in the repo, validated against a JSON Schema 
 
 ## 4. Profile and settings
 
-- **Setup (decision 0027):** your details, then **Pick your role** (active roles by code and name), then a review of the role's sources, budget lines and tasks with a rate per source prefilled (decision 0030): **This is my role** or **Pick a different role**. Wording is neutral (decision 0034).
+- **Setup (decision 0027):** your details, then **Pick your role** (active roles by code and name, under bold headings: Community Care Team, Community Resilience, Other Roles; decision 0044), then a review of the role's sources, budget lines and tasks with a rate per source prefilled (decision 0030): **This is my role** or **Pick a different role**. Wording is neutral (decision 0034).
 - **Your details:** name, initials, mailing address. No agreement # and no service area.
 - **Role:** shown read-only in Settings, "Set at setup. Ask the office to change it." It can't be changed on the phone.
 - **Per funding source of the role:** hourly rate (prefilled, editable) and, for contractors on a source with an NTE, the NTE amount (prefilled from the role, editable). Employees have no NTE field. There is no "Add a funding source"; the role's sources are set up at setup and after an office change.
