@@ -35,13 +35,13 @@ const gray = (g: number) => {
   return `rgb(${v},${v},${v})`;
 };
 
-export const pictureSize = (page: Pick<PageShapes, 'width' | 'height'>) => ({
-  width: Math.round(page.width * PICTURE_SCALE),
-  height: Math.round(page.height * PICTURE_SCALE),
+export const pictureSize = (page: Pick<PageShapes, 'width' | 'height'>, s = PICTURE_SCALE) => ({
+  width: Math.round(page.width * s),
+  height: Math.round(page.height * s),
 });
 
 export function paintPage(ctx: Paint, page: PageShapes, s = PICTURE_SCALE): void {
-  const size = pictureSize(page);
+  const size = pictureSize(page, s);
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, size.width, size.height);
   ctx.textBaseline = 'alphabetic';
@@ -49,7 +49,7 @@ export function paintPage(ctx: Paint, page: PageShapes, s = PICTURE_SCALE): void
     switch (shape.kind) {
       case 'text':
         ctx.font = `${shape.font === 'bold' ? 'bold ' : ''}${String(shape.size * s)}px ${FONTS}`;
-        ctx.fillStyle = gray(shape.gray);
+        ctx.fillStyle = shape.color ?? gray(shape.gray);
         // Never wider than Helvetica: a wider phone font is squeezed, so nothing overflows.
         ctx.fillText(shape.text, shape.x * s, shape.y * s, shape.width * s);
         break;
@@ -63,8 +63,8 @@ export function paintPage(ctx: Paint, page: PageShapes, s = PICTURE_SCALE): void
         ctx.stroke();
         break;
       case 'rect':
-        if (shape.fill !== undefined) {
-          ctx.fillStyle = gray(shape.fill);
+        if (shape.fill !== undefined || shape.fillColor !== undefined) {
+          ctx.fillStyle = shape.fillColor ?? gray(shape.fill ?? 1);
           ctx.fillRect(shape.x * s, shape.y * s, shape.w * s, shape.h * s);
         }
         if (shape.stroke) {
@@ -96,14 +96,15 @@ export function paintPage(ctx: Paint, page: PageShapes, s = PICTURE_SCALE): void
 export function pagePng(
   page: PageShapes,
   doc: Document = document,
+  scale = PICTURE_SCALE,
 ): Uint8Array<ArrayBuffer> | null {
-  const size = pictureSize(page);
+  const size = pictureSize(page, scale);
   const canvas = doc.createElement('canvas');
   canvas.width = size.width;
   canvas.height = size.height;
   const ctx = canvas.getContext('2d');
   if (!ctx) return null;
-  paintPage(ctx, page);
+  paintPage(ctx, page, scale);
   const url = canvas.toDataURL('image/png');
   if (!url.startsWith('data:image/png;base64,')) return null;
   const binary = atob(url.slice(url.indexOf(',') + 1));

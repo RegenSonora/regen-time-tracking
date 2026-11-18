@@ -45,7 +45,8 @@ describe('my-tasks.json', () => {
   });
 
   it('requires a priority of low, medium or high', () => {
-    const { priority: _, ...noPriority } = task('a');
+    const noPriority: Record<string, unknown> = task('a');
+    delete noPriority['priority'];
     expect(check(file({ 'r-tl01': [noPriority] }))).toEqual([
       "role r-tl01: task 1 must have required property 'priority'",
     ]);
