@@ -47,12 +47,12 @@
           "maxLength": 120,
           "pattern": "^\\S(.*\\S)?$"
         },
-        "details": {
-          "description": "Optional one or two sentences shown under the title.",
+        "notes": {
+          "description": "Optional starting notes. They fill the task's Notes box on the phone, which the person can edit or delete.",
           "type": "string",
           "minLength": 1,
-          "maxLength": 400,
-          "pattern": "^\\S(.*\\S)?$"
+          "maxLength": 2000,
+          "pattern": "^\\S([\\s\\S]*\\S)?$"
         },
         "retired": {
           "description": "Taken off the screen. What people typed for it stays on their phones.",

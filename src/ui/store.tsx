@@ -610,7 +610,7 @@ function useStore(storage: Storage, initial: Data) {
             );
         if (!record) {
           if (task.kind !== 'office' || task.task_id === null) return Promise.resolve();
-          record = officeProgress(roleId, task.task_id, crypto.randomUUID(), now);
+          record = officeProgress(roleId, task.task_id, crypto.randomUUID(), now, task.notes);
         }
         const next: TaskProgress = { ...record, ...change, updated_at: now };
         setData({ ...d(), task_progress: [...list.filter((p) => p.id !== next.id), next] });

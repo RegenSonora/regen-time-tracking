@@ -22,7 +22,7 @@ const LATER = '2026-11-17T10:00:00-07:00';
 const office: OfficeTask[] = [
   { id: 'walk-plots', title: 'Walk Pinal garden plots', priority: 'high' },
   { id: 'old', title: 'Old task', priority: 'low', retired: true },
-  { id: 'mulch', title: 'Order mulch', priority: 'medium', details: 'Ask for two quotes.' },
+  { id: 'mulch', title: 'Order mulch', priority: 'medium', notes: 'Ask for two quotes.' },
 ];
 
 const progress = (
@@ -72,11 +72,25 @@ describe('myTaskList', () => {
     const list = myTaskList(office, [], 'r-tl01');
     expect(list.map((t) => [t.kind, t.title, t.priority, t.status, t.notes])).toEqual([
       ['office', 'Walk Pinal garden plots', 'high', 'not_started', ''],
-      ['office', 'Order mulch', 'medium', 'not_started', ''],
+      ['office', 'Order mulch', 'medium', 'not_started', 'Ask for two quotes.'],
     ]);
-    expect(list[1]?.details).toBe('Ask for two quotes.');
-    expect(list[0]?.details).toBeNull();
     expect(list.every((t) => t.progress_id === null)).toBe(true);
+  });
+
+  it("starts an office task's notes with the office's notes; the person's edits win", () => {
+    const edited = progress({
+      id: 'p1',
+      source: { kind: 'office', task_id: 'mulch' },
+      notes: 'Ask for two quotes. Got one from Desert Mulch.',
+    });
+    expect(myTaskList(office, [edited], 'r-tl01')[1]?.notes).toBe(
+      'Ask for two quotes. Got one from Desert Mulch.',
+    );
+  });
+
+  it("keeps the office's notes deleted once the person clears them", () => {
+    const cleared = progress({ id: 'p1', source: { kind: 'office', task_id: 'mulch' }, notes: '' });
+    expect(myTaskList(office, [cleared], 'r-tl01')[1]?.notes).toBe('');
   });
 
   it("uses saved progress for an office task, with the file's current title and priority", () => {
@@ -170,6 +184,12 @@ describe('new progress records', () => {
       created_at: NOW,
       updated_at: NOW,
     });
+  });
+
+  it("carries the office's notes into an office task's first saved record", () => {
+    expect(officeProgress('r-tl01', 'mulch', 'id-3', NOW, 'Ask for two quotes.').notes).toBe(
+      'Ask for two quotes.',
+    );
   });
 
   it('starts progress for an office task the first time it changes', () => {

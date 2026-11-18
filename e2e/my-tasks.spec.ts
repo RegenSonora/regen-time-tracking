@@ -48,7 +48,13 @@ test('a Team Lead adds tasks, sets status and notes, and finds them after a relo
   await expect(card(page, "Millie's").locator('.prio-high')).toHaveText('High priority');
   await expect(card(page, "Mr Medlock's").locator('.prio-medium')).toHaveText('Medium priority');
   await expect(card(page, "Iberrie's Clean up").locator('.prio-low')).toHaveText('Low priority');
-  await expect(card(page, 'Garden clean up')).toContainText('Complete by Monday for garden party.');
+  // The office's notes are the task's own notes: shown in the Notes box, kept through a status
+  // change, and the person can edit or delete them.
+  const garden = card(page, 'Garden clean up');
+  await expect(garden.getByLabel('Notes')).toHaveValue('Complete by Monday for garden party.');
+  await garden.getByLabel('Status').selectOption('in_progress');
+  await expect(garden.getByLabel('Notes')).toHaveValue('Complete by Monday for garden party.');
+  await card(page, "Mr Medlock's").getByLabel('Notes').fill('Gate code is on the fridge.');
   await expect(card(page, "Millie's").getByRole('button', { name: /^Edit/ })).toHaveCount(0);
   await card(page, "Millie's").getByLabel('Status').selectOption('in_progress');
 
@@ -76,6 +82,16 @@ test('a Team Lead adds tasks, sets status and notes, and finds them after a relo
   );
   await expect(card(page, 'Inventory the tool shed').getByLabel('Status')).toHaveValue('completed');
   await expect(card(page, "Millie's").getByLabel('Status')).toHaveValue('in_progress');
+  await expect(garden.getByLabel('Notes')).toHaveValue('Complete by Monday for garden party.');
+  await expect(card(page, "Mr Medlock's").getByLabel('Notes')).toHaveValue(
+    'Gate code is on the fridge.',
+  );
+
+  // Deleting the office's notes sticks.
+  await garden.getByLabel('Notes').fill('');
+  await page.reload();
+  await page.getByRole('button', { name: /My Tasks/ }).click();
+  await expect(garden.getByLabel('Notes')).toHaveValue('');
 
   // Rename, then delete with Undo.
   await hitch.getByRole('button', { name: 'Edit Fix trailer hitch' }).click();

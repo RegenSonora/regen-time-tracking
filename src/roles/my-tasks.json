@@ -9,7 +9,7 @@
         "id": "garden-clean-up",
         "title": "Garden clean up",
         "priority": "medium",
-        "details": "Complete by Monday for garden party."
+        "notes": "Complete by Monday for garden party."
       },
       { "id": "tanaes", "title": "Tanae's", "priority": "medium" },
       { "id": "iberries-clean-up", "title": "Iberrie's Clean up", "priority": "low" }

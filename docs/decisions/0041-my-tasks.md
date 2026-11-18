@@ -11,6 +11,7 @@
    - **From the office:** listed in `my-tasks.json` under the role. One list per role, not per person. The office adds, renames or retires them with an app update. A few times a month is fine.
    - **Added by you:** typed by the person on the phone. They can rename or delete their own tasks; they can't change office tasks.
 3. **Office tasks have a priority: Low, Medium or High.** The office sets it in `my-tasks.json`; people can't change it. It shows as a label in words with a color (High red, Medium amber, Low green), so it reads without color too. Tasks people add have no priority. Tasks show in the file's order, which the office controls.
+   - **Office notes are the task's notes** (Chris, November 18, 2026). An office task's optional `notes` fill its Notes box. The person can add to them, change them or delete them, like any notes. Once they change the task's status or notes, what they have is kept, and later changes to the office's `notes` don't reach them.
 4. **Each task has a status** (Not started, In progress, Blocked, Completed) **and free-form notes.** Both save on the phone as they are typed. No date of the last status change is kept.
 5. **Share progress** makes a PNG picture of every task with its status and notes and opens the phone's share sheet. Where the browser can't share files, the pictures download instead (as invoice files do).
    - Text wraps to the picture's width. Each picture has a height limit (1080 × 1920 pixels).
@@ -21,7 +22,7 @@
 
 ## Starting tasks for R-TL01 (Chris, November 18, 2026)
 
-| Task | Priority | Details |
+| Task | Priority | Starting notes |
 |---|---|---|
 | Millie's | High | |
 | Mr Medlock's | Medium | |

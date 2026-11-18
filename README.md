@@ -90,12 +90,12 @@ Roles listed in [`src/roles/my-tasks.json`](src/roles/my-tasks.json) get **My Ta
   "id": "walk-plots",
   "title": "Walk Pinal garden plots",
   "priority": "high",
-  "details": "Check every bed before the freeze."
+  "notes": "Check every bed before the freeze."
 }
 ```
 
-- **Add a task:** add it to the role's list with a new `id` (lowercase, hyphens), a `title` and a `priority`: `low` (green), `medium` (amber) or `high` (red). `details` is optional. Tasks show in the order listed.
-- **Change a priority or title:** edit it and keep the `id`. People keep their status and notes; they can't change the priority.
+- **Add a task:** add it to the role's list with a new `id` (lowercase, hyphens), a `title` and a `priority`: `low` (green), `medium` (amber) or `high` (red). `notes` is optional: it fills the task's Notes box on the phone, where people can add to it, change it or delete it. Tasks show in the order listed.
+- **Change a priority or title:** edit it and keep the `id`. People keep their status and notes; they can't change the priority. Changing `notes` reaches only people who haven't touched that task yet; anyone who changed its status or notes keeps what they have.
 - **Remove a task:** mark it `"retired": true`. Never delete it or reuse its `id`. It leaves the screen; what people typed for it stays on their phones.
 - **Give another role My Tasks:** add its role id with a list, even an empty one.
 

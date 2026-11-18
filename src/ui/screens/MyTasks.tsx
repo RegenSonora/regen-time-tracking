@@ -65,7 +65,6 @@ function TaskCard({ task, onEdit }: { task: MyTask; onEdit: () => void }) {
           <span class="prio prio-own">Added by you</span>
         )}
       </div>
-      {task.details && <p class="hint task-details">{task.details}</p>}
       <Field label="Status">
         {(p) => (
           <select

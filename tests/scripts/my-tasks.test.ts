@@ -26,13 +26,16 @@ describe('my-tasks.json', () => {
     expect(Object.keys(shipped.roles)).toEqual(['r-tl01']);
   });
 
-  it('accepts tasks with each priority, details and retired', () => {
+  it('accepts tasks with each priority, multi-line notes and retired', () => {
     expect(
       check(
         file({
           'r-tl01': [
             task('a', { priority: 'low' }),
-            task('b', { priority: 'high', details: 'Before the rains.' }),
+            task('b', {
+              priority: 'high',
+              notes: ['Before the rains.', 'Ask Chris first.'].join('\n'),
+            }),
             task('c', { retired: true }),
           ],
         }),

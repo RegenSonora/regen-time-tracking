@@ -29,7 +29,8 @@ export interface OfficeTask {
   id: string;
   title: string;
   priority: TaskPriority;
-  details?: string;
+  /** Starting notes. They fill the task's Notes box, which the person can edit or clear. */
+  notes?: string;
   retired?: true;
 }
 
@@ -59,7 +60,6 @@ export interface MyTask {
   /** The office task's id; null for own tasks. */
   task_id: string | null;
   title: string;
-  details: string | null;
   /** Office tasks only. */
   priority: TaskPriority | null;
   status: TaskStatus;
@@ -100,10 +100,10 @@ export function myTaskList(
         kind: 'office',
         task_id: t.id,
         title: t.title,
-        details: t.details ?? null,
         priority: t.priority,
         status: saved?.status ?? 'not_started',
-        notes: saved?.notes ?? '',
+        // The office's notes until the person saves their own; clearing them sticks.
+        notes: saved?.notes ?? t.notes ?? '',
         progress_id: saved?.id ?? null,
       };
     });
@@ -115,7 +115,6 @@ export function myTaskList(
       kind: 'own',
       task_id: null,
       title: p.source.kind === 'own' ? p.source.title : '',
-      details: null,
       priority: null,
       status: p.status,
       notes: p.notes,
@@ -159,12 +158,16 @@ export function newOwnTask(roleId: string, title: string, id: string, now: strin
   return fresh(roleId, { kind: 'own', title: title.trim() }, id, now);
 }
 
-/** The first saved record for an office task, made when its status or notes first change. */
+/**
+ * The first saved record for an office task, made when its status or notes first change. It
+ * starts from the notes the screen showed, so the office's notes carry over.
+ */
 export function officeProgress(
   roleId: string,
   taskId: string,
   id: string,
   now: string,
+  notes = '',
 ): TaskProgress {
-  return fresh(roleId, { kind: 'office', task_id: taskId }, id, now);
+  return { ...fresh(roleId, { kind: 'office', task_id: taskId }, id, now), notes };
 }

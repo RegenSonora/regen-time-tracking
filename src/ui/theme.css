@@ -1564,11 +1564,6 @@ p {
   margin-top: -4px;
 }
 
-.task-details {
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-
 .prio {
   display: inline-block;
   padding: 3px 10px;

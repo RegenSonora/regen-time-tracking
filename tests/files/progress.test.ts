@@ -18,7 +18,6 @@ const task = (over: Partial<MyTask> = {}): MyTask => ({
   kind: 'office',
   task_id: 'walk',
   title: 'Walk Pinal garden plots',
-  details: null,
   priority: 'high',
   status: 'in_progress',
   notes: '',
@@ -91,10 +90,7 @@ describe('progress pictures', () => {
 
   it('wrap long text to the width and keep every word', () => {
     const notes = `${'Watered the beds and checked the drip lines '.repeat(12)}Superlongwordwithoutanyspaces${'x'.repeat(80)}`;
-    const [page] = progressPages(
-      [task({ notes, details: 'Ask Chris before buying anything over $200.' })],
-      details,
-    );
+    const [page] = progressPages([task({ notes })], details);
     for (const t of texts(must(page)))
       expect(t.x + t.width).toBeLessThanOrEqual(PROGRESS_PAGE.width - 20 + 0.001);
     const noteLines = wrapText(notes, 'regular', 10, PROGRESS_PAGE.width - 40);

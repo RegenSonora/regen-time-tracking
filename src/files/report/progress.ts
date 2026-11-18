@@ -139,7 +139,6 @@ function taskRows(task: MyTask): Row[] {
       pill(out, x, y + 2, STATUS_LABELS[task.status], null);
     },
   });
-  if (task.details) rows.push(...lineRows(task.details, DETAIL, 0.35));
   if (task.notes.trim()) rows.push(...lineRows(task.notes, NOTE, 0.1));
   return rows;
 }

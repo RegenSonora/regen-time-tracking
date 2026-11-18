@@ -113,6 +113,7 @@ Use R-TL01, on a build whose `my-tasks.json` lists at least one task of each pri
 
 - [ ] Home shows **My Tasks** with "0 of N done". Another role (CHW-TC01) has no My Tasks.
 - [ ] Each office task shows its priority in words and color (High red, Medium amber, Low green), readable in sunlight and in dark mode. The priority can't be changed.
+- [ ] Garden clean up's Notes box starts with "Complete by Monday for garden party." Change its status: the note stays. Delete the note, close the app, open it: the note stays deleted.
 - [ ] **Status** opens the phone's own picker; pick Blocked. Type notes of a few lines. Close the app fully, open it: status and notes are still there.
 - [ ] **Add my own task**, rename it with **Edit**, delete it, then **Undo**: it comes back with its status and notes.
 - [ ] **Share progress** opens the share sheet with one picture; send it to yourself and open it in the photo app: names, priorities, statuses and notes are readable.

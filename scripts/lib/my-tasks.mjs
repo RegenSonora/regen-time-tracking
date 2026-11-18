@@ -5,7 +5,7 @@ import { Ajv2020 } from 'ajv/dist/2020.js';
 import { readJson } from './json.mjs';
 
 /**
- * @typedef {{ id: string, title: string, priority: string, details?: string, retired?: true }} Task
+ * @typedef {{ id: string, title: string, priority: string, notes?: string, retired?: true }} Task
  * @typedef {{ roles: Record<string, Task[]> }} MyTasksFile
  * @typedef {{ roles: { id: string, code: string }[] }} RolesFile
  */
