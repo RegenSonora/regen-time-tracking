@@ -19,6 +19,16 @@
 6. **Office task rules** match counts and roles: a task `id` never changes and is never reused. To remove a task, mark it `"retired": true`. It disappears from the screen, and what the person typed for it stays on the phone. Renaming keeps the `id`, so progress carries over.
 7. **Stored on the phone only** (data format version 6 adds a `task_progress` store). No backup or sync (SPEC §11). Clearing the browser's data, or changing phones, loses the notes.
 
+## Starting tasks for R-TL01 (Chris, November 18, 2026)
+
+| Task | Priority | Details |
+|---|---|---|
+| Millie's | High | |
+| Mr Medlock's | Medium | |
+| Garden clean up | Medium | Complete by Monday for garden party. |
+| Tanae's | Medium | |
+| Iberrie's Clean up | Low | |
+
 ## Exceptions to SPEC §10
 
 - **Status is a dropdown**, as Chris asked, not a list. Phones open it as a large native picker.

@@ -83,7 +83,7 @@ _For office staff. Roles live in [`src/roles/roles.json`](src/roles/roles.json);
 
 ### My Tasks
 
-Roles listed in [`src/roles/my-tasks.json`](src/roles/my-tasks.json) get **My Tasks** on Home (decision 0041). Today that is R-TL01, with no office tasks yet. Bump the file's `version` with each change.
+Roles listed in [`src/roles/my-tasks.json`](src/roles/my-tasks.json) get **My Tasks** on Home (decision 0041). Today that is R-TL01, with five office tasks. Bump the file's `version` with each change.
 
 ```json
 {

@@ -1,6 +1,5 @@
-// My Tasks (decision 0041): own tasks with status and notes, saved on the phone, shared as
-// pictures that never cut a note off. Office tasks and their priority are covered by unit tests;
-// the shipped list for R-TL01 starts empty until the office adds tasks.
+// My Tasks (decision 0041): R-TL01's office tasks with their priority, own tasks, status and
+// notes saved on the phone, shared as pictures that never cut a note off.
 import { expect, test } from '@playwright/test';
 import {
   expectAccessible,
@@ -34,10 +33,24 @@ test('a Team Lead adds tasks, sets status and notes, and finds them after a relo
   await page.clock.install({ time: new Date('2026-11-17T09:00:00-07:00') });
   await setUp(page, 'R-TL01');
   const button = page.getByRole('button', { name: /My Tasks/ });
-  await expect(button).toContainText('None yet');
+  await expect(button).toContainText('0 of 5 done');
   await button.click();
   await expect(heading(page, 'My Tasks')).toBeVisible();
-  await expect(page.getByText('No tasks yet.')).toBeVisible();
+
+  // The office's tasks, in file order, each with a priority people can't change.
+  await expect(page.locator('.task-title')).toHaveText([
+    "Millie's",
+    "Mr Medlock's",
+    'Garden clean up',
+    "Tanae's",
+    "Iberrie's Clean up",
+  ]);
+  await expect(card(page, "Millie's").locator('.prio-high')).toHaveText('High priority');
+  await expect(card(page, "Mr Medlock's").locator('.prio-medium')).toHaveText('Medium priority');
+  await expect(card(page, "Iberrie's Clean up").locator('.prio-low')).toHaveText('Low priority');
+  await expect(card(page, 'Garden clean up')).toContainText('Complete by Monday for garden party.');
+  await expect(card(page, "Millie's").getByRole('button', { name: /^Edit/ })).toHaveCount(0);
+  await card(page, "Millie's").getByLabel('Status').selectOption('in_progress');
 
   // A name is needed.
   await page.getByRole('button', { name: 'Add my own task' }).click();
@@ -55,13 +68,14 @@ test('a Team Lead adds tasks, sets status and notes, and finds them after a relo
   await expectAccessible(page, 'My Tasks');
 
   await page.reload();
-  await expect(page.getByRole('button', { name: /My Tasks/ })).toContainText('1 of 2 done');
+  await expect(page.getByRole('button', { name: /My Tasks/ })).toContainText('1 of 7 done');
   await page.getByRole('button', { name: /My Tasks/ }).click();
   await expect(hitch.getByLabel('Status')).toHaveValue('blocked');
   await expect(hitch.getByLabel('Notes')).toHaveValue(
     'Waiting on a new coupling.\nCall the supplier Friday.',
   );
   await expect(card(page, 'Inventory the tool shed').getByLabel('Status')).toHaveValue('completed');
+  await expect(card(page, "Millie's").getByLabel('Status')).toHaveValue('in_progress');
 
   // Rename, then delete with Undo.
   await hitch.getByRole('button', { name: 'Edit Fix trailer hitch' }).click();

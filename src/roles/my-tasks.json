@@ -2,6 +2,17 @@
   "format_version": 1,
   "version": 1,
   "roles": {
-    "r-tl01": []
+    "r-tl01": [
+      { "id": "millies", "title": "Millie's", "priority": "high" },
+      { "id": "mr-medlocks", "title": "Mr Medlock's", "priority": "medium" },
+      {
+        "id": "garden-clean-up",
+        "title": "Garden clean up",
+        "priority": "medium",
+        "details": "Complete by Monday for garden party."
+      },
+      { "id": "tanaes", "title": "Tanae's", "priority": "medium" },
+      { "id": "iberries-clean-up", "title": "Iberrie's Clean up", "priority": "low" }
+    ]
   }
 }
