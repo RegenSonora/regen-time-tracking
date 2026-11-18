@@ -225,7 +225,7 @@ export function InvoicePreview() {
                 <th scope="row">{cells.name}</th>
                 <td class="lines-hours">
                   {cells.quarters === null
-                    ? row.kind === 'flat'
+                    ? row.kind === 'flat' || row.kind === 'trip'
                       ? `× ${cells.rate}`
                       : cells.rate
                     : `${formatQuarters(cells.quarters)} hrs`}

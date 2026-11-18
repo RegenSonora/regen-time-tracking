@@ -7,7 +7,8 @@ import type { Counts, Invoice, InvoiceEntry, InvoiceTaskShare } from './types';
  * The version new invoices get. v2: several tasks per entry (decision 0024). v3: kind, role,
  * certification text and counts by id (roles plan R5, decisions 0029, 0031). v4: breaks
  * (decision 0037). v5: flat-rate rows, unbilled hours and each share's billed flag (0039).
- * v6: each entry's service fees and the fee rows (decision 0043). v7: trip and gas rows (0045).
+ * v6: each entry's service fees and the fee rows (decision 0043). v7: each entry's trip, the trip
+ * rows and the gas rows (decision 0045).
  */
 export const CANONICAL_VERSION = 7;
 
@@ -202,6 +203,11 @@ function formWithRole(invoice: FingerprintedInvoice, v: 3 | 4 | 5 | 6 | 7): stri
       budget_line_name: e.budget_line_name,
       counts: countsFormV3(e.counts),
       ...(v >= 6 && { fees: { ...(e.fees ?? {}) } }),
+      ...(v >= 7 && {
+        trip: e.trip
+          ? { task_id: e.trip.task_id, fee_cents: e.trip.fee_cents, gas_cents: e.trip.gas_cents }
+          : null,
+      }),
       notes: e.notes,
     })),
     lines: invoice.lines.map((l) => ({
@@ -285,7 +291,7 @@ export function canonicalFormV6(invoice: FingerprintedInvoice): string {
   return formWithRole(invoice, 6);
 }
 
-/** Canonical form v7: as v6, plus the trip rows and the gas rows (decision 0045). */
+/** Canonical form v7: as v6, plus each entry's trip, the trip rows and the gas rows (0045). */
 export function canonicalFormV7(invoice: FingerprintedInvoice): string {
   return formWithRole(invoice, 7);
 }

@@ -7,6 +7,7 @@ import {
   qrPayloadV1,
   qrPayloadV2,
   qrPayloadV3,
+  qrPayloadV4,
 } from '../../src/files/qr/payload';
 import { findFundingSource } from '../../src/funding-sources';
 import roles from '../../src/roles/roles.json';
@@ -198,5 +199,51 @@ describe('qrMatrix', () => {
     expect(qrPayload(withFee)).toBe(qrPayloadV3(withFee));
     expect(qrPayload({ ...base, fee_lines: [] })).toBe(qrPayloadV2(base));
     expect(decode(qrMatrix(qrPayload(withFee)))).toBe(qrPayloadV3(withFee));
+  });
+
+  it('v4 adds the trip and gas rows; only invoices with trips use it (decision 0045)', () => {
+    const base = {
+      number: 'CC-2026-001',
+      period_start: '2026-11-03',
+      period_end: '2026-11-06',
+      lines: [
+        {
+          budget_line_id: 'community-care-work',
+          budget_line_name: 'Community Care Work',
+          quarters: 8,
+          rate_cents: 2000,
+          amount_cents: 4000,
+        },
+      ],
+      fingerprint: 'c'.repeat(64),
+    };
+    const trip = (from: number, to: number | null, trips: number, fee: number) => ({
+      budget_line_id: 'community-care-work',
+      budget_line_name: 'Community Care Work',
+      task_id: 'transportation-service',
+      task_name: 'Transportation service',
+      from_miles: from,
+      to_miles: to,
+      trips,
+      fee_cents: fee,
+      amount_cents: trips * fee,
+    });
+    const withTrips = {
+      ...base,
+      trip_lines: [trip(31, 60, 1, 4000), trip(161, null, 2, 8000)],
+      gas_lines: [
+        {
+          budget_line_id: 'community-care-work',
+          budget_line_name: 'Community Care Work',
+          amount_cents: 14000,
+        },
+      ],
+    };
+    expect(qrPayloadV4(withTrips)).toBe(
+      `{"v":4,"n":"CC-2026-001","p":["2026-11-03","2026-11-06"],"l":[["community-care-work",8,4000]],"x":[],"e":[],"t":[["community-care-work","transportation-service",31,1,4000],["community-care-work","transportation-service",161,2,16000]],"g":[["community-care-work",14000]],"f":"${'c'.repeat(64)}"}`,
+    );
+    expect(qrPayload(withTrips)).toBe(qrPayloadV4(withTrips));
+    expect(qrPayload({ ...base, trip_lines: [], gas_lines: [] })).toBe(qrPayloadV1(base));
+    expect(decode(qrMatrix(qrPayload(withTrips)))).toBe(qrPayloadV4(withTrips));
   });
 });

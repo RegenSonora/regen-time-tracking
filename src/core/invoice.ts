@@ -137,6 +137,13 @@ export function buildInvoiceDraft(input: InvoiceInput): InvoiceDraftResult {
     ) {
       return { ok: false, reason: 'bad_entry', entry_id: e.id };
     }
+    const trip = entryTrip(
+      input.role,
+      source.id,
+      e.budget_line_id,
+      e.tasks.map((s) => s.task_id),
+      e.counts.values,
+    );
     frozen.push({
       id: e.id,
       start: e.start,
@@ -158,6 +165,13 @@ export function buildInvoiceDraft(input: InvoiceInput): InvoiceDraftResult {
       budget_line_name: line.name,
       counts: structuredClone(e.counts),
       fees: { ...e.fees },
+      ...(trip.state === 'trip' && {
+        trip: {
+          task_id: trip.task_id,
+          fee_cents: trip.tier.fee_cents,
+          gas_cents: trip.tier.gas_cents ?? 0,
+        },
+      }),
       notes: e.notes,
       created_at: e.created_at,
       updated_at: e.updated_at,

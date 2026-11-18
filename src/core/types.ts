@@ -259,9 +259,19 @@ export interface InvoiceEntry {
   counts: Counts;
   /** The entry's service fees in cents by task id. Absent before decision 0043. */
   fees?: Record<string, number>;
+  /** The trip this entry is, with its fee and gas by its miles. Absent when none (0045). */
+  trip?: InvoiceEntryTrip;
   notes: string;
   created_at: string;
   updated_at: string;
+}
+
+/** One entry's trip as billed (decision 0045). */
+export interface InvoiceEntryTrip {
+  task_id: string;
+  fee_cents: number;
+  /** 0 when the tier has no gas. */
+  gas_cents: number;
 }
 
 export interface InvoiceLine {

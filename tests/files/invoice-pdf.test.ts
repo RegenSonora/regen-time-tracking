@@ -388,4 +388,46 @@ describe('employee timesheet PDF (decision 0031)', () => {
     }
     expect(page2?.text).toContain('Wednesday dinner service (not billed)');
   });
+
+  it('prints trip rows by tier, then one gas row with no tier (decision 0045)', async () => {
+    const ccc = findTestRole('r-ccc01');
+    const entry = (
+      date: string,
+      start: string,
+      stop: string,
+      task: string,
+      values: Record<string, number>,
+    ) =>
+      makeEntry(date, start, stop, task, 'community-care-work', {
+        source_id: regen.id,
+        role_id: ccc.id,
+        counts: { values, other: [] },
+      });
+    const invoice = await invoiceFrom({
+      source: regen,
+      role: ccc,
+      settings: { source_id: regen.id, rate_cents: 2000, nte_cents: null },
+      entries: [
+        entry('2026-11-03', '08:00:00', '09:30:00', 'transportation-service', { miles_driven: 45 }),
+        entry('2026-11-04', '13:00:00', '15:00:00', 'domestic-support', { homes_cleaned: 1 }),
+        entry('2026-11-05', '07:00:00', '10:00:00', 'transportation-service', {
+          miles_driven: 100,
+        }),
+      ],
+      prior_invoices: [],
+    });
+    const [page1, page2] = await pdfOf(invoice, regen);
+    for (const expected of [
+      'Community Care Work 2.00 $20.00 $40.00',
+      'Community Care Work: Transportation service, 1 trip 31–60 mi $40.00 $40.00',
+      'Community Care Work: Transportation service, 1 trip 61–160 mi $60.00 $60.00',
+      'Community Care Work: Gas reimbursement $60.00',
+      'Amount due 2.00 $200.00',
+      '4.50 hrs of Transportation service tracked, not billed (paid as listed above)',
+    ]) {
+      expect(page1?.text).toContain(expected);
+    }
+    expect(page1?.text).not.toContain('Gas reimbursement 31');
+    expect(page2?.text).toContain('Transportation service (not billed)');
+  });
 });

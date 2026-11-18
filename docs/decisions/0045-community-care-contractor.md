@@ -43,10 +43,10 @@
 
 - **Miles are required.** With Transportation service checked, Save needs Miles driven of at least 1: "Enter the miles for this trip." Miles are whole numbers, as every whole-step count is.
 - **A trip that shares an entry** with Domestic support or Other (decision 0024) is still one trip. Only the Transportation service share of the hours goes unbilled.
-- **Worked out when the invoice is made**, from the entry's Miles driven and the role's tiers, like flat rates. Nothing new is stored on entries, so there is no data upgrade.
-- **Fingerprint:** canonical form v7 adds the trip rows and the gas rows. v1–v6 are unchanged and older invoices keep verifying.
-- **QR:** payload v4 adds the trip and gas rows. It is used only when an invoice has them; other invoices keep v3, v2 or v1.
-- **Entry log CSV:** two columns after `fee`: `trip_fee` and `gas_reimbursement`, on part 1 of a trip entry, blank otherwise (as `fee` is, decision 0043).
+- **Worked out when the invoice is made**, from the entry's Miles driven and the role's tiers, like flat rates. Nothing new is stored on entries on the phone, so there is no data upgrade. The invoice freezes each trip entry's `trip` (task, fee, gas) along with the rows.
+- **Fingerprint:** canonical form v7 adds each entry's trip, the trip rows and the gas rows. v1–v6 are unchanged and older invoices keep verifying.
+- **QR:** payload v4 adds "t", [budget line, task, tier's first mile, trips, cents] per trip row, and "g", [budget line, cents] per gas row. It is used only when an invoice has them; other invoices keep v3, v2 or v1.
+- **Entry log CSV:** two columns after `fee`: `trip_fee` and `gas_reimbursement`, on the Transportation service row of a trip entry, blank otherwise (as `fee` sits on its task's row, decision 0043). A trip with no gas shows `0.00`.
 - **Settings** says how the trips are paid: "Transportation service: $20.00 a trip for 1–30 mi, $40.00 + $20.00 gas for 31–60 mi, …. Its hours are tracked, not billed."
 - "Other → Other" in the map is read as the line Other with its task Other, as in 0040. "Other" under Community Care Contracting is the Community Care Work task Other.
 

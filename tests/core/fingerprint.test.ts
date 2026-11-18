@@ -472,14 +472,29 @@ describe('fingerprint v7 golden files (decision 0045)', () => {
     },
   );
 
-  it('is form v6 plus the trip rows and the gas rows', () => {
+  it("is form v6 plus each entry's trip, the trip rows and the gas rows", () => {
     const c = must(casesV7[0]);
-    const v6 = JSON.parse(canonicalFormV6(c.invoice)) as Record<string, unknown>;
-    const v7 = JSON.parse(c.canonical) as Record<string, unknown>;
+    type Form = Record<string, unknown> & { entries: Record<string, unknown>[] };
+    const v6 = JSON.parse(canonicalFormV6(c.invoice)) as Form;
+    const v7 = JSON.parse(c.canonical) as Form;
     expect(v7['v']).toBe(7);
     expect(v7['trip_lines']).toEqual(c.invoice.trip_lines);
     expect(v7['gas_lines']).toEqual(c.invoice.gas_lines);
-    const stripped: Record<string, unknown> = { ...v7, v: 6 };
+    expect(v7.entries.map((e) => e['trip'])).toEqual([
+      { task_id: 'transportation-service', fee_cents: 4000, gas_cents: 2000 },
+      null,
+      { task_id: 'transportation-service', fee_cents: 6000, gas_cents: 4000 },
+      { task_id: 'transportation-service', fee_cents: 2000, gas_cents: 0 },
+    ]);
+    const stripped: Record<string, unknown> = {
+      ...v7,
+      v: 6,
+      entries: v7.entries.map((e) => {
+        const copy = { ...e };
+        delete copy['trip'];
+        return copy;
+      }),
+    };
     delete stripped['trip_lines'];
     delete stripped['gas_lines'];
     expect(stripped).toEqual(v6);
@@ -499,6 +514,13 @@ describe('fingerprint v7 golden files (decision 0045)', () => {
       (i) => (must(i.trip_lines?.[2]).fee_cents = 6100),
       (i) => (must(i.gas_lines?.[0]).amount_cents = 4000),
       (i) => (i.gas_lines = []),
+      (i) =>
+        (must(i.entries[0]).trip = {
+          task_id: 'transportation-service',
+          fee_cents: 2000,
+          gas_cents: 0,
+        }),
+      (i) => delete must(i.entries[0]).trip,
     ];
     for (const edit of edits) {
       const copy = structuredClone(base);

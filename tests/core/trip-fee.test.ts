@@ -240,6 +240,15 @@ describe('invoice with trip fees (decision 0045)', () => {
     ]);
   });
 
+  it("freezes each entry's trip with its fee and gas; others have none", () => {
+    const byDate = new Map(invoice.entries.map((e) => [e.entry_date, e.trip]));
+    expect(byDate.get('2026-11-03')).toEqual({ task_id: DRIVE, fee_cents: 4000, gas_cents: 2000 });
+    expect(byDate.get('2026-11-06')).toEqual({ task_id: DRIVE, fee_cents: 2000, gas_cents: 0 });
+    expect(byDate.get('2026-11-07')).toEqual({ task_id: DRIVE, fee_cents: 2000, gas_cents: 0 });
+    expect(byDate.get('2026-11-04')).toBeUndefined();
+    expect(byDate.get('2026-11-09')).toBeUndefined();
+  });
+
   it('lists hourly, trip, then gas rows per line', () => {
     expect(
       invoiceRows(invoice).map((r) =>
