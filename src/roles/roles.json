@@ -1,10 +1,10 @@
 {
   "format_version": 1,
-  "version": 6,
+  "version": 7,
   "role_groups": [
     {
       "name": "Community Care Team",
-      "role_ids": ["chw-tc01", "chw-te01", "chw-ce01"]
+      "role_ids": ["chw-tc01", "chw-te01", "chw-ce01", "r-ccc01"]
     },
     {
       "name": "Community Resilience",
@@ -1526,6 +1526,65 @@
                 },
                 {
                   "id": "eat-local-network-other",
+                  "count_ids": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "r-ccc01",
+      "code": "R-CCC01",
+      "name": "Community Care Contractor",
+      "employment": "contractor",
+      "chw": false,
+      "funding": [
+        {
+          "source_id": "regen-general-operating",
+          "budget_lines": [
+            {
+              "id": "other-contractors",
+              "tasks": [
+                {
+                  "id": "other",
+                  "count_ids": []
+                }
+              ]
+            },
+            {
+              "id": "community-care-work",
+              "tasks": [
+                {
+                  "id": "domestic-support",
+                  "count_ids": [
+                    "homes_cleaned",
+                    "in_home_meals_made",
+                    "people_helped_domestic_support"
+                  ]
+                },
+                {
+                  "id": "transportation-service",
+                  "count_ids": [
+                    "rides_provided",
+                    "medical_appointments_driven",
+                    "miles_driven",
+                    "resource_appointments_driven",
+                    "rides_dispatched"
+                  ],
+                  "trip_fee": {
+                    "miles_count_id": "miles_driven",
+                    "tiers": [
+                      { "from_miles": 1, "to_miles": 30, "fee_cents": 2000 },
+                      { "from_miles": 31, "to_miles": 60, "fee_cents": 4000, "gas_cents": 2000 },
+                      { "from_miles": 61, "to_miles": 160, "fee_cents": 6000, "gas_cents": 4000 },
+                      { "from_miles": 161, "fee_cents": 8000, "gas_cents": 6000 }
+                    ]
+                  }
+                },
+                {
+                  "id": "other",
                   "count_ids": []
                 }
               ]

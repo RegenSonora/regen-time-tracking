@@ -8,6 +8,11 @@ interface RoleTask {
   count_ids: string[];
   flat_rate?: { count_id: string; cents_per_unit: number };
   entry_fee?: { max_cents: number };
+  trip_fee?: TripFee;
+}
+interface TripFee {
+  miles_count_id: string;
+  tiers: { from_miles: number; to_miles?: number; fee_cents: number; gas_cents?: number }[];
 }
 interface RoleLine {
   id: string;
@@ -369,13 +374,13 @@ describe('roles file (roles plan Part 2, decisions 0027, 0029)', () => {
 
   it('groups the roles for Pick your role (decision 0044)', () => {
     expect(rolesFile.role_groups).toEqual([
-      { name: 'Community Care Team', role_ids: ['chw-tc01', 'chw-te01', 'chw-ce01'] },
+      { name: 'Community Care Team', role_ids: ['chw-tc01', 'chw-te01', 'chw-ce01', 'r-ccc01'] },
       { name: 'Community Resilience', role_ids: ['r-tl01', 'r-c01'] },
       { name: 'Other Roles', role_ids: ['r-cc01', 'r-gc01'] },
     ]);
   });
 
-  it('ships seven active roles, the Regen Catering Contractor last', () => {
+  it('ships eight active roles, the Community Care Contractor last', () => {
     expect(
       rolesFile.roles.map((r) => [r.id, r.code, r.name, r.employment, r.chw, r.retired ?? false]),
     ).toEqual([
@@ -386,6 +391,7 @@ describe('roles file (roles plan Part 2, decisions 0027, 0029)', () => {
       ['r-gc01', 'R-GC01', 'Regen Generalist Contractor', 'contractor', false, false],
       ['r-c01', 'R-C01', 'Resilience Contractor', 'contractor', false, false],
       ['r-cc01', 'R-CC01', 'Regen Catering Contractor', 'contractor', false, false],
+      ['r-ccc01', 'R-CCC01', 'Community Care Contractor', 'contractor', false, false],
     ]);
   });
 
@@ -545,6 +551,81 @@ describe('roles file (roles plan Part 2, decisions 0027, 0029)', () => {
           for (const t of l.tasks) expect(t.entry_fee, `${other.code} ${t.id}`).toBeUndefined();
   });
 
+  it('Community Care Contractor bills Regen GO by the hour, trips by distance (0045)', () => {
+    const r = role('R-CCC01');
+    expect(r.name).toBe('Community Care Contractor');
+    expect(r.employment).toBe('contractor');
+    expect(r.chw).toBe(false);
+    expect(r.certification_step).toBeUndefined();
+    expect(r.funding).toHaveLength(1);
+    const [funding] = r.funding;
+    expect(funding?.source_id).toBe('regen-general-operating');
+    expect(funding?.rate_cents).toBeUndefined();
+    expect(funding?.rate_step).toBeUndefined();
+    expect(funding?.nte_cents).toBeUndefined();
+    const plain = funding?.budget_lines.map((l) => ({
+      id: l.id,
+      tasks: l.tasks.map((t) => ({ id: t.id, count_ids: t.count_ids })),
+    }));
+    expect(plain).toEqual([
+      { id: 'other-contractors', tasks: [{ id: 'other', count_ids: [] }] },
+      {
+        id: 'community-care-work',
+        tasks: [
+          {
+            id: 'domestic-support',
+            count_ids: countIds([
+              'Homes cleaned',
+              'In-home meals made',
+              'People helped with domestic support',
+            ]),
+          },
+          {
+            id: 'transportation-service',
+            count_ids: countIds([
+              'Rides provided',
+              'Medical appointments driven to',
+              'Miles driven',
+              'Resource appointments driven to',
+              'Rides dispatched',
+            ]),
+          },
+          { id: 'other', count_ids: [] },
+        ],
+      },
+    ]);
+    const paid = (funding?.budget_lines ?? []).flatMap((l) =>
+      l.tasks
+        .filter((t) => t.flat_rate || t.entry_fee || t.trip_fee)
+        .map((t) => [l.id, t.id, t.trip_fee ?? null, t.flat_rate ?? null, t.entry_fee ?? null]),
+    );
+    expect(paid).toEqual([
+      [
+        'community-care-work',
+        'transportation-service',
+        {
+          miles_count_id: 'miles_driven',
+          tiers: [
+            { from_miles: 1, to_miles: 30, fee_cents: 2000 },
+            { from_miles: 31, to_miles: 60, fee_cents: 4000, gas_cents: 2000 },
+            { from_miles: 61, to_miles: 160, fee_cents: 6000, gas_cents: 4000 },
+            { from_miles: 161, fee_cents: 8000, gas_cents: 6000 },
+          ],
+        },
+        null,
+        null,
+      ],
+    ]);
+    // Only the Community Care Contractor has trip fees.
+    for (const other of rolesFile.roles.filter((x) => x.id !== 'r-ccc01'))
+      for (const f of other.funding)
+        for (const l of f.budget_lines)
+          for (const t of l.tasks) expect(t.trip_fee, `${other.code} ${t.id}`).toBeUndefined();
+    // Listed last under Community Care Team (decision 0044).
+    const group = rolesFile.role_groups?.find((g) => g.name === 'Community Care Team');
+    expect(group?.role_ids).toEqual(['chw-tc01', 'chw-te01', 'chw-ce01', 'r-ccc01']);
+  });
+
   it('adds Cakes made and Generators rented at the end of the list, whole numbers (0042)', () => {
     expect(rolesFile.counts.slice(-2)).toEqual([
       { id: 'cakes_made', label: 'Cakes made' },
@@ -596,6 +677,27 @@ describe('roles schema', () => {
     expect(changed((f) => ((first(f).funding[0] as Funding).budget_lines = []))).not.toEqual([]);
     expect(
       changed((f) => (((first(f).funding[0] as Funding).budget_lines[0] as RoleLine).tasks = [])),
+    ).not.toEqual([]);
+  });
+
+  it('accepts trip fee tiers in whole miles and whole cents (decision 0045)', () => {
+    const tiers = (f: RolesFile) =>
+      (
+        f.roles
+          .flatMap((r) => r.funding.flatMap((x) => x.budget_lines.flatMap((l) => l.tasks)))
+          .find((t) => t.trip_fee)?.trip_fee as TripFee
+      ).tiers;
+    const tier = (f: RolesFile, i: number) => tiers(f)[i] as TripFee['tiers'][number];
+    expect(changed(() => undefined)).toEqual([]);
+    expect(changed((f) => (tier(f, 0).fee_cents = 19.5))).not.toEqual([]);
+    expect(changed((f) => (tier(f, 0).from_miles = 0))).not.toEqual([]);
+    expect(changed((f) => (tier(f, 0).to_miles = 30.5))).not.toEqual([]);
+    expect(changed((f) => (tier(f, 1).gas_cents = 0))).not.toEqual([]);
+    expect(changed((f) => Object.assign(tier(f, 0), { miles: 3 }))).not.toEqual([]);
+    expect(
+      changed((f) => {
+        tiers(f).length = 0;
+      }),
     ).not.toEqual([]);
   });
 
@@ -909,5 +1011,68 @@ describe('build checks against the source files (roles plan R1)', () => {
         cc(f).employment = 'employee';
       }),
     ).toContain(`${at}: entry_fee is only for contractor roles`);
+  });
+
+  it('checks trip fees: tiers from 1 mile, no gaps, one open tier last, whole miles (0045)', () => {
+    const ccc = (f: RolesFile) => byId(f, 'r-ccc01');
+    const drive = (f: RolesFile) =>
+      funding(ccc(f))
+        .budget_lines.flatMap((l) => l.tasks)
+        .find((t) => t.id === 'transportation-service') as RoleTask;
+    const tier = (f: RolesFile, i: number) =>
+      (drive(f).trip_fee as TripFee).tiers[i] as TripFee['tiers'][number];
+    const at =
+      'role R-CCC01, funding regen-general-operating, budget line community-care-work, task transportation-service';
+    expect(
+      broken((f) => {
+        tier(f, 0).from_miles = 2;
+      }),
+    ).toContain(`${at}: trip_fee tier 1 must start at 1 mile`);
+    expect(
+      broken((f) => {
+        tier(f, 1).from_miles = 32;
+      }),
+    ).toContain(`${at}: trip_fee tier 2 must start at 31 miles`);
+    expect(
+      broken((f) => {
+        tier(f, 1).to_miles = 20;
+      }),
+    ).toContain(`${at}: trip_fee tier 2 ends before it starts`);
+    expect(
+      broken((f) => {
+        delete tier(f, 2).to_miles;
+      }),
+    ).toContain(`${at}: trip_fee tier 3 has no to_miles; only the last tier may be open`);
+    expect(
+      broken((f) => {
+        tier(f, 3).to_miles = 500;
+      }),
+    ).toContain(`${at}: the last trip_fee tier must have no to_miles`);
+    expect(
+      broken((f) => {
+        drive(f).count_ids = drive(f).count_ids.filter((c) => c !== 'miles_driven');
+      }),
+    ).toContain(`${at}: trip_fee count "miles_driven" isn't one of the task's counts`);
+    expect(
+      broken((f) => {
+        (f.counts.find((c) => c.id === 'miles_driven') as Count).step = 'quarter';
+      }),
+    ).toContain(`${at}: trip_fee count "miles_driven" must count whole numbers`);
+    expect(
+      broken((f) => {
+        ccc(f).employment = 'employee';
+        ccc(f).funding[0] = { ...funding(ccc(f)) };
+      }),
+    ).toContain(`${at}: trip_fee is only for contractor roles`);
+    expect(
+      broken((f) => {
+        drive(f).flat_rate = { count_id: 'rides_provided', cents_per_unit: 500 };
+      }),
+    ).toContain(`${at}: trip_fee can't be combined with flat_rate or entry_fee`);
+    expect(
+      broken((f) => {
+        drive(f).entry_fee = { max_cents: 500 };
+      }),
+    ).toContain(`${at}: trip_fee can't be combined with flat_rate or entry_fee`);
   });
 });

@@ -205,6 +205,37 @@
                         "max_cents": { "$ref": "#/$defs/cents" }
                       }
                     },
+                    "trip_fee": {
+                      "description": "Pay each entry with this task as one trip, by the entry's miles: the tier the miles fall in sets the trip fee and any gas reimbursement. The task's hours are tracked, not billed. Contractor roles only (decision 0045).",
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["miles_count_id", "tiers"],
+                      "properties": {
+                        "miles_count_id": {
+                          "description": "The task's count that holds the trip's miles.",
+                          "type": "string"
+                        },
+                        "tiers": {
+                          "description": "From 1 mile up with no gaps; only the last tier has no to_miles.",
+                          "type": "array",
+                          "minItems": 1,
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": ["from_miles", "fee_cents"],
+                            "properties": {
+                              "from_miles": { "type": "integer", "minimum": 1 },
+                              "to_miles": { "type": "integer", "minimum": 1 },
+                              "fee_cents": { "$ref": "#/$defs/cents" },
+                              "gas_cents": {
+                                "description": "Gas reimbursement per trip in this tier, its own invoice row.",
+                                "$ref": "#/$defs/cents"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
                     "flat_rate": {
                       "description": "Pay this task by one of its counts instead of by the hour: the task's hours are tracked, not billed. Contractor roles only (decision 0039).",
                       "type": "object",

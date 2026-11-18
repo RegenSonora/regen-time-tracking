@@ -134,6 +134,25 @@ export interface RoleTask {
   flat_rate?: FlatRate;
   /** A service fee per entry, up to max_cents; the task's hours are tracked, not billed (0043). */
   entry_fee?: EntryFee;
+  /** Each entry is one trip, paid by its miles; the task's hours are tracked, not billed (0045). */
+  trip_fee?: TripFee;
+}
+
+/** A task paid per trip by the entry's miles (decision 0045). */
+export interface TripFee {
+  /** The task's count that holds the trip's miles. */
+  miles_count_id: string;
+  /** From 1 mile up with no gaps; only the last tier has no to_miles. */
+  tiers: TripTier[];
+}
+
+export interface TripTier {
+  from_miles: number;
+  /** Absent on the last, open tier. */
+  to_miles?: number;
+  fee_cents: number;
+  /** Gas reimbursement per trip, billed on its own row. */
+  gas_cents?: number;
 }
 
 /** A task paid a service fee per entry (decision 0043). */
