@@ -7,9 +7,10 @@ import type { Counts, Invoice, InvoiceEntry, InvoiceTaskShare } from './types';
  * The version new invoices get. v2: several tasks per entry (decision 0024). v3: kind, role,
  * certification text and counts by id (roles plan R5, decisions 0029, 0031). v4: breaks
  * (decision 0037). v5: flat-rate rows, unbilled hours and each share's billed flag (0039).
- * v6: each entry's service fees and the fee rows (decision 0043).
+ * v6: each entry's service fees and the fee rows (decision 0043). v7: each entry's trip, the trip
+ * rows and the gas rows (decision 0045).
  */
-export const CANONICAL_VERSION = 6;
+export const CANONICAL_VERSION = 7;
 
 /** The fields an invoice is fingerprinted over: header, entries, lines, totals and rate. */
 export type FingerprintedInvoice = Omit<Invoice, 'fingerprint'>;
@@ -151,7 +152,7 @@ function countsFormV3(counts: Counts) {
  * Forms v3, v4 and v5 share this layout. v4 adds breaks; v5 adds each share's billed flag, the
  * flat-rate rows and the unbilled hours. Earlier forms' output must never change.
  */
-function formWithRole(invoice: FingerprintedInvoice, v: 3 | 4 | 5 | 6): string {
+function formWithRole(invoice: FingerprintedInvoice, v: 3 | 4 | 5 | 6 | 7): string {
   const role = invoice.role;
   return canonicalJson({
     v,
@@ -202,6 +203,11 @@ function formWithRole(invoice: FingerprintedInvoice, v: 3 | 4 | 5 | 6): string {
       budget_line_name: e.budget_line_name,
       counts: countsFormV3(e.counts),
       ...(v >= 6 && { fees: { ...(e.fees ?? {}) } }),
+      ...(v >= 7 && {
+        trip: e.trip
+          ? { task_id: e.trip.task_id, fee_cents: e.trip.fee_cents, gas_cents: e.trip.gas_cents }
+          : null,
+      }),
       notes: e.notes,
     })),
     lines: invoice.lines.map((l) => ({
@@ -236,6 +242,24 @@ function formWithRole(invoice: FingerprintedInvoice, v: 3 | 4 | 5 | 6): string {
         amount_cents: l.amount_cents,
       })),
     }),
+    ...(v >= 7 && {
+      trip_lines: (invoice.trip_lines ?? []).map((l) => ({
+        budget_line_id: l.budget_line_id,
+        budget_line_name: l.budget_line_name,
+        task_id: l.task_id,
+        task_name: l.task_name,
+        from_miles: l.from_miles,
+        to_miles: l.to_miles,
+        trips: l.trips,
+        fee_cents: l.fee_cents,
+        amount_cents: l.amount_cents,
+      })),
+      gas_lines: (invoice.gas_lines ?? []).map((l) => ({
+        budget_line_id: l.budget_line_id,
+        budget_line_name: l.budget_line_name,
+        amount_cents: l.amount_cents,
+      })),
+    }),
     total_quarters: invoice.total_quarters,
     total_cents: invoice.total_cents,
   });
@@ -267,6 +291,11 @@ export function canonicalFormV6(invoice: FingerprintedInvoice): string {
   return formWithRole(invoice, 6);
 }
 
+/** Canonical form v7: as v6, plus each entry's trip, the trip rows and the gas rows (0045). */
+export function canonicalFormV7(invoice: FingerprintedInvoice): string {
+  return formWithRole(invoice, 7);
+}
+
 const FORMS: Record<number, (invoice: FingerprintedInvoice) => string> = {
   1: canonicalFormV1,
   2: canonicalFormV2,
@@ -274,6 +303,7 @@ const FORMS: Record<number, (invoice: FingerprintedInvoice) => string> = {
   4: canonicalFormV4,
   5: canonicalFormV5,
   6: canonicalFormV6,
+  7: canonicalFormV7,
 };
 
 /** The canonical string for the invoice's own canonical version. */

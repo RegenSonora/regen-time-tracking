@@ -32,7 +32,7 @@ describe('entry log CSV (SPEC §7, decisions 0001, 0024 and 0029)', () => {
   });
 
   it('has the fixed columns, then one per count in list order, for every invoice', async () => {
-    expect(COLUMNS.slice(0, 17)).toEqual([
+    expect(COLUMNS.slice(0, 19)).toEqual([
       'invoice_number',
       'fingerprint',
       'funding_source',
@@ -50,8 +50,10 @@ describe('entry log CSV (SPEC §7, decisions 0001, 0024 and 0029)', () => {
       'budget_line',
       'rate',
       'fee',
+      'trip_fee',
+      'gas_reimbursement',
     ]);
-    expect(COLUMNS.slice(17, -4)).toEqual(countDefs.map((c) => c.id));
+    expect(COLUMNS.slice(19, -4)).toEqual(countDefs.map((c) => c.id));
     expect(COLUMNS.slice(-4)).toEqual(['other_counts', 'notes', 'created_at', 'updated_at']);
     const one = await invoiceFrom({
       entries: [
@@ -169,6 +171,46 @@ describe('entry log CSV (SPEC §7, decisions 0001, 0024 and 0029)', () => {
     expect(cell(0, 'cakes_made')).toBe('3');
   });
 
+  it("writes a trip's fee and gas on its Transportation service row (decision 0045)", async () => {
+    const ccc = findTestRole('r-ccc01');
+    const trip = (date: string, tasks: { task_id: string; quarters: number }[], miles: number) =>
+      makeEntry(date, '09:00:00', '10:00:00', must(tasks[0]).task_id, 'community-care-work', {
+        source_id: regen.id,
+        role_id: ccc.id,
+        tasks,
+        counts: { values: { miles_driven: miles }, other: [] },
+      });
+    const invoice = await invoiceFrom({
+      source: regen,
+      role: ccc,
+      settings: { source_id: regen.id, rate_cents: 2000, nte_cents: null },
+      entries: [
+        trip(
+          '2026-11-04',
+          [
+            { task_id: 'domestic-support', quarters: 2 },
+            { task_id: 'transportation-service', quarters: 2 },
+          ],
+          45,
+        ),
+        trip('2026-11-05', [{ task_id: 'transportation-service', quarters: 4 }], 12),
+      ],
+      prior_invoices: [],
+    });
+    const rows = rowsOf(entriesCsv(invoice, countDefs));
+    const cell = (r: number, c: string) => rows[r]?.[COLUMNS.indexOf(c)];
+    const trips = (r: number) => [
+      cell(r, 'task'),
+      cell(r, 'trip_fee'),
+      cell(r, 'gas_reimbursement'),
+      cell(r, 'unbilled_hours'),
+    ];
+    expect(trips(0)).toEqual(['Domestic support', '', '', '0.00']);
+    expect(trips(1)).toEqual(['Transportation service', '40.00', '20.00', '0.50']);
+    expect(trips(2)).toEqual(['Transportation service', '20.00', '0.00', '1.00']);
+    expect(cell(0, 'miles_driven')).toBe('45');
+  });
+
   it('writes one row per task share; billed hours add up, counts and notes are on part 1', async () => {
     const invoice = await invoiceFrom({ entries: splitSampleEntries });
     const rows = rowsOf(entriesCsv(invoice, countDefs));
@@ -277,7 +319,7 @@ describe('entry log CSV (SPEC §7, decisions 0001, 0024 and 0029)', () => {
       ',2026-10-01,2026-10-01T22:30:00-07:00,2026-10-02T00:15:00-07:00,1:45:00,0:00:00,1.75,',
     );
     expect(line).toContain(
-      `,Domestic support,,Domestic support,18.00,,${','.repeat(countDefs.length)}Food boxes=2;`,
+      `,Domestic support,,Domestic support,18.00,,,,${','.repeat(countDefs.length)}Food boxes=2;`,
     );
     expect(line).toContain(`,Food boxes=2; Library cards=1,"'-not a formula, ""really""",`);
   });

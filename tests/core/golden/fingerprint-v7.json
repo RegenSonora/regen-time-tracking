@@ -1,0 +1,303 @@
+[
+  {
+    "name": "Community Care: a 45-mile trip, a 100-mile trip shared with Domestic support, a 12-mile trip, Domestic support hours",
+    "invoice": {
+      "id": "00000000-0000-4000-8000-000000000500",
+      "number": "CC-2026-004",
+      "sequence": 4,
+      "kind": "invoice",
+      "role": {
+        "id": "r-ccc01",
+        "code": "R-CCC01",
+        "name": "Community Care Contractor",
+        "employment": "contractor",
+        "chw": false
+      },
+      "source": {
+        "id": "regen-general-operating",
+        "code": "REGEN-GO",
+        "name": "Regen General Operating",
+        "version": 6,
+        "certification_text": "I certify that the services listed were performed on the dates shown on the attached timesheet pages, the hours are accurate, and no participant names are included."
+      },
+      "chw": {
+        "name": "Carmen Cruz",
+        "initials": "CC",
+        "mailing_address": ""
+      },
+      "invoice_date": "2026-11-14",
+      "period_start": "2026-11-03",
+      "period_end": "2026-11-06",
+      "rate_cents": 2000,
+      "entries": [
+        {
+          "id": "00000000-0000-4000-8000-000000001008",
+          "start": "2026-11-03T08:00:00-07:00",
+          "stop": "2026-11-03T09:30:00-07:00",
+          "breaks": [],
+          "entry_date": "2026-11-03",
+          "quarters": 6,
+          "tasks": [
+            {
+              "task_id": "transportation-service",
+              "task_name": "Transportation service",
+              "core_competency": null,
+              "quarters": 6,
+              "billed": false
+            }
+          ],
+          "budget_line_id": "community-care-work",
+          "budget_line_name": "Community Care Work",
+          "counts": {
+            "values": {
+              "contacts": 0,
+              "referrals_given": 0,
+              "referral_followups": 0,
+              "rides_provided": 1,
+              "applications_completed": 0,
+              "miles_driven": 45
+            },
+            "other": []
+          },
+          "fees": {},
+          "trip": {
+            "task_id": "transportation-service",
+            "fee_cents": 4000,
+            "gas_cents": 2000
+          },
+          "notes": "",
+          "created_at": "2026-11-03T08:00:00-07:00",
+          "updated_at": "2026-11-03T08:00:00-07:00"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000001009",
+          "start": "2026-11-04T13:00:00-07:00",
+          "stop": "2026-11-04T15:00:00-07:00",
+          "breaks": [],
+          "entry_date": "2026-11-04",
+          "quarters": 8,
+          "tasks": [
+            {
+              "task_id": "domestic-support",
+              "task_name": "Domestic support",
+              "core_competency": null,
+              "quarters": 8
+            }
+          ],
+          "budget_line_id": "community-care-work",
+          "budget_line_name": "Community Care Work",
+          "counts": {
+            "values": {
+              "contacts": 0,
+              "referrals_given": 0,
+              "referral_followups": 0,
+              "rides_provided": 0,
+              "applications_completed": 0,
+              "homes_cleaned": 1
+            },
+            "other": []
+          },
+          "fees": {},
+          "notes": "",
+          "created_at": "2026-11-04T13:00:00-07:00",
+          "updated_at": "2026-11-04T13:00:00-07:00"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000001010",
+          "start": "2026-11-05T07:00:00-07:00",
+          "stop": "2026-11-05T10:00:00-07:00",
+          "breaks": [],
+          "entry_date": "2026-11-05",
+          "quarters": 12,
+          "tasks": [
+            {
+              "task_id": "transportation-service",
+              "task_name": "Transportation service",
+              "core_competency": null,
+              "quarters": 4,
+              "billed": false
+            },
+            {
+              "task_id": "domestic-support",
+              "task_name": "Domestic support",
+              "core_competency": null,
+              "quarters": 8
+            }
+          ],
+          "budget_line_id": "community-care-work",
+          "budget_line_name": "Community Care Work",
+          "counts": {
+            "values": {
+              "contacts": 0,
+              "referrals_given": 0,
+              "referral_followups": 0,
+              "rides_provided": 1,
+              "applications_completed": 0,
+              "miles_driven": 100,
+              "medical_appointments_driven": 1
+            },
+            "other": []
+          },
+          "fees": {},
+          "trip": {
+            "task_id": "transportation-service",
+            "fee_cents": 6000,
+            "gas_cents": 4000
+          },
+          "notes": "",
+          "created_at": "2026-11-05T07:00:00-07:00",
+          "updated_at": "2026-11-05T07:00:00-07:00"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000001011",
+          "start": "2026-11-06T10:00:00-07:00",
+          "stop": "2026-11-06T10:45:00-07:00",
+          "breaks": [],
+          "entry_date": "2026-11-06",
+          "quarters": 3,
+          "tasks": [
+            {
+              "task_id": "transportation-service",
+              "task_name": "Transportation service",
+              "core_competency": null,
+              "quarters": 3,
+              "billed": false
+            }
+          ],
+          "budget_line_id": "community-care-work",
+          "budget_line_name": "Community Care Work",
+          "counts": {
+            "values": {
+              "contacts": 0,
+              "referrals_given": 0,
+              "referral_followups": 0,
+              "rides_provided": 1,
+              "applications_completed": 0,
+              "miles_driven": 12
+            },
+            "other": []
+          },
+          "fees": {},
+          "trip": {
+            "task_id": "transportation-service",
+            "fee_cents": 2000,
+            "gas_cents": 0
+          },
+          "notes": "",
+          "created_at": "2026-11-06T10:00:00-07:00",
+          "updated_at": "2026-11-06T10:00:00-07:00"
+        }
+      ],
+      "lines": [
+        {
+          "budget_line_id": "community-care-work",
+          "budget_line_name": "Community Care Work",
+          "quarters": 16,
+          "rate_cents": 2000,
+          "amount_cents": 8000
+        }
+      ],
+      "flat_lines": [],
+      "fee_lines": [],
+      "trip_lines": [
+        {
+          "budget_line_id": "community-care-work",
+          "budget_line_name": "Community Care Work",
+          "task_id": "transportation-service",
+          "task_name": "Transportation service",
+          "from_miles": 1,
+          "to_miles": 30,
+          "trips": 1,
+          "fee_cents": 2000,
+          "amount_cents": 2000
+        },
+        {
+          "budget_line_id": "community-care-work",
+          "budget_line_name": "Community Care Work",
+          "task_id": "transportation-service",
+          "task_name": "Transportation service",
+          "from_miles": 31,
+          "to_miles": 60,
+          "trips": 1,
+          "fee_cents": 4000,
+          "amount_cents": 4000
+        },
+        {
+          "budget_line_id": "community-care-work",
+          "budget_line_name": "Community Care Work",
+          "task_id": "transportation-service",
+          "task_name": "Transportation service",
+          "from_miles": 61,
+          "to_miles": 160,
+          "trips": 1,
+          "fee_cents": 6000,
+          "amount_cents": 6000
+        }
+      ],
+      "gas_lines": [
+        {
+          "budget_line_id": "community-care-work",
+          "budget_line_name": "Community Care Work",
+          "amount_cents": 6000
+        }
+      ],
+      "total_quarters": 16,
+      "unbilled_quarters": 13,
+      "total_cents": 26000,
+      "counts_period": {
+        "values": {
+          "contacts": 0,
+          "referrals_given": 0,
+          "referral_followups": 0,
+          "rides_provided": 3,
+          "applications_completed": 0,
+          "miles_driven": 157,
+          "homes_cleaned": 1,
+          "medical_appointments_driven": 1
+        },
+        "other": []
+      },
+      "counts_all_time": {
+        "values": {
+          "contacts": 0,
+          "referrals_given": 0,
+          "referral_followups": 0,
+          "rides_provided": 3,
+          "applications_completed": 0,
+          "miles_driven": 157,
+          "homes_cleaned": 1,
+          "medical_appointments_driven": 1
+        },
+        "other": []
+      },
+      "count_defs": [
+        {
+          "id": "rides_provided",
+          "label": "Rides provided"
+        },
+        {
+          "id": "homes_cleaned",
+          "label": "Homes cleaned"
+        },
+        {
+          "id": "medical_appointments_driven",
+          "label": "Medical appointments driven to"
+        },
+        {
+          "id": "miles_driven",
+          "label": "Miles driven",
+          "unit": "mi"
+        }
+      ],
+      "nte": {
+        "state": "none"
+      },
+      "canonical_version": 7,
+      "created_at": "2026-11-14T16:00:00-07:00",
+      "updated_at": "2026-11-14T16:00:00-07:00",
+      "fingerprint": "298ccc251b7341f00eb5f0f0c583398fcabca89b367663722fc5f12dc93494f5"
+    },
+    "canonical": "{\"chw\":{\"initials\":\"CC\",\"mailing_address\":\"\",\"name\":\"Carmen Cruz\"},\"entries\":[{\"breaks\":[],\"budget_line_id\":\"community-care-work\",\"budget_line_name\":\"Community Care Work\",\"counts\":{\"other\":[],\"values\":{\"miles_driven\":45,\"rides_provided\":1}},\"entry_date\":\"2026-11-03\",\"fees\":{},\"id\":\"00000000-0000-4000-8000-000000001008\",\"notes\":\"\",\"quarters\":6,\"start\":\"2026-11-03T08:00:00-07:00\",\"stop\":\"2026-11-03T09:30:00-07:00\",\"tasks\":[{\"billed\":false,\"core_competency\":null,\"quarters\":6,\"task_id\":\"transportation-service\",\"task_name\":\"Transportation service\"}],\"trip\":{\"fee_cents\":4000,\"gas_cents\":2000,\"task_id\":\"transportation-service\"}},{\"breaks\":[],\"budget_line_id\":\"community-care-work\",\"budget_line_name\":\"Community Care Work\",\"counts\":{\"other\":[],\"values\":{\"homes_cleaned\":1}},\"entry_date\":\"2026-11-04\",\"fees\":{},\"id\":\"00000000-0000-4000-8000-000000001009\",\"notes\":\"\",\"quarters\":8,\"start\":\"2026-11-04T13:00:00-07:00\",\"stop\":\"2026-11-04T15:00:00-07:00\",\"tasks\":[{\"billed\":true,\"core_competency\":null,\"quarters\":8,\"task_id\":\"domestic-support\",\"task_name\":\"Domestic support\"}],\"trip\":null},{\"breaks\":[],\"budget_line_id\":\"community-care-work\",\"budget_line_name\":\"Community Care Work\",\"counts\":{\"other\":[],\"values\":{\"medical_appointments_driven\":1,\"miles_driven\":100,\"rides_provided\":1}},\"entry_date\":\"2026-11-05\",\"fees\":{},\"id\":\"00000000-0000-4000-8000-000000001010\",\"notes\":\"\",\"quarters\":12,\"start\":\"2026-11-05T07:00:00-07:00\",\"stop\":\"2026-11-05T10:00:00-07:00\",\"tasks\":[{\"billed\":false,\"core_competency\":null,\"quarters\":4,\"task_id\":\"transportation-service\",\"task_name\":\"Transportation service\"},{\"billed\":true,\"core_competency\":null,\"quarters\":8,\"task_id\":\"domestic-support\",\"task_name\":\"Domestic support\"}],\"trip\":{\"fee_cents\":6000,\"gas_cents\":4000,\"task_id\":\"transportation-service\"}},{\"breaks\":[],\"budget_line_id\":\"community-care-work\",\"budget_line_name\":\"Community Care Work\",\"counts\":{\"other\":[],\"values\":{\"miles_driven\":12,\"rides_provided\":1}},\"entry_date\":\"2026-11-06\",\"fees\":{},\"id\":\"00000000-0000-4000-8000-000000001011\",\"notes\":\"\",\"quarters\":3,\"start\":\"2026-11-06T10:00:00-07:00\",\"stop\":\"2026-11-06T10:45:00-07:00\",\"tasks\":[{\"billed\":false,\"core_competency\":null,\"quarters\":3,\"task_id\":\"transportation-service\",\"task_name\":\"Transportation service\"}],\"trip\":{\"fee_cents\":2000,\"gas_cents\":0,\"task_id\":\"transportation-service\"}}],\"fee_lines\":[],\"flat_lines\":[],\"gas_lines\":[{\"amount_cents\":6000,\"budget_line_id\":\"community-care-work\",\"budget_line_name\":\"Community Care Work\"}],\"id\":\"00000000-0000-4000-8000-000000000500\",\"invoice_date\":\"2026-11-14\",\"kind\":\"invoice\",\"lines\":[{\"amount_cents\":8000,\"budget_line_id\":\"community-care-work\",\"budget_line_name\":\"Community Care Work\",\"quarters\":16,\"rate_cents\":2000}],\"number\":\"CC-2026-004\",\"period_end\":\"2026-11-06\",\"period_start\":\"2026-11-03\",\"rate_cents\":2000,\"role\":{\"chw\":false,\"code\":\"R-CCC01\",\"employment\":\"contractor\",\"id\":\"r-ccc01\",\"name\":\"Community Care Contractor\"},\"sequence\":4,\"source\":{\"certification_text\":\"I certify that the services listed were performed on the dates shown on the attached timesheet pages, the hours are accurate, and no participant names are included.\",\"code\":\"REGEN-GO\",\"id\":\"regen-general-operating\",\"name\":\"Regen General Operating\",\"version\":6},\"total_cents\":26000,\"total_quarters\":16,\"trip_lines\":[{\"amount_cents\":2000,\"budget_line_id\":\"community-care-work\",\"budget_line_name\":\"Community Care Work\",\"fee_cents\":2000,\"from_miles\":1,\"task_id\":\"transportation-service\",\"task_name\":\"Transportation service\",\"to_miles\":30,\"trips\":1},{\"amount_cents\":4000,\"budget_line_id\":\"community-care-work\",\"budget_line_name\":\"Community Care Work\",\"fee_cents\":4000,\"from_miles\":31,\"task_id\":\"transportation-service\",\"task_name\":\"Transportation service\",\"to_miles\":60,\"trips\":1},{\"amount_cents\":6000,\"budget_line_id\":\"community-care-work\",\"budget_line_name\":\"Community Care Work\",\"fee_cents\":6000,\"from_miles\":61,\"task_id\":\"transportation-service\",\"task_name\":\"Transportation service\",\"to_miles\":160,\"trips\":1}],\"unbilled_quarters\":13,\"v\":7}",
+    "fingerprint": "298ccc251b7341f00eb5f0f0c583398fcabca89b367663722fc5f12dc93494f5"
+  }
+]

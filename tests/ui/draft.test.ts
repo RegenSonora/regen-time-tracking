@@ -175,3 +175,43 @@ describe('service fees on save (decision 0043)', () => {
     expect(editDraft(entry).fees).toEqual({ 'wednesday-dinner-service': '150.00' });
   });
 });
+
+describe('trip miles on save (decision 0045)', () => {
+  const ccc = findTestRole('r-ccc01');
+  const trip = (values: Record<string, number>, patch: Partial<EntryDraft> = {}) =>
+    draft({
+      budget_line_id: 'community-care-work',
+      tasks: [{ task_id: 'transportation-service', quarters: 4 }],
+      counts: { values, other: [] },
+      ...patch,
+    });
+
+  it('needs the miles for a trip', () => {
+    expect(build(trip({}), ccc)).toEqual({ ok: false, problem: 'miles' });
+    expect(build(trip({ miles_driven: 0, rides_provided: 1 }), ccc)).toEqual({
+      ok: false,
+      problem: 'miles',
+    });
+  });
+
+  it('saves a trip with miles, and Domestic support with none', () => {
+    const result = build(trip({ miles_driven: 45 }), ccc);
+    expect(result.ok && result.entry.counts.values).toEqual({ miles_driven: 45 });
+    const domestic = build(
+      trip({}, { tasks: [{ task_id: 'domestic-support', quarters: 4 }] }),
+      ccc,
+    );
+    expect(domestic.ok).toBe(true);
+  });
+
+  it('needs the miles when the trip shares the entry with Domestic support', () => {
+    const shared = {
+      tasks: [
+        { task_id: 'transportation-service', quarters: 2 },
+        { task_id: 'domestic-support', quarters: 2 },
+      ],
+    };
+    expect(build(trip({}, shared), ccc)).toEqual({ ok: false, problem: 'miles' });
+    expect(build(trip({ miles_driven: 12 }, shared), ccc).ok).toBe(true);
+  });
+});

@@ -134,6 +134,25 @@ export interface RoleTask {
   flat_rate?: FlatRate;
   /** A service fee per entry, up to max_cents; the task's hours are tracked, not billed (0043). */
   entry_fee?: EntryFee;
+  /** Each entry is one trip, paid by its miles; the task's hours are tracked, not billed (0045). */
+  trip_fee?: TripFee;
+}
+
+/** A task paid per trip by the entry's miles (decision 0045). */
+export interface TripFee {
+  /** The task's count that holds the trip's miles. */
+  miles_count_id: string;
+  /** From 1 mile up with no gaps; only the last tier has no to_miles. */
+  tiers: TripTier[];
+}
+
+export interface TripTier {
+  from_miles: number;
+  /** Absent on the last, open tier. */
+  to_miles?: number;
+  fee_cents: number;
+  /** Gas reimbursement per trip, billed on its own row. */
+  gas_cents?: number;
 }
 
 /** A task paid a service fee per entry (decision 0043). */
@@ -240,9 +259,19 @@ export interface InvoiceEntry {
   counts: Counts;
   /** The entry's service fees in cents by task id. Absent before decision 0043. */
   fees?: Record<string, number>;
+  /** The trip this entry is, with its fee and gas by its miles. Absent when none (0045). */
+  trip?: InvoiceEntryTrip;
   notes: string;
   created_at: string;
   updated_at: string;
+}
+
+/** One entry's trip as billed (decision 0045). */
+export interface InvoiceEntryTrip {
+  task_id: string;
+  fee_cents: number;
+  /** 0 when the tier has no gas. */
+  gas_cents: number;
 }
 
 export interface InvoiceLine {
@@ -276,6 +305,27 @@ export interface InvoiceFlatLine {
   /** The count summed over the invoice, in quarter-units (a whole count of 3 is 12). */
   units_quarters: number;
   cents_per_unit: number;
+  amount_cents: number;
+}
+
+/** A trip-fee task's trips in one tier on an invoice: trips × the tier's fee (decision 0045). */
+export interface InvoiceTripLine {
+  budget_line_id: string;
+  budget_line_name: string;
+  task_id: string;
+  task_name: string;
+  from_miles: number;
+  /** Null for the last, open tier. */
+  to_miles: number | null;
+  trips: number;
+  fee_cents: number;
+  amount_cents: number;
+}
+
+/** The gas reimbursement of a line's trips, added up, with no tier (decision 0045). */
+export interface InvoiceGasLine {
+  budget_line_id: string;
+  budget_line_name: string;
   amount_cents: number;
 }
 
@@ -327,11 +377,15 @@ export interface Invoice {
   flat_lines?: InvoiceFlatLine[];
   /** Service-fee rows, in budget line order. Absent on invoices made before decision 0043. */
   fee_lines?: InvoiceFeeLine[];
+  /** Trip rows by tier, in budget line order. Absent on invoices made before decision 0045. */
+  trip_lines?: InvoiceTripLine[];
+  /** Gas reimbursement rows, one per line. Absent on invoices made before decision 0045. */
+  gas_lines?: InvoiceGasLine[];
   /** Billed quarter-hours: the sum of the hourly rows. */
   total_quarters: number;
   /** Hours of flat-rate tasks, tracked, not billed. Absent before decision 0039. */
   unbilled_quarters?: number;
-  /** Hourly rows plus flat rows plus fee rows. */
+  /** Hourly rows plus flat, fee, trip and gas rows. */
   total_cents: number;
   counts_period: Counts;
   /** This source on this phone, including this invoice. */

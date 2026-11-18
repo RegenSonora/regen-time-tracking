@@ -64,17 +64,47 @@ export function qrPayloadV3(invoice: QrInvoice): string {
   return v2.replace('{"v":2,', '{"v":3,').replace(',"f":', `,"e":[${fees}],"f":`);
 }
 
+/**
+ * v4 (decision 0045): v3 plus "t", [budget line id, task id, tier's first mile, trips, cents] per
+ * trip row, and "g", [budget line id, cents] per gas row. Used only when an invoice has trips.
+ */
+export function qrPayloadV4(invoice: QrInvoice): string {
+  const str = (s: string) => JSON.stringify(s);
+  const v3 = qrPayloadV3(invoice);
+  const trips = (invoice.trip_lines ?? [])
+    .map(
+      (l) =>
+        `[${str(l.budget_line_id)},${str(l.task_id)},${String(l.from_miles)},${String(l.trips)},${String(l.amount_cents)}]`,
+    )
+    .join(',');
+  const gas = (invoice.gas_lines ?? [])
+    .map((l) => `[${str(l.budget_line_id)},${String(l.amount_cents)}]`)
+    .join(',');
+  return v3.replace('{"v":3,', '{"v":4,').replace(',"f":', `,"t":[${trips}],"g":[${gas}],"f":`);
+}
+
 /** What the payloads read from an invoice. */
 type QrInvoice = Pick<
   Invoice,
-  'number' | 'period_start' | 'period_end' | 'lines' | 'flat_lines' | 'fee_lines' | 'fingerprint'
+  | 'number'
+  | 'period_start'
+  | 'period_end'
+  | 'lines'
+  | 'flat_lines'
+  | 'fee_lines'
+  | 'trip_lines'
+  | 'gas_lines'
+  | 'fingerprint'
 >;
 
 /**
- * The payload an invoice prints: v3 when it has service-fee rows, v2 when it has flat-rate rows,
- * v1 otherwise (decisions 0039, 0043).
+ * The payload an invoice prints: v4 when it has trip or gas rows, v3 when it has service-fee
+ * rows, v2 when it has flat-rate rows, v1 otherwise (decisions 0039, 0043, 0045).
  */
 export function qrPayload(invoice: QrInvoice): string {
+  if ((invoice.trip_lines ?? []).length > 0 || (invoice.gas_lines ?? []).length > 0) {
+    return qrPayloadV4(invoice);
+  }
   if ((invoice.fee_lines ?? []).length > 0) return qrPayloadV3(invoice);
   return (invoice.flat_lines ?? []).length > 0 ? qrPayloadV2(invoice) : qrPayloadV1(invoice);
 }

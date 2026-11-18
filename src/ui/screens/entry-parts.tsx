@@ -3,6 +3,9 @@ import { useState } from 'preact/hooks';
 import {
   countText,
   entryFees,
+  entryTrip,
+  tierLabel,
+  tripMilesCountIds,
   feeFromText,
   formatCentsPlain,
   formatDollars,
@@ -366,6 +369,16 @@ export function CountsAndNotes({
         def: { ...(c.unit !== undefined && { unit: c.unit }), ...(c.step && { step: c.step }) },
       }))
     : COUNT_FIELDS.map((f) => ({ ...f, def: {} }));
+  // Trip miles set the pay, so they get a box to type in (decision 0045).
+  const typedIds =
+    role && draft.budget_line_id !== null
+      ? tripMilesCountIds(
+          role,
+          draft.source_id,
+          draft.budget_line_id,
+          draft.tasks.map((s) => s.task_id),
+        )
+      : new Set<string>();
   const repeats = (label: string) => (shown ? duplicateCountLabel(label, shown) : null);
   return (
     <>
@@ -386,6 +399,7 @@ export function CountsAndNotes({
               label={f.label}
               noun={f.noun}
               show={(v) => countText(v, f.def)}
+              typed={typedIds.has(f.key)}
               value={countValue(counts, f.key)}
               onChange={(v) => {
                 set({ ...counts, values: { ...counts.values, [f.key]: v } });
@@ -438,6 +452,7 @@ export function CountsAndNotes({
           })}
         </div>
       )}
+      <TripNote draft={draft} />
       {countError && <ErrorText>{countError}</ErrorText>}
       <button
         type="button"
@@ -608,6 +623,33 @@ function FeeFields({ draft }: { draft: EntryDraft }) {
   );
 }
 
+/**
+ * The trip's pay by its miles, under the counts: "Trip fee: $40.00 (31–60 mi) · Gas: $20.00"
+ * (decision 0045). One entry is one trip.
+ */
+function TripNote({ draft }: { draft: EntryDraft }) {
+  const { role } = useApp();
+  if (!draft.budget_line_id) return null;
+  const trip = entryTrip(
+    role,
+    draft.source_id,
+    draft.budget_line_id,
+    draft.tasks.map((s) => s.task_id),
+    draft.counts.values,
+  );
+  if (trip.state === 'none') return null;
+  if (trip.state === 'missing') {
+    return <p class="hint">One entry is one trip. Enter its miles driven to see the trip fee.</p>;
+  }
+  const { tier } = trip;
+  const gas = tier.gas_cents === undefined ? '' : ` · Gas: ${formatDollars(tier.gas_cents)}`;
+  return (
+    <p class="hint" role="status">
+      {`Trip fee: ${formatDollars(tier.fee_cents)} (${tierLabel(tier)})${gas}`}
+    </p>
+  );
+}
+
 export const PROBLEM_TEXT = {
   task: 'Check what you did.',
   split: 'Split all the hours between your tasks.',
@@ -618,4 +660,5 @@ export const PROBLEM_TEXT = {
   no_funding: 'None of your funding takes time on this date. Ask the office.',
   times: 'Check the times.',
   fee: 'Check the service fee.',
+  miles: 'Enter the miles for this trip.',
 } as const;

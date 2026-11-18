@@ -9,6 +9,7 @@ import {
   normalizeInitials,
   parseDollars,
   rateChangeCheck,
+  tripFeeNotes,
   uninvoicedEntries,
   type SourceSettings,
 } from '../../core';
@@ -323,13 +324,15 @@ export function Settings() {
                 />
               )}
             </Field>
-            {[...entryFeeNotes(role, source), ...flatRateNotes(role, source, COUNT_DEFS)].map(
-              (note) => (
-                <p key={note} class="hint">
-                  {note}
-                </p>
-              ),
-            )}
+            {[
+              ...entryFeeNotes(role, source),
+              ...flatRateNotes(role, source, COUNT_DEFS),
+              ...tripFeeNotes(role, source),
+            ].map((note) => (
+              <p key={note} class="hint">
+                {note}
+              </p>
+            ))}
             {employee ? null : source.has_nte ? (
               <Field
                 label={`Not-to-exceed amount for ${source.code}`}

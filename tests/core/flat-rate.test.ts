@@ -223,7 +223,7 @@ describe('invoice with a flat-rate task (decision 0039)', () => {
   it('fingerprints and verifies at the current canonical version', async () => {
     const result = await createInvoice(gcInput([mixed, resetOnly, leos]));
     if (!result.ok) throw new Error(result.reason);
-    expect(result.invoice.canonical_version).toBe(6);
+    expect(result.invoice.canonical_version).toBe(7);
     expect(await verifyFingerprint(result.invoice)).toBe(true);
     const tampered = {
       ...result.invoice,

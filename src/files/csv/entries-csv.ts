@@ -1,6 +1,7 @@
 // Entry log CSV (SPEC §7, decisions 0001, 0024 and 0029): one header row and one row per task share
 // of each entry, the same columns for every invoice and timesheet so files combine. One column per
-// count in the roles file, in list order. No per-entry dollar amount.
+// count in the roles file, in list order. Dollar amounts per entry only where an entry sets its
+// own pay: the service fee (0043) and the trip fee and gas (0045).
 import { quarterUnitsText } from '../../core/counts';
 import { formatCentsPlain, formatQuarters } from '../../core/money';
 import { pausedSeconds, rawSeconds } from '../../core/time';
@@ -26,6 +27,8 @@ const LEADING_COLUMNS = [
   'budget_line',
   'rate',
   'fee',
+  'trip_fee',
+  'gas_reimbursement',
 ] as const;
 
 /** The columns after the counts. */
@@ -87,6 +90,10 @@ export function entriesCsv(
         rate,
         // This share's service fee, set per entry (decision 0043).
         e.fees?.[t.task_id] === undefined ? '' : formatCentsPlain(e.fees[t.task_id] ?? 0),
+        // The trip this entry is, on its trip task's row (decision 0045).
+        ...(e.trip?.task_id === t.task_id
+          ? [formatCentsPlain(e.trip.fee_cents), formatCentsPlain(e.trip.gas_cents)]
+          : ['', '']),
         ...countDefs.map((c) => count(c)),
         first ? e.counts.other.map((o) => `${o.label}=${String(o.value)}`).join('; ') : '',
         first ? e.notes : '',

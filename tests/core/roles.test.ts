@@ -42,6 +42,7 @@ describe('roleChoices', () => {
       'R-GC01',
       'R-C01',
       'R-CC01',
+      'R-CCC01',
     ]);
   });
 
@@ -54,7 +55,7 @@ describe('roleChoices', () => {
 describe('roleGroups (decision 0044)', () => {
   it('groups the shipped roles under the office headings, in their order', () => {
     expect(roleGroups(file).map((g) => [g.name, g.roles.map((r) => r.code)])).toEqual([
-      ['Community Care Team', ['CHW-TC01', 'CHW-TE01', 'CHW-CE01']],
+      ['Community Care Team', ['CHW-TC01', 'CHW-TE01', 'CHW-CE01', 'R-CCC01']],
       ['Community Resilience', ['R-TL01', 'R-C01']],
       ['Other Roles', ['R-CC01', 'R-GC01']],
     ]);

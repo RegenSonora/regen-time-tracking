@@ -9,6 +9,7 @@ import {
   canonicalFormV4,
   canonicalFormV5,
   canonicalFormV6,
+  canonicalFormV7,
   fingerprintOf,
   sha256Hex,
   shortFingerprint,
@@ -24,6 +25,7 @@ import goldenV3 from './golden/fingerprint-v3.json';
 import goldenV4 from './golden/fingerprint-v4.json';
 import goldenV5 from './golden/fingerprint-v5.json';
 import goldenV6 from './golden/fingerprint-v6.json';
+import goldenV7 from './golden/fingerprint-v7.json';
 
 // Pinned forever (CLAUDE.md rule 8). If a test here fails, the canonical form changed:
 // add a new canonical version instead of editing this file.
@@ -59,6 +61,8 @@ const casesV4 = goldenV4 as unknown as Golden[];
 const casesV5 = goldenV5 as unknown as Golden[];
 /** v6 golden invoices: service fees (decision 0043). */
 const casesV6 = goldenV6 as unknown as Golden[];
+/** v7 golden invoices: trip fees and gas (decision 0045). */
+const casesV7 = goldenV7 as unknown as Golden[];
 
 describe('canonicalJson', () => {
   it('sorts keys at every level and drops whitespace', () => {
@@ -102,8 +106,8 @@ describe('canonicalJson', () => {
 });
 
 describe('fingerprint v1 golden files, after the data v3 upgrade', () => {
-  it('new invoices use canonical version 6 (decision 0043)', () => {
-    expect(CANONICAL_VERSION).toBe(6);
+  it('new invoices use canonical version 7 (decision 0045)', () => {
+    expect(CANONICAL_VERSION).toBe(7);
   });
 
   it('the upgrade turns each entry into a single task share', () => {
@@ -210,7 +214,7 @@ describe('what the fingerprint covers', () => {
   });
 
   it('refuses an unknown canonical version', () => {
-    expect(() => canonicalForm({ ...base, canonical_version: 7 })).toThrow();
+    expect(() => canonicalForm({ ...base, canonical_version: 8 })).toThrow();
   });
 });
 
@@ -444,6 +448,79 @@ describe('fingerprint v6 golden files (decision 0043)', () => {
       (i) => (must(i.fee_lines?.[0]).amount_cents = 19000),
       (i) => (must(i.fee_lines?.[0]).entries = 2),
       (i) => (i.fee_lines = []),
+    ];
+    for (const edit of edits) {
+      const copy = structuredClone(base);
+      edit(copy);
+      expect(await fingerprintOf(copy)).not.toBe(base.fingerprint);
+    }
+  });
+});
+
+describe('fingerprint v7 golden files (decision 0045)', () => {
+  it.each(casesV7.map((c) => [c.name, c] as const))('%s: canonical form is unchanged', (_, c) => {
+    expect(c.invoice.canonical_version).toBe(7);
+    expect(canonicalFormV7(c.invoice)).toBe(c.canonical);
+    expect(canonicalForm(c.invoice)).toBe(c.canonical);
+  });
+
+  it.each(casesV7.map((c) => [c.name, c] as const))(
+    '%s: fingerprint is unchanged',
+    async (_, c) => {
+      expect(await sha256Hex(c.canonical)).toBe(c.fingerprint);
+      expect(await verifyFingerprint(c.invoice)).toBe(true);
+    },
+  );
+
+  it("is form v6 plus each entry's trip, the trip rows and the gas rows", () => {
+    const c = must(casesV7[0]);
+    type Form = Record<string, unknown> & { entries: Record<string, unknown>[] };
+    const v6 = JSON.parse(canonicalFormV6(c.invoice)) as Form;
+    const v7 = JSON.parse(c.canonical) as Form;
+    expect(v7['v']).toBe(7);
+    expect(v7['trip_lines']).toEqual(c.invoice.trip_lines);
+    expect(v7['gas_lines']).toEqual(c.invoice.gas_lines);
+    expect(v7.entries.map((e) => e['trip'])).toEqual([
+      { task_id: 'transportation-service', fee_cents: 4000, gas_cents: 2000 },
+      null,
+      { task_id: 'transportation-service', fee_cents: 6000, gas_cents: 4000 },
+      { task_id: 'transportation-service', fee_cents: 2000, gas_cents: 0 },
+    ]);
+    const stripped: Record<string, unknown> = {
+      ...v7,
+      v: 6,
+      entries: v7.entries.map((e) => {
+        const copy = { ...e };
+        delete copy['trip'];
+        return copy;
+      }),
+    };
+    delete stripped['trip_lines'];
+    delete stripped['gas_lines'];
+    expect(stripped).toEqual(v6);
+  });
+
+  it('v6 invoices still verify: v6 never reads trips', async () => {
+    const c = must(casesV6[0]);
+    expect(c.invoice.trip_lines).toBeUndefined();
+    expect(await verifyFingerprint(c.invoice)).toBe(true);
+  });
+
+  it('changes when a trip row or the gas row changes', async () => {
+    const base = must(casesV7[0]).invoice;
+    const edits: ((i: Invoice) => void)[] = [
+      (i) => (must(i.trip_lines?.[0]).trips = 2),
+      (i) => (must(i.trip_lines?.[1]).to_miles = 59),
+      (i) => (must(i.trip_lines?.[2]).fee_cents = 6100),
+      (i) => (must(i.gas_lines?.[0]).amount_cents = 4000),
+      (i) => (i.gas_lines = []),
+      (i) =>
+        (must(i.entries[0]).trip = {
+          task_id: 'transportation-service',
+          fee_cents: 2000,
+          gas_cents: 0,
+        }),
+      (i) => delete must(i.entries[0]).trip,
     ];
     for (const edit of edits) {
       const copy = structuredClone(base);

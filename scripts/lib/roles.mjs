@@ -7,7 +7,9 @@ import { isRealDate } from './funding-sources.mjs';
 import { readJson } from './json.mjs';
 
 /**
- * @typedef {{ id: string, count_ids: string[], flat_rate?: { count_id: string, cents_per_unit: number }, entry_fee?: { max_cents: number } }} RoleTask
+ * @typedef {{ from_miles: number, to_miles?: number, fee_cents: number, gas_cents?: number }} TripTier
+ * @typedef {{ miles_count_id: string, tiers: TripTier[] }} TripFee
+ * @typedef {{ id: string, count_ids: string[], flat_rate?: { count_id: string, cents_per_unit: number }, entry_fee?: { max_cents: number }, trip_fee?: TripFee }} RoleTask
  * @typedef {{ id: string, tasks: RoleTask[] }} RoleLine
  * @typedef {{ after_quarters: number, rate_cents: number }} RateStep
  * @typedef {{ source_id: string, nte_cents?: number, rate_step?: RateStep, ends?: string,
@@ -195,6 +197,7 @@ export function checkRolesData(data, sourceFiles, schema) {
           if (task.entry_fee && role.employment !== 'contractor') {
             problems.push(`${atTask}: entry_fee is only for contractor roles`);
           }
+          if (task.trip_fee) problems.push(...tripFeeProblems(atTask, task, role, counts));
         }
       }
     }
@@ -255,6 +258,59 @@ function flatRateProblems(at, task, role, counts) {
   }
   if (counts.get(flat.count_id)?.step === 'quarter' && flat.cents_per_unit % 4 !== 0) {
     problems.push(`${at}: flat_rate cents_per_unit must divide by 4 for a quarter-step count`);
+  }
+  return problems;
+}
+
+/**
+ * A trip fee reads one of the task's own whole-step counts as the trip's miles, for contractors
+ * only, never with another way of paying the task. Its tiers run from 1 mile with no gaps or
+ * overlaps, and only the last one is open (decision 0045).
+ * @param {string} at
+ * @param {RoleTask} task
+ * @param {Role} role
+ * @param {Map<string, Count>} counts
+ * @returns {string[]}
+ */
+function tripFeeProblems(at, task, role, counts) {
+  const trip = /** @type {TripFee} */ (task.trip_fee);
+  /** @type {string[]} */
+  const problems = [];
+  const id = trip.miles_count_id;
+  if (!task.count_ids.includes(id)) {
+    problems.push(`${at}: trip_fee count "${id}" isn't one of the task's counts`);
+  } else if (counts.get(id)?.step === 'quarter') {
+    problems.push(`${at}: trip_fee count "${id}" must count whole numbers`);
+  }
+  if (role.employment !== 'contractor') {
+    problems.push(`${at}: trip_fee is only for contractor roles`);
+  }
+  if (task.flat_rate || task.entry_fee) {
+    problems.push(`${at}: trip_fee can't be combined with flat_rate or entry_fee`);
+  }
+  let next = 1;
+  for (const [i, tier] of trip.tiers.entries()) {
+    const n = i + 1;
+    const last = n === trip.tiers.length;
+    if (tier.from_miles !== next) {
+      problems.push(
+        `${at}: trip_fee tier ${String(n)} must start at ${String(next)} ${next === 1 ? 'mile' : 'miles'}`,
+      );
+    }
+    if (tier.to_miles === undefined) {
+      if (!last) {
+        problems.push(
+          `${at}: trip_fee tier ${String(n)} has no to_miles; only the last tier may be open`,
+        );
+        break;
+      }
+      continue;
+    }
+    if (last) problems.push(`${at}: the last trip_fee tier must have no to_miles`);
+    if (tier.to_miles < tier.from_miles) {
+      problems.push(`${at}: trip_fee tier ${String(n)} ends before it starts`);
+    }
+    next = tier.to_miles + 1;
   }
   return problems;
 }

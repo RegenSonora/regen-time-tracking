@@ -96,7 +96,7 @@ Each funding source is a JSON file in the repo, validated against a JSON Schema 
   - **Admin:** Admin: marketing, Admin: staffing.
   - **Other:** Other.
 - **CHW experience hours (decision 0036):** the same line as TISUPP's, for CHW Trainee (Employee). Its tasks are the 21 trainee tasks above.
-- **Community Care Work (decision 0038):** for the Regen Generalist: Domestic support, Transportation service, Other.
+- **Community Care Work (decision 0038):** for the Regen Generalist and the Community Care Contractor (decision 0045): Domestic support, Transportation service, Other.
 - **Certification text:** "I certify that the services listed were performed on the dates shown on the attached timesheet pages, the hours are accurate, and no participant names are included." The CHW always signs and certifies.
 - **Employee certification text (decision 0035):** "I certify that the hours shown on this timesheet were worked on the dates listed, the hours are accurate, no participant names are included, and these hours have not been reported under any other funding source."
 
@@ -115,15 +115,17 @@ Each funding source is a JSON file in the repo, validated against a JSON Schema 
 | R-GC01 | Regen Generalist Contractor | Contractor | false | Regen General Operating · Resilient Home Services contracting, Other, Leo's, Eat Local Network, Community Care Work (decision 0038) | none (typed at setup) | none | none | none |
 | R-C01 | Resilience Contractor | Contractor | false | Regen General Operating · Fire risk reduction work, Maintenance labor, Resilient Home Services contracting, Other (decision 0040) | none (typed at setup) | none | none | none |
 | R-CC01 | Regen Catering Contractor | Contractor | false | Regen General Operating · Maintenance labor, Other, Leo's, Eat Local Network (decision 0042) | $20.00 | none | none | none |
+| R-CCC01 | Community Care Contractor | Contractor | false | Regen General Operating · Other, Community Care Work (decision 0045) | none (typed at setup) | none | none | none |
 
 - **Service fees (decision 0043):** a role's task can carry a fee per entry (`entry_fee` in the roles file), prefilled on the Counts step and lowerable to any amount from $0.00 up to the fee, never above it. R-CC01's Monday breakfast service, Wednesday dinner service and Full Moon Garden Party event support are $200.00 each; their hours are tracked, not billed. Cakes made and Generators rented are $25.00 each on top (flat rates, whole numbers). Contractor roles only.
+- **Trip fees (decision 0045):** a role's task can be paid per trip (`trip_fee` in the roles file). Each entry with the task is one trip; its **Miles driven** picks the tier. R-CCC01's Transportation service: 1–30 mi $20.00; 31–60 mi $40.00 + $20.00 gas; 61–160 mi $60.00 + $40.00 gas; 161+ mi $80.00 + $60.00 gas. Its hours are tracked, not billed. Contractor roles only, never with another way of paying the same task.
 - **Flat-rate tasks (decision 0039):** a role's task can be paid by one of its counts instead of by the hour (`flat_rate` in the roles file). R-GC01's LEHR reset (Eat Local Network) and R-C01's (Maintenance labor, decision 0040) pay $140.00 per LEHR reset, in 0.25 steps. Its hours are tracked, not billed. Contractor roles only.
 - **One raise per role (decision 0036):** the raise counts hours invoiced or submitted (and waiting) on every source of the role that has the raise, added together. The reminder shows on each of those sources until that source's rate is changed. My stats shows the raise reached until every one of them is changed. Every raise on a role must match, which the build checks. CHW Certification and the Work Hours Report already add up every source of the role.
 - **Office changes:** editing a role changes what everyone in it sees after the update; retiring it with `replaced_by` moves everyone in it; retiring it with no replacement stops new time (§5, decision 0027).
 
 ## 4. Profile and settings
 
-- **Setup (decision 0027):** your details, then **Pick your role** (active roles by code and name, under bold headings: Community Care Team, Community Resilience, Other Roles; decision 0044), then a review of the role's sources, budget lines and tasks with a rate per source prefilled (decision 0030): **This is my role** or **Pick a different role**. Wording is neutral (decision 0034).
+- **Setup (decision 0027):** your details, then **Pick your role** (active roles by code and name, under bold headings: Community Care Team, Community Resilience, Other Roles; decision 0044; the Community Care Contractor is under Community Care Team, decision 0045), then a review of the role's sources, budget lines and tasks with a rate per source prefilled (decision 0030): **This is my role** or **Pick a different role**. Wording is neutral (decision 0034).
 - **Your details:** name, initials, mailing address. No agreement # and no service area.
 - **Role:** shown read-only in Settings, "Set at setup. Ask the office to change it." It can't be changed on the phone.
 - **Per funding source of the role:** hourly rate (prefilled, editable) and, for contractors on a source with an NTE, the NTE amount (prefilled from the role, editable). Employees have no NTE field. There is no "Add a funding source"; the role's sources are set up at setup and after an office change.
@@ -148,6 +150,7 @@ Each funding source is a JSON file in the repo, validated against a JSON Schema 
 - **One option (decision 0028):** a funding source or budget line with only one choice is picked for you and shown as a plain label, never a control: "Billed to: TISUPP", or "Billed to: TISUPP · CHW experience hours" when both have one choice. With one funding source, Home shows the same label in place of the funding source chip.
 - **Several tasks (decision 0024):** tasks are check boxes. With two or more checked, "Split your time" gives each a share in 0.25 h steps, starting with all hours on the first checked task, and shows what is left ("0.50 h left", "0.25 h too many", "All 1.50 h assigned"). Next is blocked until the shares add up to the entry's billed hours. A task left at 0 h is dropped. One checked task gets all the hours and skips the step. A flat-rate or service-fee task reads "(tracked, not billed)" (decisions 0039, 0043).
 - **Service fee (decision 0043):** for each checked service-fee task, the Counts step shows "Fee for Wednesday dinner service", prefilled with the full fee: "Up to $200.00. Lower it if you charged less." More than the fee, or text that isn't an amount, stops Save. The fee is kept on the entry as saved.
+- **Trip miles (decision 0045):** with a trip-fee task checked, Save needs Miles driven of at least 1 ("Enter the miles for this trip."). Miles driven gets a box to type the number in, between − and +. Under the counts: "Trip fee: $40.00 (31–60 mi) · Gas: $20.00".
 - **Counts (all optional, default 0; decision 0029):** whole numbers, except a quarter-step count, which steps by 0.25 and shows as a decimal (decision 0039). The counts of the checked tasks, in the shared list's order, with units, plus any count that already has a value, plus "Add another count" (label + number). An added label that matches one of the entry's counts, ignoring case and spaces, is refused: "Trees planted is already a count above. Use that one." Phones with no role show the five CHW counts.
 - **Notes:** optional, with the warning "Don't include client names. Notes appear on the timesheet."
 - **Editing:** entries can be edited or deleted until invoiced, then are locked. Save and delete show Undo. If the billed hours change, a one-task entry follows them; a split entry must be split again before saving. Changing the times clips an entry's breaks to them; **Remove breaks** clears them (decision 0037).
@@ -165,6 +168,7 @@ Each funding source is a JSON file in the repo, validated against a JSON Schema 
 - **Invoice date:** the day it is generated. **Service period:** first entry date to last entry date.
 - **Lines:** one per budget line with billed hours: hours, rate, amount. Line amount = quarter-hours × rate in cents ÷ 4, rounded half up to the cent.
 - **Service-fee rows (decision 0043):** each service-fee task with fees above $0.00 gets one row per budget line after the hourly row: "Leo's: Wednesday dinner service ×2", "up to $200.00", the fees added up. Fee rows come before flat rows.
+- **Trip and gas rows (decision 0045):** after a line's fee and flat rows, one row per tier with trips: "Community Care Work: Transportation service, 2 trips 1–30 mi", "$20.00", the fees added up. Then one gas row for the line with the gas added up and no tier: "Community Care Work: Gas reimbursement".
 - **Flat-rate rows (decision 0039):** each flat-rate task with a count this period gets its own row right after its budget line's hourly row: "Eat Local Network: 2.5 LEHRs reset", rate $140.00, amount $350.00. Its hours are left out of the line's hours and noted under the total as tracked, not billed. Invoice total = sum of the hourly rows and the flat rows. Home's waiting amount counts the same way.
 - **NTE tracker (TISUPP contractors only; none on timesheets):** NTE amount; billed before this invoice (sum of earlier invoices for this source on this phone); this invoice; remaining. Over the limit: a warning only ("OVER CONTRACT LIMIT: do not pay without an amendment" on the PDF), never a block. No NTE entered: "Enter your not-to-exceed amount in Settings."
 - **Counts (decision 0029):** only counts with a value this period, each with its all-time total for this funding source on this phone (including this invoice). The record freezes the labels and units of its counts.
@@ -253,6 +257,8 @@ Total hours,,,1.50,1.50,
 | `budget_line` | CHW referrals | |
 | `rate` | 20.00 | The invoice's or timesheet's rate |
 | `fee` | 150.00 | This row's service fee, as saved on the entry; blank for other tasks (decision 0043) |
+| `trip_fee` | 40.00 | The trip fee, on the trip task's row; blank for other rows (decision 0045) |
+| `gas_reimbursement` | 20.00 | The trip's gas, on the trip task's row; 0.00 when the tier has none, blank for other rows (decision 0045) |
 | one column per count id, e.g. `contacts`, … `certifications_earned` | 1 | Every count in the roles file, in list order, retired ones included; blank unless above 0 (decision 0029); quarter-step counts as decimals, e.g. 2.5 (decision 0039) |
 | `other_counts` | Food boxes=2; Library cards=1 | Custom counts joined with "; " |
 | `notes` | Met at the library table | |
@@ -265,8 +271,8 @@ Total hours,,,1.50,1.50,
 
 ### Fingerprint and QR code
 
-- **Fingerprint:** SHA-256 over a canonical JSON form of the invoice (header, entries, lines, totals, rate). Shown short on the PDF (`3F9A-21C7`), full in both CSVs and the QR code. The canonical form is versioned and must never change silently. v1 has one task per entry; v2 (decision 0024) lists each entry's task shares; v3 (decision 0031) adds the kind, the role, the certification text and counts by id; v4 (decision 0037) adds each entry's breaks; v5 (decision 0039) adds each task share's billed flag, the flat-rate rows and the unbilled hours; v6 (decision 0043) adds each entry's service fees and the fee rows. Invoices keep the version they were made with.
-- **QR code:** invoice #, period, hours and amount by budget line, fingerprint. Invoices with flat-rate rows use payload v2, which adds them (decision 0039); invoices with service-fee rows use v3, which adds those too (decision 0043). Readable after printing or scanning so a later system can match paper to data.
+- **Fingerprint:** SHA-256 over a canonical JSON form of the invoice (header, entries, lines, totals, rate). Shown short on the PDF (`3F9A-21C7`), full in both CSVs and the QR code. The canonical form is versioned and must never change silently. v1 has one task per entry; v2 (decision 0024) lists each entry's task shares; v3 (decision 0031) adds the kind, the role, the certification text and counts by id; v4 (decision 0037) adds each entry's breaks; v5 (decision 0039) adds each task share's billed flag, the flat-rate rows and the unbilled hours; v6 (decision 0043) adds each entry's service fees and the fee rows; v7 (decision 0045) adds each entry's trip, the trip rows and the gas rows. Invoices keep the version they were made with.
+- **QR code:** invoice #, period, hours and amount by budget line, fingerprint. Invoices with flat-rate rows use payload v2, which adds them (decision 0039); invoices with service-fee rows use v3, which adds those too (decision 0043); invoices with trip or gas rows use v4, which adds those as well (decision 0045). Readable after printing or scanning so a later system can match paper to data.
 
 ## 8. Signatures (outside the app)
 
@@ -298,7 +304,7 @@ Install gate (iPhone) · Setup: details, Pick your role, Your role (review) · H
 
 ## 11. Out of scope
 
-Expenses or mileage (time only, except flat-rate tasks and service fees, decisions 0039, 0043) · "nature of the activity" field · service area · agreement # · backup and restore · server, sync or push notifications · in-app signatures · Excel export · Spanish · logo (slot only) · supplemental invoices for retroactive raises · contractor onboarding documents.
+Expenses or mileage (time only, except flat-rate tasks, service fees and trip fees with their gas, decisions 0039, 0043, 0045) · "nature of the activity" field · service area · agreement # · backup and restore · server, sync or push notifications · in-app signatures · Excel export · Spanish · logo (slot only) · supplemental invoices for retroactive raises · contractor onboarding documents.
 
 ## 12. Open questions (ask Chris before building the affected part)
 

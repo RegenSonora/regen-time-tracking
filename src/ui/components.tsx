@@ -1,6 +1,6 @@
 // Shared pieces for every screen (SPEC §10: main actions low, big targets, plain words).
 import type { ComponentChildren, JSX } from 'preact';
-import { useEffect, useId, useRef } from 'preact/hooks';
+import { useEffect, useId, useRef, useState } from 'preact/hooks';
 import type { Entry, FundingSourceConfig } from '../core';
 import { checkEntryTimes } from '../core';
 import { dateLabel, hoursLabel, lineName, tasksLabel, timeRangeLabel } from './format';
@@ -362,6 +362,7 @@ export function Stepper({
   less = 'Fewer',
   more = 'More',
   show = String,
+  typed = false,
 }: {
   label: string;
   value: number;
@@ -372,8 +373,15 @@ export function Stepper({
   more?: string;
   /** How the value reads, e.g. "1.5 hrs". */
   show?: (value: number) => string;
+  /** A box to type a whole number in between − and +, for counts like trip miles (decision 0045). */
+  typed?: boolean;
 }) {
   const id = useId();
+  // What the box shows; blank while the person clears it to type a new number.
+  const [text, setText] = useState(String(value));
+  useEffect(() => {
+    if (Number(text || '0') !== value) setText(String(value));
+  }, [value]);
   return (
     <div class="cnt">
       <span id={id}>{label}</span>
@@ -389,9 +397,33 @@ export function Stepper({
         >
           −
         </button>
-        <span class="val" aria-live="polite">
-          {show(value)}
-        </span>
+        {typed ? (
+          <input
+            class="inp cnt-inp"
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            autoComplete="off"
+            aria-labelledby={id}
+            value={text}
+            onFocus={(e) => {
+              e.currentTarget.select();
+            }}
+            onInput={(e) => {
+              const digits = e.currentTarget.value.replace(/\D/g, '').slice(0, 5);
+              e.currentTarget.value = digits;
+              setText(digits);
+              onChange(digits === '' ? 0 : Number(digits));
+            }}
+            onBlur={() => {
+              setText(String(value));
+            }}
+          />
+        ) : (
+          <span class="val" aria-live="polite">
+            {show(value)}
+          </span>
+        )}
         <button
           type="button"
           class="stp"

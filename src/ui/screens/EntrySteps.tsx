@@ -163,6 +163,7 @@ export function CountsStep() {
     if (result === 'count_label') setProblem(PROBLEM_TEXT.count_label);
     else if (result === 'count_duplicate') setProblem(PROBLEM_TEXT.count_duplicate);
     else if (result === 'fee') setProblem(PROBLEM_TEXT.fee);
+    else if (result === 'miles') setProblem(PROBLEM_TEXT.miles);
     else if (
       result === 'task' ||
       result === 'split' ||
