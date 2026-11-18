@@ -33,8 +33,12 @@
           },
           "label": { "$ref": "#/$defs/text" },
           "unit": {
-            "description": "Unit shown after the number, e.g. gal or sq ft. Values are whole numbers.",
+            "description": "Unit shown after the number, e.g. gal or sq ft. Values are whole numbers unless step is set.",
             "$ref": "#/$defs/text"
+          },
+          "step": {
+            "description": "quarter: the count steps by 0.25 and is stored as whole quarter-units. Never changes after release (decision 0039).",
+            "enum": ["quarter"]
           },
           "retired": {
             "description": "Taken out of every task. Keeps its entry log column.",
@@ -175,6 +179,16 @@
                       "description": "Counts this task shows, by id from the shared list. May be empty.",
                       "type": "array",
                       "items": { "type": "string" }
+                    },
+                    "flat_rate": {
+                      "description": "Pay this task by one of its counts instead of by the hour: the task's hours are tracked, not billed. Contractor roles only (decision 0039).",
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["count_id", "cents_per_unit"],
+                      "properties": {
+                        "count_id": { "type": "string" },
+                        "cents_per_unit": { "$ref": "#/$defs/cents" }
+                      }
                     }
                   }
                 }

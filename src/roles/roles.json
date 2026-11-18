@@ -246,7 +246,8 @@
     },
     {
       "id": "lehrs_reset",
-      "label": "LEHRs reset"
+      "label": "LEHRs reset",
+      "step": "quarter"
     },
     {
       "id": "soil_harvested",
@@ -1242,7 +1243,11 @@
                 },
                 {
                   "id": "lehr-reset",
-                  "count_ids": ["lehrs_reset", "soil_harvested"]
+                  "count_ids": ["lehrs_reset", "soil_harvested"],
+                  "flat_rate": {
+                    "count_id": "lehrs_reset",
+                    "cents_per_unit": 14000
+                  }
                 },
                 {
                   "id": "garden-maintenance",

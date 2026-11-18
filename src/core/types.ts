@@ -76,6 +76,8 @@ export interface CountDef {
   label: string;
   /** Shown after the number, e.g. "gal". */
   unit?: string;
+  /** quarter: steps by 0.25, stored as whole quarter-units (decision 0039). */
+  step?: 'quarter';
   retired?: true;
 }
 
@@ -120,9 +122,17 @@ export interface RoleTask {
   id: string;
   /** Counts this task shows, by id from the shared list. */
   count_ids: string[];
+  /** Paid by this count instead of by the hour; the task's hours are tracked, not billed (0039). */
+  flat_rate?: FlatRate;
 }
 
-/** Count values by count id (decision 0029). Whole numbers. */
+/** A task paid per count (decision 0039). */
+export interface FlatRate {
+  count_id: string;
+  cents_per_unit: number;
+}
+
+/** Count values by count id (decision 0029). Whole numbers; quarter-step counts in quarter-units (0039). */
 export type CountValues = Record<string, number>;
 
 /** The CHW's details (SPEC §4). */

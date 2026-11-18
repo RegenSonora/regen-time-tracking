@@ -6,6 +6,7 @@ import { checkRoles, checkRolesData, makeRolesValidator } from '../../scripts/li
 interface RoleTask {
   id: string;
   count_ids: string[];
+  flat_rate?: { count_id: string; cents_per_unit: number };
 }
 interface RoleLine {
   id: string;
@@ -34,6 +35,7 @@ interface Count {
   id: string;
   label: string;
   unit?: string;
+  step?: string;
   retired?: boolean;
 }
 interface RolesFile {
@@ -371,12 +373,34 @@ describe('roles file (roles plan Part 2, decisions 0027, 0029)', () => {
     expect(funding?.rate_cents).toBeUndefined();
     expect(funding?.rate_step).toBeUndefined();
     expect(funding?.nte_cents).toBeUndefined();
-    expect(funding?.budget_lines).toEqual(
+    const plain = funding?.budget_lines.map((l) => ({
+      id: l.id,
+      tasks: l.tasks.map((t) => ({ id: t.id, count_ids: t.count_ids })),
+    }));
+    expect(plain).toEqual(
       GENERALIST_LINES.map(([id, tasks]) => ({
         id,
         tasks: tasks.map(([task, labels]) => ({ id: task, count_ids: countIds(labels) })),
       })),
     );
+  });
+
+  it('pays the Regen Generalist $140.00 per LEHR reset, in quarter steps (decision 0039)', () => {
+    const flat = role('R-GC01')
+      .funding.flatMap((f) => f.budget_lines)
+      .flatMap((l) => l.tasks.filter((t) => t.flat_rate).map((t) => [l.id, t.id, t.flat_rate]));
+    expect(flat).toEqual([
+      ['eat-local-network', 'lehr-reset', { count_id: 'lehrs_reset', cents_per_unit: 14000 }],
+    ]);
+    // A count's step never changes after release.
+    expect(rolesFile.counts.filter((c) => c.step).map((c) => [c.id, c.step])).toEqual([
+      ['lehrs_reset', 'quarter'],
+    ]);
+    // Every other role is paid by the hour only.
+    for (const r of rolesFile.roles.filter((x) => x.id !== 'r-gc01'))
+      for (const f of r.funding)
+        for (const l of f.budget_lines)
+          for (const t of l.tasks) expect(t.flat_rate, `${r.code} ${t.id}`).toBeUndefined();
   });
 
   it('adds the eight Regen Generalist counts at the end of the list (0038)', () => {
@@ -424,6 +448,19 @@ describe('roles schema', () => {
     expect(
       changed((f) => (((first(f).funding[0] as Funding).budget_lines[0] as RoleLine).tasks = [])),
     ).not.toEqual([]);
+  });
+
+  it('accepts only the quarter step and a flat rate in whole cents (decision 0039)', () => {
+    expect(changed((f) => ((f.counts[0] as Count).step = 'half'))).not.toEqual([]);
+    expect(changed((f) => ((f.counts[0] as Count).step = 'quarter'))).toEqual([]);
+    const t = (f: RolesFile) =>
+      (first(f).funding[0] as Funding).budget_lines[0]?.tasks[0] as RoleTask;
+    expect(
+      changed((f) => (t(f).flat_rate = { count_id: 'contacts', cents_per_unit: 12.5 })),
+    ).not.toEqual([]);
+    expect(
+      changed((f) => (t(f).flat_rate = { count_id: 'contacts', cents_per_unit: 100 })),
+    ).toEqual([]);
   });
 
   it('rejects a blank unit or label, and an end date that is not a date', () => {
@@ -646,6 +683,38 @@ describe('build checks against the source files (roles plan R1)', () => {
     expect(
       broken((f) => {
         delete regenOf(te(f)).rate_step;
+      }),
+    ).toEqual([]);
+  });
+  it('checks flat rates: a count of the task, contractors only, cents that divide by 4 (0039)', () => {
+    const gc = (f: RolesFile) => byId(f, 'r-gc01');
+    const reset = (f: RolesFile) =>
+      funding(gc(f))
+        .budget_lines.flatMap((l) => l.tasks)
+        .find((t) => t.id === 'lehr-reset') as RoleTask;
+    const at =
+      'role R-GC01, funding regen-general-operating, budget line eat-local-network, task lehr-reset';
+    expect(
+      broken((f) => {
+        reset(f).flat_rate = { count_id: 'trees_planted', cents_per_unit: 14000 };
+      }),
+    ).toContain(`${at}: flat_rate count "trees_planted" isn't one of the task's counts`);
+    expect(
+      broken((f) => {
+        gc(f).employment = 'employee';
+        gc(f).funding[0] = { ...funding(gc(f)) };
+      }),
+    ).toContain(`${at}: flat_rate is only for contractor roles`);
+    expect(
+      broken((f) => {
+        reset(f).flat_rate = { count_id: 'lehrs_reset', cents_per_unit: 14001 };
+      }),
+    ).toContain(`${at}: flat_rate cents_per_unit must divide by 4 for a quarter-step count`);
+    expect(
+      broken((f) => {
+        const lehrs = f.counts.find((c) => c.id === 'lehrs_reset') as Count;
+        delete lehrs.step;
+        reset(f).flat_rate = { count_id: 'lehrs_reset', cents_per_unit: 14001 };
       }),
     ).toEqual([]);
   });
