@@ -93,8 +93,8 @@ describe('grant periods and the Resilience Team Lead (roles plan R1, decisions 0
     );
   });
 
-  it('Regen General Operating has no start or end date, at version 5', () => {
-    expect(regen['version']).toBe(5);
+  it('Regen General Operating has no start or end date, at version 6', () => {
+    expect(regen['version']).toBe(6);
     expect(regen['period_start']).toBeNull();
     expect(regen['period_end']).toBeNull();
   });
@@ -130,9 +130,22 @@ describe('grant periods and the Resilience Team Lead (roles plan R1, decisions 0
     ]);
   });
 
+  it('then adds 4 tasks for the Regen Catering Contractor (decision 0042)', () => {
+    expect(regen.tasks).toHaveLength(74);
+    expect(regen.tasks.slice(70)).toEqual(
+      [
+        ['monday-breakfast-service', 'Monday breakfast service'],
+        ['wednesday-dinner-service', 'Wednesday dinner service'],
+        ['vehicle-maintenance', 'Vehicle maintenance'],
+        ['other-maintenance', 'Other maintenance'],
+      ].map(([id, name]) => ({ id, name, core_competency: null })),
+    );
+    expect(regen.budget_lines).toHaveLength(25);
+  });
+
   it('then adds 7 tasks and the Community Care Work line for Regen Generalists (decision 0038)', () => {
-    expect(regen.tasks).toHaveLength(70);
-    expect(regen.tasks.slice(63)).toEqual(
+    expect(regen.tasks.slice(63, 70)).toHaveLength(7);
+    expect(regen.tasks.slice(63, 70)).toEqual(
       [
         ['gleaning', 'Gleaning'],
         ['food-processing', 'Food processing'],

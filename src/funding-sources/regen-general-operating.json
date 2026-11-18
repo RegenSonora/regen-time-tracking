@@ -3,7 +3,7 @@
   "id": "regen-general-operating",
   "code": "REGEN-GO",
   "name": "Regen General Operating",
-  "version": 5,
+  "version": 6,
   "has_nte": false,
   "default_rate_cents": null,
   "period_start": null,
@@ -359,6 +359,26 @@
     {
       "id": "lehr-installation",
       "name": "LEHR installation",
+      "core_competency": null
+    },
+    {
+      "id": "monday-breakfast-service",
+      "name": "Monday breakfast service",
+      "core_competency": null
+    },
+    {
+      "id": "wednesday-dinner-service",
+      "name": "Wednesday dinner service",
+      "core_competency": null
+    },
+    {
+      "id": "vehicle-maintenance",
+      "name": "Vehicle maintenance",
+      "core_competency": null
+    },
+    {
+      "id": "other-maintenance",
+      "name": "Other maintenance",
       "core_competency": null
     }
   ],
