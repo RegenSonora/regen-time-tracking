@@ -44,7 +44,7 @@ test('setup picks a role, reviews it with the rate prefilled, and can pick again
 
   await expect(heading(page, 'Pick your role')).toBeVisible();
   await expectAccessible(page, 'pick your role');
-  for (const code of ['CHW-TC01', 'CHW-TE01', 'R-TL01', 'R-GC01', 'R-C01', 'R-CC01']) {
+  for (const code of ['CHW-TC01', 'CHW-TE01', 'R-TL01', 'R-GC01', 'R-C01', 'R-CC01', 'R-CCC01']) {
     await expect(page.getByRole('button', { name: new RegExp(`^${code}`) })).toBeVisible();
   }
   // Bold headings over the roles, in the office's order (decision 0044).
@@ -56,7 +56,12 @@ test('setup picks a role, reviews it with the rate prefilled, and can pick again
   const group = (name: string) => page.getByRole('region', { name });
   const codesIn = async (name: string) =>
     (await group(name).locator('.check-name').allTextContents()).map((t) => t.trim());
-  expect(await codesIn('Community Care Team')).toEqual(['CHW-TC01', 'CHW-TE01', 'CHW-CE01']);
+  expect(await codesIn('Community Care Team')).toEqual([
+    'CHW-TC01',
+    'CHW-TE01',
+    'CHW-CE01',
+    'R-CCC01',
+  ]);
   expect(await codesIn('Community Resilience')).toEqual(['R-TL01', 'R-C01']);
   expect(await codesIn('Other Roles')).toEqual(['R-CC01', 'R-GC01']);
 
@@ -572,6 +577,107 @@ test('a Regen Catering Contractor: a lowered dinner fee, cakes, and an hourly ta
   await page.getByRole('button', { name: 'Settings' }).click();
   await expect(
     page.getByText('Wednesday dinner service: up to $200.00 each entry.', { exact: false }),
+  ).toBeVisible();
+});
+
+test('a Community Care Contractor: trips paid by distance with gas, Domestic support by the hour', async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  await page.clock.install({ time: new Date('2026-11-18T18:00:00-07:00') });
+  await stubShare(page);
+  await page.goto('./');
+  await fillDetails(page);
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: /^R-CCC01/ }).click();
+  await expect(page.getByText('R-CCC01 · Community Care Contractor')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Community Care Work' })).toBeVisible();
+  await expect(page.getByLabel('Hourly rate for REGEN-GO')).toHaveValue('');
+  await page.getByLabel('Hourly rate for REGEN-GO').fill('20.00');
+  await page.getByRole('button', { name: 'This is my role' }).click();
+  await expect(heading(page, 'Regen Time Tracking')).toBeVisible();
+
+  /** One trip: Transportation service alone, with its miles. */
+  const trip = async (start: string, end: string, miles: number, note: RegExp) => {
+    await recordTime(page, '2026-11-18', start, end);
+    await page.getByRole('button', { name: 'Next' }).click();
+    await pickLine(page, 'Community Care Work');
+    await taskBox(page, 'Transportation service').check();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(heading(page, 'Counts and notes')).toBeVisible();
+    await expect(page.getByText('One entry is one trip.', { exact: false })).toBeVisible();
+    await page.getByRole('button', { name: 'Save entry' }).click();
+    await expect(page.getByText('Enter the miles for this trip.')).toBeVisible();
+    const more = page.getByRole('button', { name: 'More miles driven' });
+    for (let i = 0; i < miles; i++) await more.click();
+    await expect(page.getByText(note)).toBeVisible();
+    await page.getByRole('button', { name: 'Save entry' }).click();
+    await expect(heading(page, 'Regen Time Tracking')).toBeVisible();
+  };
+
+  // A 12-mile trip ($20.00) and a 61-mile trip ($60.00 + $40.00 gas).
+  await trip('08:00', '09:00', 12, /^Trip fee: \$20\.00 \(1–30 mi\)$/);
+  await trip('10:00', '12:00', 61, /^Trip fee: \$60\.00 \(61–160 mi\) · Gas: \$40\.00$/);
+  // 2 hrs of Domestic support at $20.00.
+  await recordTime(page, '2026-11-18', '13:00', '15:00');
+  await page.getByRole('button', { name: 'Next' }).click();
+  await pickLine(page, 'Community Care Work');
+  await taskBox(page, 'Domestic support').check();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(page.getByText('One entry is one trip.', { exact: false })).toHaveCount(0);
+  await expectAccessible(page, 'community care counts step');
+  await page.getByRole('button', { name: 'Save entry' }).click();
+  await expect(heading(page, 'Regen Time Tracking')).toBeVisible();
+  // $20.00 + $60.00 + $40.00 gas + 2 hrs × $20.00.
+  await expect(page.getByText(/3 entries · 5 hrs · \$160\.00/)).toBeVisible();
+
+  await page.getByRole('button', { name: 'Generate Regen Invoice' }).click();
+  await expect(
+    page.getByRole('row', { name: /Community Care Work: Transportation service, 1 trip 1–30 mi/ }),
+  ).toContainText('$20.00');
+  await expect(
+    page.getByRole('row', {
+      name: /Community Care Work: Transportation service, 1 trip 61–160 mi/,
+    }),
+  ).toContainText('$60.00');
+  await expect(
+    page.getByRole('row', { name: 'Community Care Work: Gas reimbursement' }),
+  ).toContainText('$40.00');
+  await expectAccessible(page, 'community care invoice preview');
+  await page.getByRole('button', { name: 'Create invoice files' }).click();
+  await expect(heading(page, 'Invoice created')).toBeVisible();
+  await page.getByRole('button', { name: 'Share files' }).click();
+  await expect(page.getByRole('status')).toHaveText('Files shared.');
+  const [files] = await sharedFiles(page);
+  const pdf = await readPdf(new Uint8Array(files?.[0]?.bytes ?? []));
+  const page1 = pdf[0]?.text ?? '';
+  expect(page1).toContain('Community Care Work 2.00 $20.00 $40.00');
+  expect(page1).toContain(
+    'Community Care Work: Transportation service, 1 trip 1–30 mi $20.00 $20.00',
+  );
+  expect(page1).toContain(
+    'Community Care Work: Transportation service, 1 trip 61–160 mi $60.00 $60.00',
+  );
+  expect(page1).toContain('Community Care Work: Gas reimbursement $40.00');
+  expect(page1).toContain('Amount due 2.00 $160.00');
+  const log = parseCsv(files?.[3]?.bytes ?? []);
+  const header = log[0] ?? [];
+  const tripRows = log.filter((r) => r[header.indexOf('task')] === 'Transportation service');
+  expect(
+    tripRows.map((r) => [
+      r[header.indexOf('miles_driven')],
+      r[header.indexOf('trip_fee')],
+      r[header.indexOf('gas_reimbursement')],
+    ]),
+  ).toEqual([
+    ['12', '20.00', '0.00'],
+    ['61', '60.00', '40.00'],
+  ]);
+  await page.getByRole('button', { name: 'Done' }).click();
+
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await expect(
+    page.getByText('Transportation service: $20.00 a trip for 1–30 mi', { exact: false }),
   ).toBeVisible();
 });
 
