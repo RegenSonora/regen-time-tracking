@@ -6,6 +6,7 @@ import {
   qrPayload,
   qrPayloadV1,
   qrPayloadV2,
+  qrPayloadV3,
 } from '../../src/files/qr/payload';
 import { findFundingSource } from '../../src/funding-sources';
 import roles from '../../src/roles/roles.json';
@@ -158,5 +159,44 @@ describe('qrMatrix', () => {
     expect(qrPayload(base)).toBe(qrPayloadV1(base));
     const matrix = qrMatrix(qrPayload({ ...base, flat_lines: [flat] }));
     expect(decode(matrix)).toBe(qrPayloadV2({ ...base, flat_lines: [flat] }));
+  });
+
+  it('v3 adds the service-fee rows; only invoices with fee rows use it (decision 0043)', () => {
+    const base = {
+      number: 'RC-2026-001',
+      period_start: '2026-11-04',
+      period_end: '2026-11-08',
+      lines: [],
+      flat_lines: [
+        {
+          budget_line_id: 'leos',
+          budget_line_name: "Leo's",
+          task_id: 'wednesday-dinner-service',
+          task_name: 'Wednesday dinner service',
+          count_id: 'cakes_made',
+          count_label: 'Cakes made',
+          units_quarters: 12,
+          cents_per_unit: 2500,
+          amount_cents: 7500,
+        },
+      ],
+      fingerprint: 'b'.repeat(64),
+    };
+    const fee = {
+      budget_line_id: 'leos',
+      budget_line_name: "Leo's",
+      task_id: 'wednesday-dinner-service',
+      task_name: 'Wednesday dinner service',
+      entries: 2,
+      max_cents: 20000,
+      amount_cents: 35000,
+    };
+    const withFee = { ...base, fee_lines: [fee] };
+    expect(qrPayloadV3(withFee)).toBe(
+      `{"v":3,"n":"RC-2026-001","p":["2026-11-04","2026-11-08"],"l":[],"x":[["leos","wednesday-dinner-service",12,7500]],"e":[["leos","wednesday-dinner-service",2,35000]],"f":"${'b'.repeat(64)}"}`,
+    );
+    expect(qrPayload(withFee)).toBe(qrPayloadV3(withFee));
+    expect(qrPayload({ ...base, fee_lines: [] })).toBe(qrPayloadV2(base));
+    expect(decode(qrMatrix(qrPayload(withFee)))).toBe(qrPayloadV3(withFee));
   });
 });

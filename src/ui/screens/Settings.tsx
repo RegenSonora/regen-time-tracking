@@ -2,6 +2,7 @@
 // storage, version.
 import { useLayoutEffect, useState } from 'preact/hooks';
 import {
+  entryFeeNotes,
   flatRateNotes,
   formatDollars,
   formatInvoiceNumber,
@@ -322,11 +323,13 @@ export function Settings() {
                 />
               )}
             </Field>
-            {flatRateNotes(role, source, COUNT_DEFS).map((note) => (
-              <p key={note} class="hint">
-                {note}
-              </p>
-            ))}
+            {[...entryFeeNotes(role, source), ...flatRateNotes(role, source, COUNT_DEFS)].map(
+              (note) => (
+                <p key={note} class="hint">
+                  {note}
+                </p>
+              ),
+            )}
             {employee ? null : source.has_nte ? (
               <Field
                 label={`Not-to-exceed amount for ${source.code}`}

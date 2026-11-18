@@ -25,6 +25,7 @@ const LEADING_COLUMNS = [
   'core_competency',
   'budget_line',
   'rate',
+  'fee',
 ] as const;
 
 /** The columns after the counts. */
@@ -84,6 +85,8 @@ export function entriesCsv(
         t.core_competency ?? '',
         e.budget_line_name,
         rate,
+        // This share's service fee, set per entry (decision 0043).
+        e.fees?.[t.task_id] === undefined ? '' : formatCentsPlain(e.fees[t.task_id] ?? 0),
         ...countDefs.map((c) => count(c)),
         first ? e.counts.other.map((o) => `${o.label}=${String(o.value)}`).join('; ') : '',
         first ? e.notes : '',

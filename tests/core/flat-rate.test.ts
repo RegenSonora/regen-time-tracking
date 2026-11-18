@@ -285,7 +285,7 @@ describe('lines table, notes and Settings text (decision 0039)', () => {
 
   it('notes the unbilled hours, and nothing when every hour is billed', () => {
     expect(unbilledNote(invoice)).toBe(
-      '2.50 hrs of LEHR reset tracked, not billed (paid per count above)',
+      '2.50 hrs of LEHR reset tracked, not billed (paid as listed above)',
     );
     expect(unbilledNote(draft(gcInput([leos])))).toBe('');
   });

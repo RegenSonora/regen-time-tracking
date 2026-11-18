@@ -48,12 +48,33 @@ export function qrPayloadV2(
   );
 }
 
-/** The payload an invoice prints: v2 when it has flat-rate rows, v1 otherwise (decision 0039). */
-export function qrPayload(
-  invoice: Pick<
-    Invoice,
-    'number' | 'period_start' | 'period_end' | 'lines' | 'flat_lines' | 'fingerprint'
-  >,
-): string {
+/**
+ * v3 (decision 0043): v2 plus "e", [budget line id, task id, entries, cents] per service-fee row.
+ * Used only when an invoice has fee rows.
+ */
+export function qrPayloadV3(invoice: QrInvoice): string {
+  const str = (s: string) => JSON.stringify(s);
+  const v2 = qrPayloadV2(invoice);
+  const fees = (invoice.fee_lines ?? [])
+    .map(
+      (l) =>
+        `[${str(l.budget_line_id)},${str(l.task_id)},${String(l.entries)},${String(l.amount_cents)}]`,
+    )
+    .join(',');
+  return v2.replace('{"v":2,', '{"v":3,').replace(',"f":', `,"e":[${fees}],"f":`);
+}
+
+/** What the payloads read from an invoice. */
+type QrInvoice = Pick<
+  Invoice,
+  'number' | 'period_start' | 'period_end' | 'lines' | 'flat_lines' | 'fee_lines' | 'fingerprint'
+>;
+
+/**
+ * The payload an invoice prints: v3 when it has service-fee rows, v2 when it has flat-rate rows,
+ * v1 otherwise (decisions 0039, 0043).
+ */
+export function qrPayload(invoice: QrInvoice): string {
+  if ((invoice.fee_lines ?? []).length > 0) return qrPayloadV3(invoice);
   return (invoice.flat_lines ?? []).length > 0 ? qrPayloadV2(invoice) : qrPayloadV1(invoice);
 }

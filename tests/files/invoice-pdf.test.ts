@@ -352,12 +352,40 @@ describe('employee timesheet PDF (decision 0031)', () => {
       'Eat Local Network 0.50 $20.00 $10.00',
       'Eat Local Network: 2.5 LEHRs reset $140.00 $350.00',
       'Amount due 0.50 $360.00',
-      '0.50 hrs of LEHR reset tracked, not billed (paid per count above)',
+      '0.50 hrs of LEHR reset tracked, not billed (paid as listed above)',
       'LEHRs reset 2.5 2.5',
       'Soil harvested 30 gal 30 gal',
     ]) {
       expect(page1?.text).toContain(expected);
     }
     expect(page2?.text).toContain('LEHR reset (not billed)');
+  });
+
+  it('prints service-fee rows with "up to" the fee, then the cake row (decision 0043)', async () => {
+    const catering = findTestRole('r-cc01');
+    const invoice = await invoiceFrom({
+      source: regen,
+      role: catering,
+      settings: { source_id: regen.id, rate_cents: 2000, nte_cents: null },
+      entries: [
+        makeEntry('2026-11-04', '15:00:00', '18:00:00', 'wednesday-dinner-service', 'leos', {
+          source_id: regen.id,
+          role_id: catering.id,
+          fees: { 'wednesday-dinner-service': 15000 },
+          counts: { values: { cakes_made: 3 }, other: [] },
+        }),
+      ],
+      prior_invoices: [],
+    });
+    const [page1, page2] = await pdfOf(invoice, regen);
+    for (const expected of [
+      "Leo's: Wednesday dinner service ×1 up to $200.00 $150.00",
+      "Leo's: 3 Cakes made $25.00 $75.00",
+      'Amount due 0.00 $225.00',
+      '3.00 hrs of Wednesday dinner service tracked, not billed (paid as listed above)',
+    ]) {
+      expect(page1?.text).toContain(expected);
+    }
+    expect(page2?.text).toContain('Wednesday dinner service (not billed)');
   });
 });

@@ -422,7 +422,7 @@ export function flatRowName(flat: InvoiceFlatLine): string {
 }
 
 /**
- * "2.50 hrs of LEHR reset tracked, not billed (paid per count above)", or "" when every hour is
+ * "2.50 hrs of LEHR reset tracked, not billed (paid as listed above)", or "" when every hour is
  * billed (decision 0039).
  */
 export function unbilledNote(invoice: Pick<Invoice, 'entries' | 'unbilled_quarters'>): string {
@@ -435,7 +435,7 @@ export function unbilledNote(invoice: Pick<Invoice, 'entries' | 'unbilled_quarte
       ),
     ),
   ];
-  return `${formatQuarters(quarters)} hrs of ${names.join(', ')} tracked, not billed (paid per count above)`;
+  return `${formatQuarters(quarters)} hrs of ${names.join(', ')} tracked, not billed (paid as listed above)`;
 }
 
 /**
