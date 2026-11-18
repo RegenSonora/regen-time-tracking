@@ -20,6 +20,7 @@ The invoice files (SPEC §7), hand-written. Pure like `src/core`: an invoice in,
 | `pdf/timesheet-page.ts` | Landscape timesheet pages; shrink to 7 pt, then cut notes                                             | §7, decisions 0003, 0013 |
 | `pdf/invoice-pdf.ts`    | Page 1 plus one page per 7 dates worked                                                               | §7                       |
 | `report/work-hours.ts`  | Work Hours Report: PDF laid out like the ADHS form, page 1 as shapes, CSV                             | decision 0026            |
+| `report/progress.ts`    | Share progress pictures: wrapped tasks on 1080 × 1920 pages, continued so nothing is cut off          | decision 0041            |
 
 Page 1 lists the counts with a value this period (at most 10; the rest are in the entry log CSV), each with its all-time total for the source (decision 0029).
 

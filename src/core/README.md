@@ -23,6 +23,7 @@ Pure rules: money, time, rounding, overlap, page-splitting, invoice, counter and
 | `timer.ts`                       | The running timer: start, pause, resume, what Stop saves, worked seconds for the clock                              | §5, decision 0037        |
 | `stats.ts`                       | My stats: invoiced hours, hrs needed for the raise and for CHW Cert eligibility                                     | §5, decision 0026        |
 | `work-hours.ts`                  | Work Hours Report: invoiced hours per form row with dates, past three years                                         | decision 0026            |
+| `my-tasks.ts`                    | My Tasks: office tasks with priority, own tasks, status and notes, Home's "N of M done"                             | decision 0041            |
 | `canonical.ts`, `fingerprint.ts` | Canonical JSON and SHA-256 fingerprint, versioned (v1 to v4)                                                        | §7, rule 8               |
 
 Tests live in `tests/core/`. `tests/core/golden/fingerprint-v1.json` to `fingerprint-v4.json` pin canonical forms v1 to v4: never edit them; add a new canonical version instead. v1 golden invoices are checked after the data v3 upgrade.

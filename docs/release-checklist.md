@@ -107,6 +107,19 @@ Use a clean install for each role: remove the app between roles (this erases its
 - [ ] **Work Hours Report** (CHW Trainee): **Settings › Work Hours Report** shares the PDF, PNG and CSV. R-TL01's Settings has no Work Hours Report.
 - [ ] **A role edit reaches the phone:** after a deploy that changes a task's name or counts for the role, tap **Updated, tap to reload**; the entry steps show the change and existing entries are still there.
 
+## 11. My Tasks (0.14.0, decision 0041)
+
+Use R-TL01, on a build whose `my-tasks.json` lists at least one task of each priority.
+
+- [ ] Home shows **My Tasks** with "0 of N done". Another role (CHW-TC01) has no My Tasks.
+- [ ] Each office task shows its priority in words and color (High red, Medium amber, Low green), readable in sunlight and in dark mode. The priority can't be changed.
+- [ ] Garden clean up's Notes box starts with "Complete by Monday for garden party." Change its status: the note stays. Delete the note, close the app, open it: the note stays deleted.
+- [ ] **Status** opens the phone's own picker; pick Blocked. Type notes of a few lines. Close the app fully, open it: status and notes are still there.
+- [ ] **Add my own task**, rename it with **Edit**, delete it, then **Undo**: it comes back with its status and notes.
+- [ ] **Share progress** opens the share sheet with one picture; send it to yourself and open it in the photo app: names, priorities, statuses and notes are readable.
+- [ ] Paste a very long note (a page or more) and share: two or more pictures arrive, marked "Page 1 of 2"…, and the note continues with "(continued)", nothing cut off.
+- [ ] After an update that retires a task, it disappears; adding it back with the same id shows the old notes.
+
 ## After
 
 - [ ] Remove the app from the phone (this erases the test data).

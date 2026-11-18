@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { emptyCounts } from '../../src/core/counts';
 import { verifyFingerprint } from '../../src/core/fingerprint';
+import { newOwnTask, officeProgress } from '../../src/core/my-tasks';
 import type { Entry } from '../../src/core/types';
 import { emptyAppState, rememberPicks } from '../../src/storage/storage';
 import { RECENT_TASKS_MAX, type AppState, type Storage } from '../../src/storage/types';
@@ -101,6 +102,40 @@ describe.each(adapters)('$name adapter', (adapter) => {
       const entry: Entry = { ...must(sampleEntries[0]), invoice_id: uuid(1) };
       expect(await storage.saveEntry(entry)).toEqual({ ok: false, reason: 'invoice_id_set' });
       expect(await storage.getEntry(entry.id)).toBeNull();
+      storage.close();
+    });
+  });
+
+  describe('My Tasks progress (decision 0041)', () => {
+    it('starts empty, keeps one record per id, and updates in place', async () => {
+      const storage = await adapter.make();
+      expect(await storage.listTaskProgress()).toEqual([]);
+      const office = officeProgress('r-tl01', 'mulch', uuid(201), NOW);
+      const own = newOwnTask('r-tl01', 'Fix hitch', uuid(202), NOW);
+      await storage.saveTaskProgress(office);
+      await storage.saveTaskProgress(own);
+      const changed = {
+        ...office,
+        status: 'blocked' as const,
+        notes: ['Waiting on quote.', 'Call Friday.'].join('\n'),
+      };
+      await storage.saveTaskProgress(changed);
+      const all = await storage.listTaskProgress();
+      expect(all).toHaveLength(2);
+      expect(all).toEqual(expect.arrayContaining([changed, own]));
+      storage.close();
+    });
+
+    it('deletes only tasks the person added', async () => {
+      const storage = await adapter.make();
+      const office = officeProgress('r-tl01', 'mulch', uuid(203), NOW);
+      const own = newOwnTask('r-tl01', 'Fix hitch', uuid(204), NOW);
+      await storage.saveTaskProgress(office);
+      await storage.saveTaskProgress(own);
+      expect(await storage.deleteOwnTask(office.id)).toEqual({ ok: false, reason: 'office' });
+      expect(await storage.deleteOwnTask(own.id)).toEqual({ ok: true });
+      expect(await storage.deleteOwnTask(own.id)).toEqual({ ok: false, reason: 'not_found' });
+      expect(await storage.listTaskProgress()).toEqual([office]);
       storage.close();
     });
   });

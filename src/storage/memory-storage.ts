@@ -3,7 +3,7 @@
 // transactions run one at a time, and a throw inside one leaves nothing behind.
 import { createStorage, type StorageOptions } from './storage';
 import type { BeforeWrite, Backend, Storage, StoreName, StoredRecord, Tx } from './types';
-import { STORES_V1 } from './records';
+import { STORES_V6 } from './records';
 
 export type MemoryData = Map<StoreName, Map<string, StoredRecord>>;
 
@@ -13,7 +13,7 @@ export interface MemoryOptions extends StorageOptions {
 
 export function createMemoryBackend(beforeWrite?: BeforeWrite): Backend & { data: MemoryData } {
   const data: MemoryData = new Map(
-    STORES_V1.map((name) => [name, new Map<string, StoredRecord>()]),
+    STORES_V6.map((name) => [name, new Map<string, StoredRecord>()]),
   );
   let queue: Promise<unknown> = Promise.resolve();
 

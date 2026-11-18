@@ -7,11 +7,13 @@ import {
   formatDollars,
   fundingChoices,
   myStats,
+  myTaskList,
   raiseSourceIds,
   raiseStatus,
   sourceMyStats,
   rateStepReminder,
   uninvoicedEntries,
+  taskProgressSummary,
   uninvoicedSummary,
   type CertificationStat,
   type FundingSourceConfig,
@@ -20,7 +22,7 @@ import {
   type Role,
 } from '../../core';
 import { FUNDING_SOURCES } from '../../funding-sources';
-import { COUNT_DEFS, ROLES } from '../../roles';
+import { COUNT_DEFS, officeTasksFor, ROLES } from '../../roles';
 import { phoneNow } from '../../storage';
 import {
   EntryRow,
@@ -319,6 +321,11 @@ export function Home() {
     fundingChoices(role, FUNDING_SOURCES, localDateTime(phoneNow()).date).length === 0;
   // Roles plan R7: a role retired with no replacement takes no new time at all.
   const newTime = !roleInactive;
+  const officeTasks = role ? officeTasksFor(role.id) : null;
+  const myTasks =
+    role && officeTasks
+      ? taskProgressSummary(myTaskList(officeTasks, data.task_progress, role.id))
+      : null;
 
   return (
     <Page
@@ -409,6 +416,24 @@ export function Home() {
         <RoleMyStats role={role} />
       ) : (
         <MyStats source={selectedSource} rateCents={rate} waitingQuarters={summary.quarters} />
+      )}
+      {/* Decision 0041: My Tasks, for roles the office gave tasks to. */}
+      {myTasks && (
+        <button
+          type="button"
+          class="card nav-row home-tasks"
+          onClick={() => {
+            actions.dismissToast();
+            actions.push('tasks');
+          }}
+        >
+          <span>My Tasks</span>
+          <span class="nav-row-detail">
+            {myTasks.total > 0
+              ? `${String(myTasks.done)} of ${String(myTasks.total)} done`
+              : 'None yet'}
+          </span>
+        </button>
       )}
       {/* Decision 0019: Past invoices lives on Home, under the list. */}
       <button

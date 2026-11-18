@@ -116,3 +116,56 @@ describe('picture of page 1 (decision 0018)', () => {
     expect(squares[1]?.slice(2)).toEqual([right - 4, Math.round(650 * s) + 4, 4, 4]);
   });
 });
+
+describe('progress pictures (decision 0041)', () => {
+  it('paint at the scale given, with picture-only colors', () => {
+    const { ctx, calls } = fakeContext();
+    paintPage(
+      ctx,
+      {
+        width: 360,
+        height: 640,
+        shapes: [
+          {
+            kind: 'rect',
+            x: 10,
+            y: 20,
+            w: 30,
+            h: 13,
+            width: 0.75,
+            gray: 0.5,
+            fill: 0.9,
+            fillColor: '#fdecea',
+            stroke: false,
+          },
+          {
+            kind: 'text',
+            x: 15,
+            y: 30,
+            text: 'High priority',
+            font: 'bold',
+            size: 8,
+            gray: 0.1,
+            width: 50,
+            color: '#7a1a10',
+          },
+        ],
+      },
+      3,
+    );
+    expect(pictureSize({ width: 360, height: 640 }, 3)).toEqual({ width: 1080, height: 1920 });
+    expect(calls).toEqual([
+      ['fillRect', '#ffffff', 0, 0, 1080, 1920],
+      ['fillRect', '#fdecea', 30, 60, 90, 39],
+      [
+        'fillText',
+        'bold 24px Helvetica, Arial, sans-serif',
+        '#7a1a10',
+        'High priority',
+        45,
+        90,
+        150,
+      ],
+    ]);
+  });
+});

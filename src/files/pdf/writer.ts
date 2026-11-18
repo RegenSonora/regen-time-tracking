@@ -37,6 +37,8 @@ export type Shape =
       size: number;
       gray: Gray;
       width: number;
+      /** Pictures only (decision 0041): a CSS color that replaces gray. The PDF never sets it. */
+      color?: string;
     }
   | {
       kind: 'line';
@@ -58,6 +60,8 @@ export type Shape =
       gray: Gray;
       dash?: number;
       fill?: Gray;
+      /** Pictures only (decision 0041): a CSS color that replaces the gray fill. */
+      fillColor?: string;
       stroke: boolean;
     }
   | {

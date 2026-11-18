@@ -57,3 +57,12 @@ export {
   workHoursPageShapes,
   type ReportDetails,
 } from './report/work-hours';
+export {
+  PRIORITY_COLORS,
+  PROGRESS_PAGE,
+  PROGRESS_SCALE,
+  progressPages,
+  progressPngNames,
+  type ProgressDetails,
+  type ProgressPage,
+} from './report/progress';

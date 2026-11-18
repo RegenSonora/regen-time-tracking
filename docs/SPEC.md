@@ -129,6 +129,7 @@ Each funding source is a JSON file in the repo, validated against a JSON Schema 
 - **Initials:** used in invoice numbers. Changing them does not affect numbering.
 - **Rate changes:** one rate per funding source. The rate in effect when an invoice is generated applies to every entry on it and is then frozen in that invoice. When the rate is edited while uninvoiced entries exist for that source, ask: "You have N entries not yet invoiced. They will be billed at the new rate." with **Create invoice first**, **Change rate now**, **Cancel**. Retroactive raises are handled by the office outside the app.
 - **NTE edits:** allowed (agreement amendments). Each invoice prints the current amount.
+- **My Tasks (decision 0041):** roles listed in `src/roles/my-tasks.json` (today R-TL01) get **My Tasks** on Home. The office's tasks show with a priority (Low, Medium, High) only the office sets, and any office notes start in the task's Notes box, where people can edit or delete them; people add, rename and delete their own tasks. Each task has a status (Not started, In progress, Blocked, Completed) and notes, saved on the phone as they change. **Share progress** shares PNG pictures (1080 × 1920) of every task; long notes continue on more pictures and are never cut off.
 
 ## 5. Logging time
 
@@ -277,7 +278,7 @@ Guardrails, written in a one-page procedure (`docs/signing-procedure.md`, CC BY 
 
 ## 9. Screens
 
-Install gate (iPhone) · Setup: details, Pick your role, Your role (review) · Home (with the role notice and the "No active funding" and "no longer active" messages) · Timer running · What did you do? (tasks and budget line) · Split your time · Counts and notes · Enter times · Invoice preview (New invoice / New timesheet) · Invoice created / Timesheet created (share) · Past invoices / Past timesheets · Settings · Rate change check · Work Hours Report · plus edit entry and "show all entries" (not drawn). See the wireframes.
+Install gate (iPhone) · Setup: details, Pick your role, Your role (review) · Home (with the role notice and the "No active funding" and "no longer active" messages) · Timer running · What did you do? (tasks and budget line) · Split your time · Counts and notes · Enter times · Invoice preview (New invoice / New timesheet) · Invoice created / Timesheet created (share) · Past invoices / Past timesheets · Settings · Rate change check · Work Hours Report · My Tasks (decision 0041) · plus edit entry and "show all entries" (not drawn). See the wireframes.
 
 ## 10. Field usability and quality
 

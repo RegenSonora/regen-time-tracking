@@ -15,6 +15,7 @@ import type {
   Break,
 } from '../core/types';
 import type { RunningTimer } from '../core/timer';
+import type { TaskProgress } from '../core/my-tasks';
 
 /** What the app remembers between screens (SPEC §5). */
 export interface AppState {
@@ -87,6 +88,7 @@ export interface SourcePicks {
 export const RECENT_TASKS_MAX = 10;
 
 export type SaveEntryResult = { ok: true } | { ok: false; reason: 'locked' | 'invoice_id_set' };
+export type DeleteOwnTaskResult = { ok: true } | { ok: false; reason: 'not_found' | 'office' };
 export type DeleteEntryResult = { ok: true } | { ok: false; reason: 'locked' | 'not_found' };
 export type SetNextNumberResult =
   { ok: true; counter: InvoiceCounter } | { ok: false; reason: 'locked' | 'invalid' };
@@ -142,6 +144,12 @@ export interface Storage {
   getAppState(): Promise<AppState>;
   saveAppState(state: AppState): Promise<void>;
 
+  /** Status and notes for My Tasks, every role's (decision 0041). */
+  listTaskProgress(): Promise<TaskProgress[]>;
+  saveTaskProgress(progress: TaskProgress): Promise<void>;
+  /** Only tasks the person added can be deleted; an office task's progress is kept. */
+  deleteOwnTask(id: string): Promise<DeleteOwnTaskResult>;
+
   /** Lock the source's uninvoiced entries, save the invoice and advance the counter, all or nothing. */
   generateInvoice(request: GenerateInvoiceRequest): Promise<GenerateInvoiceResult>;
 
@@ -167,7 +175,14 @@ export interface Backend {
 export type BeforeWrite = (store: StoreName, abort: () => void) => void;
 
 export type StoreName =
-  'meta' | 'profile' | 'source_settings' | 'entries' | 'invoices' | 'counter' | 'app_state';
+  | 'meta'
+  | 'profile'
+  | 'source_settings'
+  | 'entries'
+  | 'invoices'
+  | 'counter'
+  | 'app_state'
+  | 'task_progress';
 
 /** Every stored record is keyed by `id`. */
 export interface StoredRecord {

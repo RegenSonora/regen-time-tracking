@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://regensonora.github.io/regen-time-tracking/schemas/my-tasks.schema.json",
+  "title": "My Tasks",
+  "description": "The office's tasks on the My Tasks screen, per role (decision 0041). A role listed here gets My Tasks; its people can add their own tasks too. Format version 1.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format_version", "version", "roles"],
+  "properties": {
+    "format_version": {
+      "description": "Version of this file format.",
+      "const": 1
+    },
+    "version": {
+      "description": "Release number of this file's content. Bump it when tasks change.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "roles": {
+      "description": "Role id (from roles.json) → the office's tasks for that role, in display order. An empty list still turns on My Tasks.",
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/slug" },
+      "additionalProperties": {
+        "type": "array",
+        "items": { "$ref": "#/$defs/task" }
+      }
+    }
+  },
+  "$defs": {
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "priority"],
+      "properties": {
+        "priority": {
+          "description": "Set by the office; people can't change it. Shown in words with a color: high red, medium amber, low green.",
+          "enum": ["low", "medium", "high"]
+        },
+        "id": {
+          "description": "Stable id the phone keeps progress under. Never changes and is never reused.",
+          "$ref": "#/$defs/slug"
+        },
+        "title": {
+          "description": "Short name shown on the screen and the picture. Can be changed; the id keeps the progress.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "pattern": "^\\S(.*\\S)?$"
+        },
+        "notes": {
+          "description": "Optional starting notes. They fill the task's Notes box on the phone, which the person can edit or delete.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000,
+          "pattern": "^\\S([\\s\\S]*\\S)?$"
+        },
+        "retired": {
+          "description": "Taken off the screen. What people typed for it stays on their phones.",
+          "const": true
+        }
+      }
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "maxLength": 64
+    }
+  }
+}
