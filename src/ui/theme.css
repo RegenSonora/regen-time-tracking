@@ -1468,6 +1468,24 @@ p {
   padding: 10px 16px;
 }
 
+/* Bold headings over the role groups (decision 0044). */
+.role-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.role-group + .role-group {
+  margin-top: 14px;
+}
+
+.role-group-name {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--fg);
+}
+
 .review {
   display: flex;
   flex-direction: column;

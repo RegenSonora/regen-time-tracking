@@ -40,6 +40,7 @@ interface Count {
   retired?: boolean;
 }
 interface RolesFile {
+  role_groups?: { name: string; role_ids: string[] }[];
   format_version: number;
   version: number;
   counts: Count[];
@@ -363,6 +364,14 @@ describe('roles file (roles plan Part 2, decisions 0027, 0029)', () => {
       ['food_gleaned', 'lb'],
       ['food_processed', 'lb'],
       ['soil_harvested', 'gal'],
+    ]);
+  });
+
+  it('groups the roles for Pick your role (decision 0044)', () => {
+    expect(rolesFile.role_groups).toEqual([
+      { name: 'Community Care Team', role_ids: ['chw-tc01', 'chw-te01', 'chw-ce01'] },
+      { name: 'Community Resilience', role_ids: ['r-tl01', 'r-c01'] },
+      { name: 'Other Roles', role_ids: ['r-cc01', 'r-gc01'] },
     ]);
   });
 
@@ -866,6 +875,31 @@ describe('build checks against the source files (roles plan R1)', () => {
       }),
     ).toEqual([]);
   });
+  it('puts every active role in exactly one group, and only known roles (decision 0044)', () => {
+    const groups = (f: RolesFile) => f.role_groups ?? [];
+    expect(
+      broken((f) => {
+        const other = groups(f).find((g) => g.name === 'Other Roles');
+        if (other) other.role_ids = ['r-cc01'];
+      }),
+    ).toContain('role R-GC01: not in any role group');
+    expect(
+      broken((f) => {
+        groups(f)[0]?.role_ids.push('r-gc01');
+      }),
+    ).toContain('role R-GC01: in more than one role group');
+    expect(
+      broken((f) => {
+        groups(f)[0]?.role_ids.push('r-zz99');
+      }),
+    ).toContain('role group "Community Care Team": role "r-zz99" doesn\'t exist');
+    expect(
+      broken((f) => {
+        groups(f).push({ name: 'Community Care Team', role_ids: [] });
+      }),
+    ).toContain('role group "Community Care Team": name is used more than once');
+  });
+
   it('allows service fees on contractor roles only (decision 0043)', () => {
     const cc = (f: RolesFile) => byId(f, 'r-cc01');
     const at =

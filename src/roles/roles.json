@@ -1,6 +1,20 @@
 {
   "format_version": 1,
-  "version": 5,
+  "version": 6,
+  "role_groups": [
+    {
+      "name": "Community Care Team",
+      "role_ids": ["chw-tc01", "chw-te01", "chw-ce01"]
+    },
+    {
+      "name": "Community Resilience",
+      "role_ids": ["r-tl01", "r-c01"]
+    },
+    {
+      "name": "Other Roles",
+      "role_ids": ["r-cc01", "r-gc01"]
+    }
+  ],
   "counts": [
     {
       "id": "contacts",

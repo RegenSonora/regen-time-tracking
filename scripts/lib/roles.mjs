@@ -16,7 +16,8 @@ import { readJson } from './json.mjs';
  *   certification_step?: object, employee_certification_text?: string,
  *   retired?: true, replaced_by?: string, funding: Funding[] }} Role
  * @typedef {{ id: string, label: string, step?: string, retired?: true }} Count
- * @typedef {{ counts: Count[], roles: Role[] }} RolesFile
+ * @typedef {{ name: string, role_ids: string[] }} RoleGroup
+ * @typedef {{ counts: Count[], roles: Role[], role_groups?: RoleGroup[] }} RolesFile
  * @typedef {{ id: string, code: string, has_nte: boolean, period_start: string | null,
  *   period_end: string | null, employee_certification_text?: string,
  *   tasks: { id: string }[], budget_lines: { id: string }[] }} Source
@@ -111,6 +112,8 @@ export function checkRolesData(data, sourceFiles, schema) {
     codes.add(role.code);
   }
 
+  problems.push(...roleGroupProblems(file, roles));
+
   for (const role of file.roles) {
     const at = `role ${role.code}`;
     if (role.certification_step && !role.chw) {
@@ -195,6 +198,38 @@ export function checkRolesData(data, sourceFiles, schema) {
         }
       }
     }
+  }
+  return problems;
+}
+
+/**
+ * Role groups (decision 0044): names unique, roles known, and every active role in exactly one
+ * group. No groups at all is fine: roles then show in file order.
+ * @param {RolesFile} file
+ * @param {Map<string, Role>} roles
+ * @returns {string[]}
+ */
+function roleGroupProblems(file, roles) {
+  if (!file.role_groups) return [];
+  /** @type {string[]} */
+  const problems = [];
+  const names = new Set();
+  /** @type {Map<string, number>} */
+  const seen = new Map();
+  for (const group of file.role_groups) {
+    const at = `role group "${group.name}"`;
+    if (names.has(group.name)) problems.push(`${at}: name is used more than once`);
+    names.add(group.name);
+    for (const id of group.role_ids) {
+      if (!roles.has(id)) problems.push(`${at}: role "${id}" doesn't exist`);
+      seen.set(id, (seen.get(id) ?? 0) + 1);
+    }
+  }
+  for (const role of file.roles) {
+    if (role.retired) continue;
+    const count = seen.get(role.id) ?? 0;
+    if (count === 0) problems.push(`role ${role.code}: not in any role group`);
+    if (count > 1) problems.push(`role ${role.code}: in more than one role group`);
   }
   return problems;
 }

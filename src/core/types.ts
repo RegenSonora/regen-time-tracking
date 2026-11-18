@@ -64,9 +64,17 @@ export interface BudgetLine {
 export interface RolesFile {
   format_version: 1;
   version: number;
+  /** Headings on Pick your role, each with its roles in order (decision 0044). */
+  role_groups?: RoleGroup[];
   /** Every count any task shows, in display and entry log column order. */
   counts: CountDef[];
   roles: Role[];
+}
+
+/** A heading on Pick your role and the roles under it (decision 0044). */
+export interface RoleGroup {
+  name: string;
+  role_ids: string[];
 }
 
 /** One count in the shared list (decision 0029). */

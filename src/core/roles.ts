@@ -12,6 +12,7 @@ import type {
   OtherCount,
   Role,
   RoleFunding,
+  RolesFile,
   SourceSettings,
   Task,
 } from './types';
@@ -19,6 +20,32 @@ import type {
 /** The roles setup offers: active ones, in file order. */
 export function roleChoices(roles: readonly Role[]): Role[] {
   return roles.filter((r) => !r.retired);
+}
+
+/**
+ * The roles setup offers, under the office's headings in their order (decision 0044). Retired
+ * roles and empty groups are left out. With no groups, one unnamed group in file order; an active
+ * role missing from every group (the build forbids it) comes last, under no heading.
+ */
+export function roleGroups(
+  file: Pick<RolesFile, 'roles' | 'role_groups'>,
+): { name: string | null; roles: Role[] }[] {
+  const active = roleChoices(file.roles);
+  const byId = new Map(active.map((r) => [r.id, r]));
+  const placed = new Set<string>();
+  const groups: { name: string | null; roles: Role[] }[] = [];
+  for (const group of file.role_groups ?? []) {
+    const roles = group.role_ids.flatMap((id) => {
+      const role = byId.get(id);
+      if (!role || placed.has(id)) return [];
+      placed.add(id);
+      return [role];
+    });
+    if (roles.length > 0) groups.push({ name: group.name, roles });
+  }
+  const rest = active.filter((r) => !placed.has(r.id));
+  if (rest.length > 0) groups.push({ name: null, roles: rest });
+  return groups;
 }
 
 /**

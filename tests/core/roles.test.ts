@@ -11,6 +11,7 @@ import {
   prefillRate,
   resolveRole,
   roleChoices,
+  roleGroups,
   roleDefaultLine,
   roleUpdate,
   taskChoices,
@@ -47,6 +48,43 @@ describe('roleChoices', () => {
   it('leaves out retired roles', () => {
     const retired: Role = { ...lead, id: 'r-tl00', code: 'R-TL00', retired: true };
     expect(roleChoices([retired, ...file.roles]).map((r) => r.id)).not.toContain('r-tl00');
+  });
+});
+
+describe('roleGroups (decision 0044)', () => {
+  it('groups the shipped roles under the office headings, in their order', () => {
+    expect(roleGroups(file).map((g) => [g.name, g.roles.map((r) => r.code)])).toEqual([
+      ['Community Care Team', ['CHW-TC01', 'CHW-TE01', 'CHW-CE01']],
+      ['Community Resilience', ['R-TL01', 'R-C01']],
+      ['Other Roles', ['R-CC01', 'R-GC01']],
+    ]);
+  });
+
+  it('leaves out retired roles and empty groups', () => {
+    const groups = roleGroups({
+      roles: file.roles.map((r) =>
+        r.id === 'r-tl01' || r.id === 'r-c01' ? { ...r, retired: true } : r,
+      ),
+      role_groups: file.role_groups ?? [],
+    });
+    expect(groups.map((g) => g.name)).toEqual(['Community Care Team', 'Other Roles']);
+  });
+
+  it('is one unnamed group in file order when the file has no groups', () => {
+    expect(roleGroups({ roles: file.roles })).toEqual([
+      { name: null, roles: roleChoices(file.roles) },
+    ]);
+  });
+
+  it('puts an active role missing from every group last, under no heading', () => {
+    const groups = roleGroups({
+      roles: file.roles,
+      role_groups: [{ name: 'Community Care Team', role_ids: ['chw-tc01'] }],
+    });
+    expect(groups.map((g) => [g.name, g.roles.length])).toEqual([
+      ['Community Care Team', 1],
+      [null, file.roles.length - 1],
+    ]);
   });
 });
 

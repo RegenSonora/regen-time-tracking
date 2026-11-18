@@ -16,6 +16,22 @@
       "type": "integer",
       "minimum": 1
     },
+    "role_groups": {
+      "description": "Headings on Pick your role, in order, each listing its roles in order. Every active role is in exactly one group (decision 0044). Without this list, roles show in file order with no headings.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "role_ids"],
+        "properties": {
+          "name": { "$ref": "#/$defs/text" },
+          "role_ids": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/slug" }
+          }
+        }
+      }
+    },
     "counts": {
       "description": "Every count any task shows, in display and entry log column order. Add new counts at the end; never delete one, mark it retired (decision 0029).",
       "type": "array",

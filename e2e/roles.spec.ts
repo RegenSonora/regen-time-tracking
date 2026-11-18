@@ -47,6 +47,18 @@ test('setup picks a role, reviews it with the rate prefilled, and can pick again
   for (const code of ['CHW-TC01', 'CHW-TE01', 'R-TL01', 'R-GC01', 'R-C01', 'R-CC01']) {
     await expect(page.getByRole('button', { name: new RegExp(`^${code}`) })).toBeVisible();
   }
+  // Bold headings over the roles, in the office's order (decision 0044).
+  await expect(page.getByRole('heading', { level: 2 })).toHaveText([
+    'Community Care Team',
+    'Community Resilience',
+    'Other Roles',
+  ]);
+  const group = (name: string) => page.getByRole('region', { name });
+  const codesIn = async (name: string) =>
+    (await group(name).locator('.check-name').allTextContents()).map((t) => t.trim());
+  expect(await codesIn('Community Care Team')).toEqual(['CHW-TC01', 'CHW-TE01', 'CHW-CE01']);
+  expect(await codesIn('Community Resilience')).toEqual(['R-TL01', 'R-C01']);
+  expect(await codesIn('Other Roles')).toEqual(['R-CC01', 'R-GC01']);
 
   await page.getByRole('button', { name: /^CHW-TC01/ }).click();
   await expect(heading(page, 'Your role')).toBeVisible();
