@@ -6,6 +6,7 @@
 - **Roles:** each lists its funding sources, the budget lines it bills under each, the tasks under each line, and the counts each task shows (`count_ids`, in the shared list's order). Rates, NTE and the raise sit on the funding entry; certification on the role. A role never names a person.
 - **Quarter-step counts and flat rates (decision 0039):** a count with `"step": "quarter"` steps by 0.25 and is stored in quarter-units. A role's task with `flat_rate` is paid by that count × `cents_per_unit`; its hours are tracked, not billed. Contractors only.
 - **Service fees (decision 0043):** a role's task with `entry_fee` bills up to `max_cents` per entry; the person can lower it on the entry. Its hours are tracked, not billed. Contractors only.
+- **Trip fees (decision 0045):** a role's task with `trip_fee` bills each entry as one trip, by the tier its miles (`miles_count_id`) fall in, plus any `gas_cents` on its own row. Tiers start at 1 mile with no gaps; only the last has no `to_miles`. Its hours are tracked, not billed. Contractors only, never with `flat_rate` or `entry_fee` on the same task.
 - **Role groups (decision 0044):** `role_groups` sets the bold headings on Pick your role and the order of the roles under each. Every active role is in exactly one group.
 - Ids never change once released. Bump `version` when roles or counts change.
 

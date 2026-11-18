@@ -12,7 +12,7 @@ The invoice files (SPEC §7), hand-written. Pure like `src/core`: an invoice in,
 | `csv/csv.ts`            | BOM, RFC 4180 quoting, CRLF, formula-injection guard                                                  | §7                       |
 | `csv/timesheet-csv.ts`  | Timesheet CSV: header block, one block per PDF timesheet page                                         | §7, decision 0001        |
 | `csv/entries-csv.ts`    | Entry log CSV: fixed columns plus one per count in the roles file, one row per task share             | §7, decisions 0001, 0024 |
-| `qr/payload.ts`         | QR payload v1, versioned and pinned by a golden test                                                  | §7, decision 0011        |
+| `qr/payload.ts`         | QR payloads v1 to v4, versioned; v1 pinned by a golden test                                           | §7, decisions 0011, 0045 |
 | `qr/matrix.ts`          | QR modules via `qrcode-generator` (MIT), error correction M                                           | §7                       |
 | `pdf/writer.ts`         | Minimal PDF 1.4 writer: Helvetica in WinAnsi, lines, rectangles, squares; also records them as shapes | §7, decision 0018        |
 | `pdf/fonts.ts`          | AFM widths, WinAnsi mapping (`?` for what Helvetica can't show), wrapping                             | §7                       |
