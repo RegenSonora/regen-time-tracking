@@ -9,8 +9,9 @@ import type { StoreName, StoredRecord, Tx } from './types';
  * v4: profiles and entries gain `role_id`, counts are kept by count id, invoices gain `kind`,
  * `role` and `count_defs` (roles plan R3).
  * v5: entries and the running timer get `breaks`; the timer gets `paused_at` (decision 0037).
+ * v6: a `task_progress` store for My Tasks status and notes (decision 0041).
  */
-export const DATA_VERSION = 5;
+export const DATA_VERSION = 6;
 
 /** The stores of v1. Later versions keep the same stores. */
 export const STORES_V1: readonly StoreName[] = [
@@ -22,6 +23,9 @@ export const STORES_V1: readonly StoreName[] = [
   'counter',
   'app_state',
 ];
+
+/** v6 adds `task_progress` (decision 0041). */
+export const STORES_V6: readonly StoreName[] = [...STORES_V1, 'task_progress'];
 
 /** The one record in `meta`: which data format version the stores hold. */
 export interface MetaRecord extends StoredRecord {

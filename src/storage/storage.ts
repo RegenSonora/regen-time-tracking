@@ -1,6 +1,7 @@
 // Storage rules shared by both adapters: locked entries, the counter, singletons (CLAUDE.md rules 3, 5).
 import { newCounter, setNextNumber } from '../core/invoice-number';
 import { toIsoWithOffset } from '../core/time';
+import type { TaskProgress } from '../core/my-tasks';
 import type { Entry, Invoice, InvoiceCounter, Profile, SourceSettings } from '../core/types';
 import { generateInvoice, type GenerateHooks } from './generate';
 import { readSingleton, readSourceSettings, unwrap, wrap, type Wrapped } from './records';
@@ -170,6 +171,25 @@ export function createStorage(backend: Backend, options: StorageOptions = {}): S
     },
 
     saveAppState: (state) => saveSingleton('app_state', state),
+
+    async listTaskProgress() {
+      const all = await backend.read(['task_progress'], (tx) => tx.getAll('task_progress'));
+      return all as TaskProgress[];
+    },
+
+    async saveTaskProgress(progress) {
+      await backend.write(['task_progress'], (tx) => tx.put('task_progress', progress));
+    },
+
+    deleteOwnTask(id) {
+      return backend.write(['task_progress'], async (tx) => {
+        const existing = (await tx.get('task_progress', id)) as TaskProgress | undefined;
+        if (!existing) return { ok: false, reason: 'not_found' } as const;
+        if (existing.source.kind !== 'own') return { ok: false, reason: 'office' } as const;
+        await tx.delete('task_progress', id);
+        return { ok: true } as const;
+      });
+    },
 
     generateInvoice: (request) =>
       generateInvoice(backend, request, { now, newId, hooks: options.generateHooks ?? {} }),

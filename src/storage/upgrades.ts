@@ -2,7 +2,7 @@
 // version's stores to the next. The IndexedDB adapter runs them inside the upgrade
 // transaction, so a step that throws leaves the old data and version untouched.
 import { checkEntryTimes } from '../core/time';
-import { DATA_VERSION, STORES_V1 } from './records';
+import { DATA_VERSION, STORES_V1, STORES_V6 } from './records';
 import type { StoredRecord } from './types';
 
 /** Every store's records, by store name. Old versions may have stores v1 doesn't. */
@@ -181,10 +181,13 @@ export const v4ToV5: UpgradeStep = (snapshot) => ({
   }),
 });
 
+/** v5 → v6 (decision 0041): an empty `task_progress` store; nothing else changes. */
+export const v5ToV6: UpgradeStep = (snapshot) => ({ ...snapshot, task_progress: [] });
+
 export const SCHEMA: Schema = {
   version: DATA_VERSION,
-  layouts: { 1: STORES_V1, 2: STORES_V1, 3: STORES_V1, 4: STORES_V1, 5: STORES_V1 },
-  steps: { 1: v1ToV2, 2: v2ToV3, 3: v3ToV4, 4: v4ToV5 },
+  layouts: { 1: STORES_V1, 2: STORES_V1, 3: STORES_V1, 4: STORES_V1, 5: STORES_V1, 6: STORES_V6 },
+  steps: { 1: v1ToV2, 2: v2ToV3, 3: v3ToV4, 4: v4ToV5, 5: v5ToV6 },
 };
 
 /** Run every step from `from` up to `to`. Throws if one is missing or fails. */
