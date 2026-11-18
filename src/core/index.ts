@@ -5,6 +5,7 @@ export * from './fingerprint';
 export * from './invoice';
 export * from './invoice-number';
 export * from './money';
+export * from './my-tasks';
 export * from './overlap';
 export * from './picks';
 export * from './rate-change';
