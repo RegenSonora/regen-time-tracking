@@ -608,8 +608,11 @@ test('a Community Care Contractor: trips paid by distance with gas, Domestic sup
     await expect(page.getByText('One entry is one trip.', { exact: false })).toBeVisible();
     await page.getByRole('button', { name: 'Save entry' }).click();
     await expect(page.getByText('Enter the miles for this trip.')).toBeVisible();
-    const more = page.getByRole('button', { name: 'More miles driven' });
-    for (let i = 0; i < miles; i++) await more.click();
+    // Miles are typed in (decision 0045); + and − still nudge the number.
+    const box = page.getByRole('textbox', { name: 'Miles driven' });
+    await box.fill(String(miles - 1));
+    await page.getByRole('button', { name: 'More miles driven' }).click();
+    await expect(box).toHaveValue(String(miles));
     await expect(page.getByText(note)).toBeVisible();
     await page.getByRole('button', { name: 'Save entry' }).click();
     await expect(heading(page, 'Regen Time Tracking')).toBeVisible();

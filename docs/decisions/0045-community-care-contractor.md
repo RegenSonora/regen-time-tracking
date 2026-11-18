@@ -42,6 +42,7 @@
 ## Decided during the build
 
 - **Miles are required.** With Transportation service checked, Save needs Miles driven of at least 1: "Enter the miles for this trip." Miles are whole numbers, as every whole-step count is.
+- **Miles are typed in.** For the trip's miles count, a number box sits between − and + (phone number keypad, up to 5 digits), so a 100-mile trip isn't 100 taps. Other counts keep − and +.
 - **A trip that shares an entry** with Domestic support or Other (decision 0024) is still one trip. Only the Transportation service share of the hours goes unbilled.
 - **Worked out when the invoice is made**, from the entry's Miles driven and the role's tiers, like flat rates. Nothing new is stored on entries on the phone, so there is no data upgrade. The invoice freezes each trip entry's `trip` (task, fee, gas) along with the rows.
 - **Fingerprint:** canonical form v7 adds each entry's trip, the trip rows and the gas rows. v1–v6 are unchanged and older invoices keep verifying.

@@ -5,6 +5,7 @@ import {
   entryFees,
   entryTrip,
   tierLabel,
+  tripMilesCountIds,
   feeFromText,
   formatCentsPlain,
   formatDollars,
@@ -368,6 +369,16 @@ export function CountsAndNotes({
         def: { ...(c.unit !== undefined && { unit: c.unit }), ...(c.step && { step: c.step }) },
       }))
     : COUNT_FIELDS.map((f) => ({ ...f, def: {} }));
+  // Trip miles set the pay, so they get a box to type in (decision 0045).
+  const typedIds =
+    role && draft.budget_line_id !== null
+      ? tripMilesCountIds(
+          role,
+          draft.source_id,
+          draft.budget_line_id,
+          draft.tasks.map((s) => s.task_id),
+        )
+      : new Set<string>();
   const repeats = (label: string) => (shown ? duplicateCountLabel(label, shown) : null);
   return (
     <>
@@ -388,6 +399,7 @@ export function CountsAndNotes({
               label={f.label}
               noun={f.noun}
               show={(v) => countText(v, f.def)}
+              typed={typedIds.has(f.key)}
               value={countValue(counts, f.key)}
               onChange={(v) => {
                 set({ ...counts, values: { ...counts.values, [f.key]: v } });

@@ -15,6 +15,7 @@ import {
   tierLabel,
   tripFeeNotes,
   tripFees,
+  tripMilesCountIds,
   tripTier,
   unbilledTaskIds,
 } from '../../src/core/roles';
@@ -119,6 +120,17 @@ describe('trip fee helpers (decision 0045)', () => {
     expect([...(fees.get(LINE)?.keys() ?? [])]).toEqual([DRIVE]);
     expect(tripFees(catering, regen.id).size).toBe(0);
     expect(tripFees(null, regen.id).size).toBe(0);
+  });
+
+  it('names the miles count to type in, only with the trip task checked', () => {
+    expect([...tripMilesCountIds(ccc, regen.id, LINE, [DRIVE])]).toEqual(['miles_driven']);
+    expect([...tripMilesCountIds(ccc, regen.id, LINE, ['domestic-support', DRIVE])]).toEqual([
+      'miles_driven',
+    ]);
+    expect(tripMilesCountIds(ccc, regen.id, LINE, ['domestic-support']).size).toBe(0);
+    expect(tripMilesCountIds(ccc, regen.id, 'other-contractors', ['other']).size).toBe(0);
+    expect(tripMilesCountIds(catering, regen.id, LINE, [DRIVE]).size).toBe(0);
+    expect(tripMilesCountIds(null, regen.id, LINE, [DRIVE]).size).toBe(0);
   });
 
   it('picks the tier at every boundary', () => {

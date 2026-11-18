@@ -411,6 +411,25 @@ export function tripFees(
   return out;
 }
 
+/**
+ * The counts that set a trip's fee for the checked tasks, so the entry screen can offer a box
+ * to type the miles in instead of tapping + once per mile (decision 0045).
+ */
+export function tripMilesCountIds(
+  role: Pick<Role, 'funding'> | null | undefined,
+  sourceId: string,
+  lineId: string,
+  taskIds: readonly string[],
+): Set<string> {
+  const fees = tripFees(role, sourceId).get(lineId);
+  const out = new Set<string>();
+  for (const id of taskIds) {
+    const trip = fees?.get(id);
+    if (trip) out.add(trip.miles_count_id);
+  }
+  return out;
+}
+
 /** The tier a trip of whole miles falls in; null for no miles or miles that aren't whole. */
 export function tripTier(trip: TripFee, miles: number): TripTier | null {
   if (!Number.isSafeInteger(miles) || miles < 1) return null;
