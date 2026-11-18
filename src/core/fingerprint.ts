@@ -7,8 +7,9 @@ import type { Counts, Invoice, InvoiceEntry, InvoiceTaskShare } from './types';
  * The version new invoices get. v2: several tasks per entry (decision 0024). v3: kind, role,
  * certification text and counts by id (roles plan R5, decisions 0029, 0031). v4: breaks
  * (decision 0037). v5: flat-rate rows, unbilled hours and each share's billed flag (0039).
+ * v6: each entry's service fees and the fee rows (decision 0043).
  */
-export const CANONICAL_VERSION = 5;
+export const CANONICAL_VERSION = 6;
 
 /** The fields an invoice is fingerprinted over: header, entries, lines, totals and rate. */
 export type FingerprintedInvoice = Omit<Invoice, 'fingerprint'>;
@@ -150,7 +151,7 @@ function countsFormV3(counts: Counts) {
  * Forms v3, v4 and v5 share this layout. v4 adds breaks; v5 adds each share's billed flag, the
  * flat-rate rows and the unbilled hours. Earlier forms' output must never change.
  */
-function formWithRole(invoice: FingerprintedInvoice, v: 3 | 4 | 5): string {
+function formWithRole(invoice: FingerprintedInvoice, v: 3 | 4 | 5 | 6): string {
   const role = invoice.role;
   return canonicalJson({
     v,
@@ -200,6 +201,7 @@ function formWithRole(invoice: FingerprintedInvoice, v: 3 | 4 | 5): string {
       budget_line_id: e.budget_line_id,
       budget_line_name: e.budget_line_name,
       counts: countsFormV3(e.counts),
+      ...(v >= 6 && { fees: { ...(e.fees ?? {}) } }),
       notes: e.notes,
     })),
     lines: invoice.lines.map((l) => ({
@@ -222,6 +224,17 @@ function formWithRole(invoice: FingerprintedInvoice, v: 3 | 4 | 5): string {
         amount_cents: l.amount_cents,
       })),
       unbilled_quarters: invoice.unbilled_quarters ?? 0,
+    }),
+    ...(v >= 6 && {
+      fee_lines: (invoice.fee_lines ?? []).map((l) => ({
+        budget_line_id: l.budget_line_id,
+        budget_line_name: l.budget_line_name,
+        task_id: l.task_id,
+        task_name: l.task_name,
+        entries: l.entries,
+        max_cents: l.max_cents,
+        amount_cents: l.amount_cents,
+      })),
     }),
     total_quarters: invoice.total_quarters,
     total_cents: invoice.total_cents,
@@ -249,12 +262,18 @@ export function canonicalFormV5(invoice: FingerprintedInvoice): string {
   return formWithRole(invoice, 5);
 }
 
+/** Canonical form v6: as v5, plus each entry's service fees and the fee rows (decision 0043). */
+export function canonicalFormV6(invoice: FingerprintedInvoice): string {
+  return formWithRole(invoice, 6);
+}
+
 const FORMS: Record<number, (invoice: FingerprintedInvoice) => string> = {
   1: canonicalFormV1,
   2: canonicalFormV2,
   3: canonicalFormV3,
   4: canonicalFormV4,
   5: canonicalFormV5,
+  6: canonicalFormV6,
 };
 
 /** The canonical string for the invoice's own canonical version. */

@@ -2,8 +2,8 @@
 import { quarterUnitsText, sumCounts } from './counts';
 import { CANONICAL_VERSION, fingerprintOf, type FingerprintedInvoice } from './fingerprint';
 import { formatInvoiceNumber, normalizeInitials, takeNumber } from './invoice-number';
-import { flatAmountCents, formatQuarters, lineAmountCents, sumCents } from './money';
-import { flatRates } from './roles';
+import { flatAmountCents, formatDollars, formatQuarters, lineAmountCents, sumCents } from './money';
+import { entryFees, flatRates } from './roles';
 import { sharesMatch } from './task-split';
 import { checkEntryTimes, entryDateOf, parseIso } from './time';
 import type {
@@ -13,6 +13,7 @@ import type {
   Invoice,
   InvoiceCounter,
   InvoiceEntry,
+  InvoiceFeeLine,
   InvoiceFlatLine,
   InvoiceLine,
   NteStatus,
@@ -112,9 +113,12 @@ export function buildInvoiceDraft(input: InvoiceInput): InvoiceDraftResult {
   );
   if (billed.length === 0) return { ok: false, reason: 'no_entries' };
 
-  // Flat-rate tasks: hours tracked, not billed; the count is billed instead (decision 0039).
+  // Flat-rate and service-fee tasks: hours tracked, not billed; the count or the fee is billed
+  // instead (decisions 0039, 0043).
   const flat = flatRates(input.role, source.id);
-  const isFlat = (lineId: string, taskId: string) => flat.get(lineId)?.has(taskId) === true;
+  const fees = entryFees(input.role, source.id);
+  const isUnbilled = (lineId: string, taskId: string) =>
+    flat.get(lineId)?.has(taskId) === true || fees.get(lineId)?.has(taskId) === true;
 
   const frozen: InvoiceEntry[] = [];
   for (const e of billed) {
@@ -142,12 +146,13 @@ export function buildInvoiceDraft(input: InvoiceInput): InvoiceDraftResult {
           task_name: task.name,
           core_competency: task.core_competency,
           quarters: s.quarters,
-          ...(isFlat(e.budget_line_id, s.task_id) && { billed: false as const }),
+          ...(isUnbilled(e.budget_line_id, s.task_id) && { billed: false as const }),
         };
       }),
       budget_line_id: line.id,
       budget_line_name: line.name,
       counts: structuredClone(e.counts),
+      fees: { ...e.fees },
       notes: e.notes,
       created_at: e.created_at,
       updated_at: e.updated_at,
@@ -164,6 +169,7 @@ export function buildInvoiceDraft(input: InvoiceInput): InvoiceDraftResult {
     frozen.filter((e) => e.budget_line_id === lineId).flatMap((e) => e.tasks);
   const invoiceLines: InvoiceLine[] = [];
   const flatLines: InvoiceFlatLine[] = [];
+  const feeLines: InvoiceFeeLine[] = [];
   let unbilledQuarters = 0;
   for (const line of source.budget_lines) {
     const shares = sharesOf(line.id);
@@ -171,6 +177,7 @@ export function buildInvoiceDraft(input: InvoiceInput): InvoiceDraftResult {
     unbilledQuarters += shares
       .filter((t) => t.billed === false)
       .reduce((n, t) => n + t.quarters, 0);
+    feeLines.push(...feeLinesOf(line, fees.get(line.id), frozen, tasks));
     flatLines.push(...flatLinesOf(line, flat.get(line.id), frozen, tasks, input.count_defs));
     if (quarters === 0) continue;
     invoiceLines.push({
@@ -184,6 +191,7 @@ export function buildInvoiceDraft(input: InvoiceInput): InvoiceDraftResult {
   const totalCents = sumCents([
     ...invoiceLines.map((l) => l.amount_cents),
     ...flatLines.map((l) => l.amount_cents),
+    ...feeLines.map((l) => l.amount_cents),
   ]);
   const totalQuarters = invoiceLines.reduce((sum, l) => sum + l.quarters, 0);
 
@@ -240,6 +248,7 @@ export function buildInvoiceDraft(input: InvoiceInput): InvoiceDraftResult {
       entries: frozen,
       lines: invoiceLines,
       flat_lines: flatLines,
+      fee_lines: feeLines,
       total_quarters: totalQuarters,
       unbilled_quarters: unbilledQuarters,
       total_cents: totalCents,
@@ -252,6 +261,36 @@ export function buildInvoiceDraft(input: InvoiceInput): InvoiceDraftResult {
       updated_at: input.now,
     },
   };
+}
+
+/**
+ * One row per service-fee task of the line with fees above $0.00 this period: the fees of the
+ * entries that checked the task, added up (decision 0043).
+ */
+function feeLinesOf(
+  line: { id: string; name: string },
+  fees: ReadonlyMap<string, { max_cents: number }> | undefined,
+  frozen: readonly InvoiceEntry[],
+  tasks: ReadonlyMap<string, { name: string }>,
+): InvoiceFeeLine[] {
+  const rows: InvoiceFeeLine[] = [];
+  for (const [taskId, fee] of fees ?? []) {
+    const amounts = frozen
+      .filter((e) => e.budget_line_id === line.id && e.tasks.some((t) => t.task_id === taskId))
+      .map((e) => e.fees?.[taskId] ?? 0)
+      .filter((cents) => cents > 0);
+    if (amounts.length === 0) continue;
+    rows.push({
+      budget_line_id: line.id,
+      budget_line_name: line.name,
+      task_id: taskId,
+      task_name: tasks.get(taskId)?.name ?? '',
+      entries: amounts.length,
+      max_cents: fee.max_cents,
+      amount_cents: sumCents(amounts),
+    });
+  }
+  return rows;
 }
 
 /**
@@ -336,28 +375,45 @@ export async function createInvoice(input: InvoiceInput): Promise<InvoiceResult>
   return { ...draft, invoice: { ...draft.invoice, fingerprint } };
 }
 
-/** One row of an invoice's lines table: hours by budget line, or a flat-rate fee (0039). */
+/** One row of an invoice's lines table: hours, a service fee (0043) or a flat-rate fee (0039). */
 export type InvoiceRow =
-  { kind: 'hours'; line: InvoiceLine } | { kind: 'flat'; flat: InvoiceFlatLine };
+  | { kind: 'hours'; line: InvoiceLine }
+  | { kind: 'fee'; fee: InvoiceFeeLine }
+  | { kind: 'flat'; flat: InvoiceFlatLine };
 
 /**
- * The lines table in order: each budget line's hourly row, then its flat-rate rows. Flat rows
- * of a line with no billed hours follow the hourly rows, in budget line order (decision 0039).
+ * The lines table in order: each budget line's hourly row, then its fee rows, then its flat-rate
+ * rows. Lines with no billed hours follow, each with its fee and flat rows (decisions 0039, 0043).
  */
-export function invoiceRows(invoice: Pick<Invoice, 'lines' | 'flat_lines'>): InvoiceRow[] {
+export function invoiceRows(
+  invoice: Pick<Invoice, 'lines' | 'flat_lines' | 'fee_lines'>,
+): InvoiceRow[] {
   const flat = invoice.flat_lines ?? [];
+  const fee = invoice.fee_lines ?? [];
+  const extras = (lineId: string): InvoiceRow[] => [
+    ...fee
+      .filter((f) => f.budget_line_id === lineId)
+      .map((f): InvoiceRow => ({ kind: 'fee', fee: f })),
+    ...flat
+      .filter((f) => f.budget_line_id === lineId)
+      .map((f): InvoiceRow => ({ kind: 'flat', flat: f })),
+  ];
   const hourly = new Set(invoice.lines.map((l) => l.budget_line_id));
+  const others = [
+    ...new Set([...fee, ...flat].map((f) => f.budget_line_id).filter((id) => !hourly.has(id))),
+  ];
   return [
     ...invoice.lines.flatMap((line): InvoiceRow[] => [
       { kind: 'hours', line },
-      ...flat
-        .filter((f) => f.budget_line_id === line.budget_line_id)
-        .map((f): InvoiceRow => ({ kind: 'flat', flat: f })),
+      ...extras(line.budget_line_id),
     ]),
-    ...flat
-      .filter((f) => !hourly.has(f.budget_line_id))
-      .map((f): InvoiceRow => ({ kind: 'flat', flat: f })),
+    ...others.flatMap(extras),
   ];
+}
+
+/** "Leo's: Wednesday dinner service ×2", the fee row's name on the page and preview. */
+export function feeRowName(fee: InvoiceFeeLine): string {
+  return `${fee.budget_line_name}: ${fee.task_name} ×${String(fee.entries)}`;
 }
 
 /** "Eat Local Network: 2.5 LEHRs reset", the flat row's name on the page and preview. */
@@ -380,4 +436,38 @@ export function unbilledNote(invoice: Pick<Invoice, 'entries' | 'unbilled_quarte
     ),
   ];
   return `${formatQuarters(quarters)} hrs of ${names.join(', ')} tracked, not billed (paid per count above)`;
+}
+
+/**
+ * A lines-table row as the page and the preview show it: name, hours (hourly rows only), the
+ * rate column and the amount. A fee row's rate reads "up to $200.00" (decisions 0039, 0043).
+ */
+export function invoiceRowCells(row: InvoiceRow): {
+  name: string;
+  quarters: number | null;
+  rate: string;
+  amount_cents: number;
+} {
+  if (row.kind === 'hours') {
+    return {
+      name: row.line.budget_line_name,
+      quarters: row.line.quarters,
+      rate: formatDollars(row.line.rate_cents),
+      amount_cents: row.line.amount_cents,
+    };
+  }
+  if (row.kind === 'fee') {
+    return {
+      name: feeRowName(row.fee),
+      quarters: null,
+      rate: `up to ${formatDollars(row.fee.max_cents)}`,
+      amount_cents: row.fee.amount_cents,
+    };
+  }
+  return {
+    name: flatRowName(row.flat),
+    quarters: null,
+    rate: formatDollars(row.flat.cents_per_unit),
+    amount_cents: row.flat.amount_cents,
+  };
 }

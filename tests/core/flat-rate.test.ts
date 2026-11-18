@@ -220,10 +220,10 @@ describe('invoice with a flat-rate task (decision 0039)', () => {
     expect(tl.total_cents).toBe(2000);
   });
 
-  it('fingerprints and verifies at canonical v5', async () => {
+  it('fingerprints and verifies at the current canonical version', async () => {
     const result = await createInvoice(gcInput([mixed, resetOnly, leos]));
     if (!result.ok) throw new Error(result.reason);
-    expect(result.invoice.canonical_version).toBe(5);
+    expect(result.invoice.canonical_version).toBe(6);
     expect(await verifyFingerprint(result.invoice)).toBe(true);
     const tampered = {
       ...result.invoice,
@@ -257,7 +257,11 @@ describe('lines table, notes and Settings text (decision 0039)', () => {
   it("puts each flat row right after its line's hourly row", () => {
     expect(
       invoiceRows(invoice).map((r) =>
-        r.kind === 'hours' ? r.line.budget_line_id : `${r.flat.budget_line_id} flat`,
+        r.kind === 'hours'
+          ? r.line.budget_line_id
+          : r.kind === 'flat'
+            ? `${r.flat.budget_line_id} flat`
+            : 'fee',
       ),
     ).toEqual(['leos', 'eat-local-network', 'eat-local-network flat']);
   });
@@ -266,7 +270,11 @@ describe('lines table, notes and Settings text (decision 0039)', () => {
     const only = draft(gcInput([resetOnly, leos]));
     expect(
       invoiceRows(only).map((r) =>
-        r.kind === 'hours' ? r.line.budget_line_id : `${r.flat.budget_line_id} flat`,
+        r.kind === 'hours'
+          ? r.line.budget_line_id
+          : r.kind === 'flat'
+            ? `${r.flat.budget_line_id} flat`
+            : 'fee',
       ),
     ).toEqual(['leos', 'eat-local-network flat']);
   });

@@ -245,6 +245,18 @@ export interface InvoiceLine {
   amount_cents: number;
 }
 
+/** A service-fee task's row on an invoice: the fees of its entries added up (decision 0043). */
+export interface InvoiceFeeLine {
+  budget_line_id: string;
+  budget_line_name: string;
+  task_id: string;
+  task_name: string;
+  /** Entries with a fee above $0.00. */
+  entries: number;
+  max_cents: number;
+  amount_cents: number;
+}
+
 /** A flat-rate task's fee on an invoice: its count × the cents per unit (decision 0039). */
 export interface InvoiceFlatLine {
   budget_line_id: string;
@@ -305,11 +317,13 @@ export interface Invoice {
   lines: InvoiceLine[];
   /** Flat-rate rows, in budget line order. Absent on invoices made before decision 0039. */
   flat_lines?: InvoiceFlatLine[];
+  /** Service-fee rows, in budget line order. Absent on invoices made before decision 0043. */
+  fee_lines?: InvoiceFeeLine[];
   /** Billed quarter-hours: the sum of the hourly rows. */
   total_quarters: number;
   /** Hours of flat-rate tasks, tracked, not billed. Absent before decision 0039. */
   unbilled_quarters?: number;
-  /** Hourly rows plus flat rows. */
+  /** Hourly rows plus flat rows plus fee rows. */
   total_cents: number;
   counts_period: Counts;
   /** This source on this phone, including this invoice. */
