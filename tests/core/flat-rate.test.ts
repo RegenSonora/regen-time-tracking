@@ -289,3 +289,38 @@ describe('lines table, notes and Settings text (decision 0039)', () => {
     expect(flatRateNotes(lead, regen, countDefs)).toEqual([]);
   });
 });
+
+describe('Resilience Contractor LEHR resets (decision 0040)', () => {
+  const contractor = findTestRole('r-c01');
+
+  it('bills LEHR resets on Maintenance labor at $140.00 each, hours tracked, not billed', () => {
+    const entry = makeEntry(
+      '2026-11-02',
+      '08:00:00',
+      '10:00:00',
+      'lehr-reset',
+      'maintenance-labor',
+      {
+        source_id: regen.id,
+        role_id: contractor.id,
+        tasks: [
+          { task_id: 'lehr-reset', quarters: 4 },
+          { task_id: 'pinal-garden-maintenance', quarters: 4 },
+        ],
+        counts: counts({}, { lehrs_reset: 6 }),
+      },
+    );
+    const invoice = draft(gcInput([entry], { role: contractor }));
+    expect(invoice.lines.map((l) => [l.budget_line_id, l.quarters, l.amount_cents])).toEqual([
+      ['maintenance-labor', 4, 2000],
+    ]);
+    expect(
+      invoice.flat_lines?.map((f) => [f.budget_line_id, f.units_quarters, f.amount_cents]),
+    ).toEqual([['maintenance-labor', 6, 21000]]);
+    expect(invoice.unbilled_quarters).toBe(4);
+    expect(invoice.total_cents).toBe(23000);
+    expect(flatRateNotes(contractor, regen, countDefs)).toEqual([
+      'LEHR reset: $140.00 each, by the “LEHRs reset” count. Its hours are tracked, not billed.',
+    ]);
+  });
+});

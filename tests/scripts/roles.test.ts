@@ -212,6 +212,32 @@ const TEAM_LEAD_LINES: [string, [string, string[]][]][] = [
   ['other-contractors', [['other', []]]],
 ];
 
+// Resilience Contractor lines, in the source's line order (decision 0040).
+const CONTRACTOR_LINES: [string, [string, string[]][]][] = [
+  [
+    'fire-risk-reduction-work',
+    [
+      ['residential-fuel-reduction', ['Trailer loads removed']],
+      ['municipal-fuel-reduction', ['Trailer loads removed']],
+      ['dump-runs', ['Trailer loads removed']],
+    ],
+  ],
+  [
+    'maintenance-labor',
+    [
+      ['pinal-garden-maintenance', []],
+      ['regen-lot-clean-and-maintenance', []],
+      ['lehr-reset', ['LEHRs reset']],
+      ['leos-maintenance', []],
+    ],
+  ],
+  [
+    'resilient-home-services-contracting',
+    TEAM_LEAD_LINES.find(([id]) => id === 'resilient-home-services-contracting')?.[1] ?? [],
+  ],
+  ['other-contractors', [['other', []]]],
+];
+
 // Regen Generalist Contractor lines, in the source's line order (decision 0038).
 const GENERALIST_LINES: [string, [string, string[]][]][] = [
   [
@@ -300,7 +326,7 @@ describe('roles file (roles plan Part 2, decisions 0027, 0029)', () => {
     ]);
   });
 
-  it('ships five active roles: two CHW Trainees, a Certified CHW, the Resilience Team Lead and the Regen Generalist', () => {
+  it('ships six active roles: two CHW Trainees, a Certified CHW, the Resilience Team Lead, the Regen Generalist and the Resilience Contractor', () => {
     expect(
       rolesFile.roles.map((r) => [r.id, r.code, r.name, r.employment, r.chw, r.retired ?? false]),
     ).toEqual([
@@ -309,6 +335,7 @@ describe('roles file (roles plan Part 2, decisions 0027, 0029)', () => {
       ['chw-ce01', 'CHW-CE01', 'Certified CHW (Employee)', 'employee', false, false],
       ['r-tl01', 'R-TL01', 'Resilience Team Lead', 'contractor', false, false],
       ['r-gc01', 'R-GC01', 'Regen Generalist Contractor', 'contractor', false, false],
+      ['r-c01', 'R-C01', 'Resilience Contractor', 'contractor', false, false],
     ]);
   });
 
@@ -385,22 +412,44 @@ describe('roles file (roles plan Part 2, decisions 0027, 0029)', () => {
     );
   });
 
-  it('pays the Regen Generalist $140.00 per LEHR reset, in quarter steps (decision 0039)', () => {
-    const flat = role('R-GC01')
-      .funding.flatMap((f) => f.budget_lines)
-      .flatMap((l) => l.tasks.filter((t) => t.flat_rate).map((t) => [l.id, t.id, t.flat_rate]));
-    expect(flat).toEqual([
-      ['eat-local-network', 'lehr-reset', { count_id: 'lehrs_reset', cents_per_unit: 14000 }],
-    ]);
+  it('pays the Regen Generalist and Resilience Contractor $140.00 per LEHR reset (0039, 0040)', () => {
+    const flatOf = (code: string) =>
+      role(code)
+        .funding.flatMap((f) => f.budget_lines)
+        .flatMap((l) => l.tasks.filter((t) => t.flat_rate).map((t) => [l.id, t.id, t.flat_rate]));
+    const rate = { count_id: 'lehrs_reset', cents_per_unit: 14000 };
+    expect(flatOf('R-GC01')).toEqual([['eat-local-network', 'lehr-reset', rate]]);
+    expect(flatOf('R-C01')).toEqual([['maintenance-labor', 'lehr-reset', rate]]);
     // A count's step never changes after release.
     expect(rolesFile.counts.filter((c) => c.step).map((c) => [c.id, c.step])).toEqual([
       ['lehrs_reset', 'quarter'],
     ]);
     // Every other role is paid by the hour only.
-    for (const r of rolesFile.roles.filter((x) => x.id !== 'r-gc01'))
+    for (const r of rolesFile.roles.filter((x) => x.id !== 'r-gc01' && x.id !== 'r-c01'))
       for (const f of r.funding)
         for (const l of f.budget_lines)
           for (const t of l.tasks) expect(t.flat_rate, `${r.code} ${t.id}`).toBeUndefined();
+  });
+
+  it('Resilience Contractor bills Regen General Operating with no preset rate (0040)', () => {
+    const r = role('R-C01');
+    expect(r.certification_step).toBeUndefined();
+    expect(r.funding).toHaveLength(1);
+    const [funding] = r.funding;
+    expect(funding?.source_id).toBe('regen-general-operating');
+    expect(funding?.rate_cents).toBeUndefined();
+    expect(funding?.rate_step).toBeUndefined();
+    expect(funding?.nte_cents).toBeUndefined();
+    const plain = funding?.budget_lines.map((l) => ({
+      id: l.id,
+      tasks: l.tasks.map((t) => ({ id: t.id, count_ids: t.count_ids })),
+    }));
+    expect(plain).toEqual(
+      CONTRACTOR_LINES.map(([id, tasks]) => ({
+        id,
+        tasks: tasks.map(([task, labels]) => ({ id: task, count_ids: countIds(labels) })),
+      })),
+    );
   });
 
   it('adds the eight Regen Generalist counts at the end of the list (0038)', () => {

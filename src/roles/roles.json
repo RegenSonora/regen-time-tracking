@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "version": 3,
+  "version": 4,
   "counts": [
     {
       "id": "contacts",
@@ -1292,6 +1292,96 @@
                     "rides_dispatched"
                   ]
                 },
+                {
+                  "id": "other",
+                  "count_ids": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "r-c01",
+      "code": "R-C01",
+      "name": "Resilience Contractor",
+      "employment": "contractor",
+      "chw": false,
+      "funding": [
+        {
+          "source_id": "regen-general-operating",
+          "budget_lines": [
+            {
+              "id": "fire-risk-reduction-work",
+              "tasks": [
+                {
+                  "id": "residential-fuel-reduction",
+                  "count_ids": ["trailer_loads_removed"]
+                },
+                {
+                  "id": "municipal-fuel-reduction",
+                  "count_ids": ["trailer_loads_removed"]
+                },
+                {
+                  "id": "dump-runs",
+                  "count_ids": ["trailer_loads_removed"]
+                }
+              ]
+            },
+            {
+              "id": "maintenance-labor",
+              "tasks": [
+                {
+                  "id": "pinal-garden-maintenance",
+                  "count_ids": []
+                },
+                {
+                  "id": "regen-lot-clean-and-maintenance",
+                  "count_ids": []
+                },
+                {
+                  "id": "lehr-reset",
+                  "count_ids": ["lehrs_reset"],
+                  "flat_rate": {
+                    "count_id": "lehrs_reset",
+                    "cents_per_unit": 14000
+                  }
+                },
+                {
+                  "id": "leos-maintenance",
+                  "count_ids": []
+                }
+              ]
+            },
+            {
+              "id": "resilient-home-services-contracting",
+              "tasks": [
+                {
+                  "id": "plant-propagation",
+                  "count_ids": ["plants_propagated"]
+                },
+                {
+                  "id": "tree-planting",
+                  "count_ids": ["trees_planted"]
+                },
+                {
+                  "id": "tree-removal",
+                  "count_ids": ["trees_removed"]
+                },
+                {
+                  "id": "water-harvesting",
+                  "count_ids": ["water_capacity_added"]
+                },
+                {
+                  "id": "garden-support",
+                  "count_ids": ["grow_space_added"]
+                }
+              ]
+            },
+            {
+              "id": "other-contractors",
+              "tasks": [
                 {
                   "id": "other",
                   "count_ids": []

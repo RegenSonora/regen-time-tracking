@@ -39,6 +39,7 @@ describe('roleChoices', () => {
       'CHW-CE01',
       'R-TL01',
       'R-GC01',
+      'R-C01',
     ]);
   });
 
@@ -262,6 +263,11 @@ describe('prefillRate (decision 0030)', () => {
     const generalist = role('r-gc01');
     expect(
       prefillRate(generalist, funding(generalist, 'regen-general-operating'), regen),
+    ).toBeNull();
+    // So does the Resilience Contractor (decision 0040).
+    const contractor = role('r-c01');
+    expect(
+      prefillRate(contractor, funding(contractor, 'regen-general-operating'), regen),
     ).toBeNull();
   });
 });
