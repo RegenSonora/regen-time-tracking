@@ -26,8 +26,8 @@ export function uninvoicedSummary(
 ): UninvoicedSummary {
   const open = uninvoicedEntries(entries, sourceId);
   const perLine = new Map<string, number>();
-  // Flat units per role, line, task and count, summed before the fee is worked out.
-  const flatUnits = new Map<string, { units: number; cents: number; count_id: string }>();
+  // Flat quarter-units per role, line, task and count, summed before the fee is worked out.
+  const flatUnits = new Map<string, { units: number; cents: number }>();
   let quarters = 0;
   for (const e of open) {
     const times = checkEntryTimes(e.start, e.stop, e.breaks);
@@ -45,18 +45,13 @@ export function uninvoicedSummary(
         continue;
       }
       const key = [e.role_id, e.budget_line_id, share.task_id, rate.count_id].join('|');
-      const seen = flatUnits.get(key) ?? {
-        units: 0,
-        cents: rate.cents_per_unit,
-        count_id: rate.count_id,
-      };
-      seen.units += e.counts.values[rate.count_id] ?? 0;
+      const seen = flatUnits.get(key) ?? { units: 0, cents: rate.cents_per_unit };
+      const perUnit = countDefs.find((c) => c.id === rate.count_id)?.step === 'quarter' ? 1 : 4;
+      seen.units += (e.counts.values[rate.count_id] ?? 0) * perUnit;
       flatUnits.set(key, seen);
     }
     perLine.set(e.budget_line_id, (perLine.get(e.budget_line_id) ?? 0) + billed);
   }
-  const quarterStep = (id: string) =>
-    countDefs.find((c) => c.id === id)?.step === 'quarter' ? 'quarter' : 'whole';
   return {
     count: open.length,
     quarters,
@@ -65,9 +60,7 @@ export function uninvoicedSummary(
         ? null
         : sumCents([
             ...[...perLine.values()].map((q) => lineAmountCents(q, rateCents)),
-            ...[...flatUnits.values()].map((f) =>
-              flatAmountCents(f.units, f.cents, quarterStep(f.count_id)),
-            ),
+            ...[...flatUnits.values()].map((f) => flatAmountCents(f.units, f.cents)),
           ]),
   };
 }

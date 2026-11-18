@@ -174,8 +174,8 @@ describe('myStats (decision 0032)', () => {
       0,
     );
     expect(stats.counts).toEqual([
-      { id: 'contacts', label: 'Contacts', unit: null, total: 6 },
-      { id: 'rides_provided', label: 'Rides provided', unit: null, total: 1 },
+      { id: 'contacts', label: 'Contacts', unit: null, step: null, total: 6 },
+      { id: 'rides_provided', label: 'Rides provided', unit: null, step: null, total: 1 },
     ]);
     expect(stats).not.toHaveProperty('other');
   });
@@ -190,8 +190,8 @@ describe('myStats (decision 0032)', () => {
       0,
     );
     expect(stats.counts).toEqual([
-      { id: 'trees_planted', label: 'Trees planted', unit: null, total: 3 },
-      { id: 'grow_space_added', label: 'Grow space added', unit: 'sq ft', total: 40 },
+      { id: 'trees_planted', label: 'Trees planted', unit: null, step: null, total: 3 },
+      { id: 'grow_space_added', label: 'Grow space added', unit: 'sq ft', step: null, total: 40 },
     ]);
   });
 

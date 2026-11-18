@@ -1,6 +1,7 @@
 // Entry log CSV (SPEC §7, decisions 0001, 0024 and 0029): one header row and one row per task share
 // of each entry, the same columns for every invoice and timesheet so files combine. One column per
 // count in the roles file, in list order. No per-entry dollar amount.
+import { quarterUnitsText } from '../../core/counts';
 import { formatCentsPlain, formatQuarters } from '../../core/money';
 import { pausedSeconds, rawSeconds } from '../../core/time';
 import type { CountDef, Invoice } from '../../core/types';
@@ -19,6 +20,7 @@ const LEADING_COLUMNS = [
   'raw_duration',
   'paused',
   'billed_hours',
+  'unbilled_hours',
   'task',
   'core_competency',
   'budget_line',
@@ -45,7 +47,8 @@ export function durationText(seconds: number): string {
 }
 
 /**
- * `billed_hours` is the row's task share, so the column adds up to the invoice hours. Times
+ * `billed_hours` is the row's task share, so the column adds up to the invoice hours; a
+ * flat-rate task's share goes in `unbilled_hours` instead (decision 0039). Times
  * repeat on every part; counts and notes are on part 1 only, so they add up too. A count cell
  * is blank unless the entry has a value above 0.
  */
@@ -57,10 +60,12 @@ export function entriesCsv(
   const rows = invoice.entries.flatMap((e) =>
     e.tasks.map((t, i) => {
       const first = i === 0;
-      const count = (id: string) => {
-        const n = e.counts.values[id] ?? 0;
-        return first && n > 0 ? String(n) : '';
+      const count = (c: CountDef) => {
+        const n = e.counts.values[c.id] ?? 0;
+        if (!first || n <= 0) return '';
+        return c.step === 'quarter' ? quarterUnitsText(n) : String(n);
       };
+      const unbilled = t.billed === false;
       return [
         invoice.number,
         invoice.fingerprint,
@@ -73,12 +78,13 @@ export function entriesCsv(
         // Worked time before rounding, then the pauses (decision 0037).
         durationText(rawSeconds(e.start, e.stop) - pausedSeconds(e.breaks)),
         durationText(pausedSeconds(e.breaks)),
-        formatQuarters(t.quarters),
+        formatQuarters(unbilled ? 0 : t.quarters),
+        formatQuarters(unbilled ? t.quarters : 0),
         t.task_name,
         t.core_competency ?? '',
         e.budget_line_name,
         rate,
-        ...countDefs.map((c) => count(c.id)),
+        ...countDefs.map((c) => count(c)),
         first ? e.counts.other.map((o) => `${o.label}=${String(o.value)}`).join('; ') : '',
         first ? e.notes : '',
         e.created_at,

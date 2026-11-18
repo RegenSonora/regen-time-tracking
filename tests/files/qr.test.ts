@@ -1,7 +1,12 @@
 import jsQR from 'jsqr';
 import { describe, expect, it } from 'vitest';
 import { qrMatrix } from '../../src/files/qr/matrix';
-import { QR_PAYLOAD_VERSION, qrPayloadV1 } from '../../src/files/qr/payload';
+import {
+  QR_PAYLOAD_VERSION,
+  qrPayload,
+  qrPayloadV1,
+  qrPayloadV2,
+} from '../../src/files/qr/payload';
 import { findFundingSource } from '../../src/funding-sources';
 import roles from '../../src/roles/roles.json';
 import { makeEntry, regen } from '../core/fixtures/wireframe-sample';
@@ -114,5 +119,44 @@ describe('qrMatrix', () => {
 
   it('refuses text outside printable ASCII', () => {
     expect(() => qrMatrix('café')).toThrow();
+  });
+
+  it('v2 adds the flat-rate rows; only invoices with flat rows use it (decision 0039)', () => {
+    const base = {
+      number: 'RG-2026-001',
+      period_start: '2026-11-02',
+      period_end: '2026-11-04',
+      lines: [
+        {
+          budget_line_id: 'leos',
+          budget_line_name: "Leo's",
+          quarters: 6,
+          rate_cents: 2000,
+          amount_cents: 3000,
+        },
+      ],
+      fingerprint: 'a'.repeat(64),
+    };
+    const flat = {
+      budget_line_id: 'eat-local-network',
+      budget_line_name: 'Eat Local Network',
+      task_id: 'lehr-reset',
+      task_name: 'LEHR reset',
+      count_id: 'lehrs_reset',
+      count_label: 'LEHRs reset',
+      units_quarters: 10,
+      cents_per_unit: 14000,
+      amount_cents: 35000,
+    };
+    expect(qrPayloadV2({ ...base, flat_lines: [flat] })).toBe(
+      `{"v":2,"n":"RG-2026-001","p":["2026-11-02","2026-11-04"],"l":[["leos",6,3000]],"x":[["eat-local-network","lehr-reset",10,35000]],"f":"${'a'.repeat(64)}"}`,
+    );
+    expect(qrPayload({ ...base, flat_lines: [flat] })).toBe(
+      qrPayloadV2({ ...base, flat_lines: [flat] }),
+    );
+    expect(qrPayload({ ...base, flat_lines: [] })).toBe(qrPayloadV1(base));
+    expect(qrPayload(base)).toBe(qrPayloadV1(base));
+    const matrix = qrMatrix(qrPayload({ ...base, flat_lines: [flat] }));
+    expect(decode(matrix)).toBe(qrPayloadV2({ ...base, flat_lines: [flat] }));
   });
 });

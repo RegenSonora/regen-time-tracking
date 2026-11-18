@@ -1,6 +1,8 @@
 // Pieces shared by the new-entry steps and Edit entry (SPEC §5).
 import { useState } from 'preact/hooks';
 import {
+  countText,
+  flatRates,
   budgetLineChoices,
   carryPicks,
   checkTask,
@@ -287,8 +289,13 @@ export function splitText(total: number, assigned: number): string {
 
 /** Each checked task with − and + in 0.25 h steps, under a bar showing what is left (decision 0024). */
 export function SplitEditor({ draft, error }: { draft: EntryDraft; error?: string | null }) {
-  const { actions } = useApp();
+  const { actions, role } = useApp();
   const source = sourceById(draft.source_id);
+  // Flat-rate tasks are paid by their count; their time is tracked, not billed (decision 0039).
+  const flat =
+    draft.budget_line_id === null
+      ? undefined
+      : flatRates(role, source.id).get(draft.budget_line_id);
   const total = useDraftQuarters(draft);
   const status = splitStatus(total, draft.tasks);
   return (
@@ -303,7 +310,7 @@ export function SplitEditor({ draft, error }: { draft: EntryDraft; error?: strin
           return (
             <Stepper
               key={share.task_id}
-              label={name}
+              label={flat?.has(share.task_id) ? `${name} (tracked, not billed)` : name}
               noun={`time on ${name}`}
               less="Less"
               more="More"
@@ -348,8 +355,13 @@ export function CountsAndNotes({
       )
     : null;
   const fields = shown
-    ? shown.map((c) => ({ key: c.id, label: c.label, noun: c.label.toLowerCase(), unit: c.unit }))
-    : COUNT_FIELDS.map((f) => ({ ...f, unit: undefined }));
+    ? shown.map((c) => ({
+        key: c.id,
+        label: c.label,
+        noun: c.label.toLowerCase(),
+        def: { ...(c.unit !== undefined && { unit: c.unit }), ...(c.step && { step: c.step }) },
+      }))
+    : COUNT_FIELDS.map((f) => ({ ...f, def: {} }));
   const repeats = (label: string) => (shown ? duplicateCountLabel(label, shown) : null);
   return (
     <>
@@ -368,7 +380,7 @@ export function CountsAndNotes({
               key={f.key}
               label={f.label}
               noun={f.noun}
-              show={(v) => (f.unit ? `${String(v)} ${f.unit}` : String(v))}
+              show={(v) => countText(v, f.def)}
               value={countValue(counts, f.key)}
               onChange={(v) => {
                 set({ ...counts, values: { ...counts.values, [f.key]: v } });

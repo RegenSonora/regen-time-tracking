@@ -299,11 +299,19 @@ describe('invoiceCounts (decision 0029)', () => {
         },
       ),
     ).toEqual([
-      { id: 'trees_planted', label: 'Trees planted', unit: null, period: 6, all_time: 41 },
+      {
+        id: 'trees_planted',
+        label: 'Trees planted',
+        unit: null,
+        step: null,
+        period: 6,
+        all_time: 41,
+      },
       {
         id: 'water_capacity_added',
         label: 'Water capacity added',
         unit: 'gal',
+        step: null,
         period: 500,
         all_time: 1500,
       },
@@ -336,7 +344,7 @@ describe('invoiceCounts (decision 0029)', () => {
           ],
         },
       ),
-    ).toEqual([{ id: null, label: 'Flyers', unit: null, period: 20, all_time: 50 }]);
+    ).toEqual([{ id: null, label: 'Flyers', unit: null, step: null, period: 20, all_time: 50 }]);
   });
 });
 

@@ -1,9 +1,15 @@
 // Flat-rate tasks and quarter-step counts (decision 0039).
 import { describe, expect, it } from 'vitest';
 import { countText } from '../../src/core/counts';
-import { buildInvoiceDraft, createInvoice } from '../../src/core/invoice';
+import {
+  buildInvoiceDraft,
+  createInvoice,
+  flatRowName,
+  invoiceRows,
+  unbilledNote,
+} from '../../src/core/invoice';
 import { verifyFingerprint } from '../../src/core/fingerprint';
-import { flatRates } from '../../src/core/roles';
+import { flatRateNotes, flatRates } from '../../src/core/roles';
 import { uninvoicedSummary } from '../../src/core/summary';
 import type { InvoiceInput } from '../../src/core/invoice';
 import type { Entry } from '../../src/core/types';
@@ -242,5 +248,44 @@ describe('uninvoicedSummary with flat-rate tasks (decision 0039)', () => {
     expect(
       uninvoicedSummary([mixed], regen.id, null, [generalist], countDefs).amount_cents,
     ).toBeNull();
+  });
+});
+
+describe('lines table, notes and Settings text (decision 0039)', () => {
+  const invoice = draft(gcInput([mixed, resetOnly, leos]));
+
+  it("puts each flat row right after its line's hourly row", () => {
+    expect(
+      invoiceRows(invoice).map((r) =>
+        r.kind === 'hours' ? r.line.budget_line_id : `${r.flat.budget_line_id} flat`,
+      ),
+    ).toEqual(['leos', 'eat-local-network', 'eat-local-network flat']);
+  });
+
+  it('puts flat rows of a line with no billed hours after the hourly rows', () => {
+    const only = draft(gcInput([resetOnly, leos]));
+    expect(
+      invoiceRows(only).map((r) =>
+        r.kind === 'hours' ? r.line.budget_line_id : `${r.flat.budget_line_id} flat`,
+      ),
+    ).toEqual(['leos', 'eat-local-network flat']);
+  });
+
+  it('names the flat row with its count', () => {
+    expect(flatRowName(must(invoice.flat_lines?.[0]))).toBe('Eat Local Network: 3.5 LEHRs reset');
+  });
+
+  it('notes the unbilled hours, and nothing when every hour is billed', () => {
+    expect(unbilledNote(invoice)).toBe(
+      '2.50 hrs of LEHR reset tracked, not billed (paid per count above)',
+    );
+    expect(unbilledNote(draft(gcInput([leos])))).toBe('');
+  });
+
+  it('tells Settings how the flat-rate task is paid', () => {
+    expect(flatRateNotes(generalist, regen, countDefs)).toEqual([
+      'LEHR reset: $140.00 each, by the “LEHRs reset” count. Its hours are tracked, not billed.',
+    ]);
+    expect(flatRateNotes(lead, regen, countDefs)).toEqual([]);
   });
 });

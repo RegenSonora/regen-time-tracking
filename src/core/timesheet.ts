@@ -76,7 +76,8 @@ export function paginateTimesheet(
       if (!row) {
         row = {
           task_id: share.task_id,
-          task_name: share.task_name,
+          // A flat-rate task's hours show on the sheet but aren't billed (decision 0039).
+          task_name: share.billed === false ? `${share.task_name} (not billed)` : share.task_name,
           core_competency: share.core_competency,
           budget_line_id: e.budget_line_id,
           budget_line_name: e.budget_line_name,

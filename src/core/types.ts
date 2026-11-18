@@ -242,7 +242,7 @@ export interface InvoiceFlatLine {
   task_name: string;
   count_id: string;
   count_label: string;
-  /** The count summed over the invoice, in quarter-units for a quarter-step count. */
+  /** The count summed over the invoice, in quarter-units (a whole count of 3 is 12). */
   units_quarters: number;
   cents_per_unit: number;
   amount_cents: number;

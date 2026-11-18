@@ -327,4 +327,37 @@ describe('employee timesheet PDF (decision 0031)', () => {
     expect(page2?.text).not.toContain('CORE COMPETENCY');
     expect(page2?.text).toContain('Water harvesting Resilient Home Services contracting 1.00 1.00');
   });
+
+  it('prints the flat-rate row, the unbilled note and 2.5 LEHRs reset (decision 0039)', async () => {
+    const generalist = findTestRole('r-gc01');
+    const invoice = await invoiceFrom({
+      source: regen,
+      role: generalist,
+      settings: { source_id: regen.id, rate_cents: 2000, nte_cents: null },
+      entries: [
+        makeEntry('2026-11-02', '09:00:00', '10:00:00', 'lehr-reset', 'eat-local-network', {
+          source_id: regen.id,
+          role_id: generalist.id,
+          tasks: [
+            { task_id: 'lehr-reset', quarters: 2 },
+            { task_id: 'garden-maintenance', quarters: 2 },
+          ],
+          counts: { values: { lehrs_reset: 10, soil_harvested: 30 }, other: [] },
+        }),
+      ],
+      prior_invoices: [],
+    });
+    const [page1, page2] = await pdfOf(invoice, regen);
+    for (const expected of [
+      'Eat Local Network 0.50 $20.00 $10.00',
+      'Eat Local Network: 2.5 LEHRs reset $140.00 $350.00',
+      'Amount due 0.50 $360.00',
+      '0.50 hrs of LEHR reset tracked, not billed (paid per count above)',
+      'LEHRs reset 2.5 2.5',
+      'Soil harvested 30 gal 30 gal',
+    ]) {
+      expect(page1?.text).toContain(expected);
+    }
+    expect(page2?.text).toContain('LEHR reset (not billed)');
+  });
 });

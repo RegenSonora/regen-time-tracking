@@ -1,8 +1,8 @@
 // Invoice builder (SPEC §6): one funding source, every uninvoiced entry for it.
-import { sumCounts } from './counts';
+import { quarterUnitsText, sumCounts } from './counts';
 import { CANONICAL_VERSION, fingerprintOf, type FingerprintedInvoice } from './fingerprint';
 import { formatInvoiceNumber, normalizeInitials, takeNumber } from './invoice-number';
-import { flatAmountCents, lineAmountCents, sumCents } from './money';
+import { flatAmountCents, formatQuarters, lineAmountCents, sumCents } from './money';
 import { flatRates } from './roles';
 import { sharesMatch } from './task-split';
 import { checkEntryTimes, entryDateOf, parseIso } from './time';
@@ -267,11 +267,13 @@ function flatLinesOf(
 ): InvoiceFlatLine[] {
   const rows: InvoiceFlatLine[] = [];
   for (const [taskId, rate] of rates ?? []) {
+    const def = countDefs.find((c) => c.id === rate.count_id);
+    // Whole-step counts are kept in quarter-units here too, so every fee is worked out alike.
+    const perUnit = def?.step === 'quarter' ? 1 : 4;
     const units = frozen
       .filter((e) => e.budget_line_id === line.id && e.tasks.some((t) => t.task_id === taskId))
-      .reduce((n, e) => n + (e.counts.values[rate.count_id] ?? 0), 0);
+      .reduce((n, e) => n + (e.counts.values[rate.count_id] ?? 0) * perUnit, 0);
     if (units === 0) continue;
-    const def = countDefs.find((c) => c.id === rate.count_id);
     rows.push({
       budget_line_id: line.id,
       budget_line_name: line.name,
@@ -281,11 +283,7 @@ function flatLinesOf(
       count_label: def?.label ?? rate.count_id,
       units_quarters: units,
       cents_per_unit: rate.cents_per_unit,
-      amount_cents: flatAmountCents(
-        units,
-        rate.cents_per_unit,
-        def?.step === 'quarter' ? 'quarter' : 'whole',
-      ),
+      amount_cents: flatAmountCents(units, rate.cents_per_unit),
     });
   }
   return rows;
@@ -336,4 +334,50 @@ export async function createInvoice(input: InvoiceInput): Promise<InvoiceResult>
   if (!draft.ok) return draft;
   const fingerprint = await fingerprintOf(draft.invoice);
   return { ...draft, invoice: { ...draft.invoice, fingerprint } };
+}
+
+/** One row of an invoice's lines table: hours by budget line, or a flat-rate fee (0039). */
+export type InvoiceRow =
+  { kind: 'hours'; line: InvoiceLine } | { kind: 'flat'; flat: InvoiceFlatLine };
+
+/**
+ * The lines table in order: each budget line's hourly row, then its flat-rate rows. Flat rows
+ * of a line with no billed hours follow the hourly rows, in budget line order (decision 0039).
+ */
+export function invoiceRows(invoice: Pick<Invoice, 'lines' | 'flat_lines'>): InvoiceRow[] {
+  const flat = invoice.flat_lines ?? [];
+  const hourly = new Set(invoice.lines.map((l) => l.budget_line_id));
+  return [
+    ...invoice.lines.flatMap((line): InvoiceRow[] => [
+      { kind: 'hours', line },
+      ...flat
+        .filter((f) => f.budget_line_id === line.budget_line_id)
+        .map((f): InvoiceRow => ({ kind: 'flat', flat: f })),
+    ]),
+    ...flat
+      .filter((f) => !hourly.has(f.budget_line_id))
+      .map((f): InvoiceRow => ({ kind: 'flat', flat: f })),
+  ];
+}
+
+/** "Eat Local Network: 2.5 LEHRs reset", the flat row's name on the page and preview. */
+export function flatRowName(flat: InvoiceFlatLine): string {
+  return `${flat.budget_line_name}: ${quarterUnitsText(flat.units_quarters)} ${flat.count_label}`;
+}
+
+/**
+ * "2.50 hrs of LEHR reset tracked, not billed (paid per count above)", or "" when every hour is
+ * billed (decision 0039).
+ */
+export function unbilledNote(invoice: Pick<Invoice, 'entries' | 'unbilled_quarters'>): string {
+  const quarters = invoice.unbilled_quarters ?? 0;
+  if (quarters === 0) return '';
+  const names = [
+    ...new Set(
+      invoice.entries.flatMap((e) =>
+        e.tasks.filter((t) => t.billed === false).map((t) => t.task_name),
+      ),
+    ),
+  ];
+  return `${formatQuarters(quarters)} hrs of ${names.join(', ')} tracked, not billed (paid per count above)`;
 }

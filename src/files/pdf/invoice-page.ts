@@ -1,12 +1,14 @@
 // PDF page 1 (SPEC §7 "PDF page 1", wireframe PdfInvoice): the invoice, or for an employee the
 // timesheet summary with hours only and the supervisor's approval (decision 0031). Laid out top to
 // bottom at a scale; when a long one doesn't fit, it is drawn again smaller.
+import { countText } from '../../core/counts';
 import { shortFingerprint } from '../../core/fingerprint';
+import { flatRowName, invoiceRows, unbilledNote } from '../../core/invoice';
 import { formatDollars, formatQuarters } from '../../core/money';
 import { invoiceCounts } from '../../core/roles';
 import type { Invoice } from '../../core/types';
 import { qrMatrix } from '../qr/matrix';
-import { qrPayloadV1 } from '../qr/payload';
+import { qrPayload } from '../qr/payload';
 import { dateRange, longDate } from '../text';
 import { fitText, textWidth, wrapLines, wrapText, type FontName } from './fonts';
 import { LETTER, PdfPage, type Gray } from './writer';
@@ -62,8 +64,12 @@ function signBox(c: Ctx, x: number, y: number, width: number, height: number) {
   text(c, x + 6, y + height - 5, 'Sign here', 7.5, 'regular', MUTED);
 }
 
-/** "40 gal", or "40" for a count with no unit. */
-const withUnit = (n: number, unit: string | null) => (unit ? `${String(n)} ${unit}` : String(n));
+/** "40 gal", "2.5", or "40" for a count with no unit (decision 0039). */
+const withUnit = (n: number, row: { unit: string | null; step: 'quarter' | null }) =>
+  countText(n, {
+    ...(row.unit !== null && { unit: row.unit }),
+    ...(row.step && { step: row.step }),
+  });
 
 /** Draw page 1 at scale k. Returns how far down the content above the footer reaches. */
 function layout(c: Ctx, invoice: Invoice, pageCount: number, footerTop: number): number {
@@ -128,16 +134,22 @@ function layout(c: Ctx, invoice: Invoice, pageCount: number, footerTop: number):
   }
   y += 5 * k;
   c.page.line(LEFT, y, RIGHT, y, { width: 1.5, gray: INK });
-  for (const line of invoice.lines) {
-    const names = wrapText(line.budget_line_name, 'regular', 10 * k, nameWidth);
+  // Hourly rows, each followed by its flat-rate rows: count × rate, no hours (decision 0039).
+  for (const row of invoiceRows(invoice)) {
+    const name = row.kind === 'hours' ? row.line.budget_line_name : flatRowName(row.flat);
+    const names = wrapText(name, 'regular', 10 * k, nameWidth);
     const first = y + 14 * k;
-    names.forEach((name, i) => {
-      text(c, LEFT, first + 12 * i * k, name, 10);
+    names.forEach((n, i) => {
+      text(c, LEFT, first + 12 * i * k, n, 10);
     });
-    text(c, hoursX, first, formatQuarters(line.quarters), 10, 'regular', INK, 'right');
+    if (row.kind === 'hours') {
+      text(c, hoursX, first, formatQuarters(row.line.quarters), 10, 'regular', INK, 'right');
+    }
     if (!timesheet) {
-      text(c, rateX, first, formatDollars(line.rate_cents), 10, 'regular', INK, 'right');
-      text(c, RIGHT, first, formatDollars(line.amount_cents), 10, 'regular', INK, 'right');
+      const rate = row.kind === 'hours' ? row.line.rate_cents : row.flat.cents_per_unit;
+      const amount = row.kind === 'hours' ? row.line.amount_cents : row.flat.amount_cents;
+      text(c, rateX, first, formatDollars(rate), 10, 'regular', INK, 'right');
+      text(c, RIGHT, first, formatDollars(amount), 10, 'regular', INK, 'right');
     }
     y = first + (12 * (names.length - 1) + 6) * k;
     c.page.line(LEFT, y, RIGHT, y, { width: 0.5, gray: RULE });
@@ -148,6 +160,20 @@ function layout(c: Ctx, invoice: Invoice, pageCount: number, footerTop: number):
   if (!timesheet) text(c, RIGHT, y, formatDollars(invoice.total_cents), 12, 'bold', INK, 'right');
   y += 6 * k;
   c.page.line(LEFT, y, RIGHT, y, { width: 1.5, gray: INK });
+  // Flat-rate tasks' hours: on the timesheet pages, not in the hours above (decision 0039).
+  const unbilled = invoice.unbilled_quarters ?? 0;
+  if (unbilled > 0) {
+    y += 12 * k;
+    text(
+      c,
+      LEFT,
+      y,
+      fitText(unbilledNote(invoice), 'regular', 8 * k, RIGHT - LEFT),
+      8,
+      'regular',
+      MUTED,
+    );
+  }
   y += 22 * k;
 
   // Counts (left) and contract tracking (right).
@@ -176,8 +202,8 @@ function layout(c: Ctx, invoice: Invoice, pageCount: number, footerTop: number):
   for (const row of rows.slice(0, COUNTS_SHOWN)) {
     y += 12 * k;
     text(c, LEFT, y, fitText(row.label, 'regular', 9 * k, 108), 9);
-    text(c, periodX, y, withUnit(row.period, row.unit), 9, 'bold', INK, 'right');
-    text(c, allX, y, withUnit(row.all_time, row.unit), 9, 'regular', INK, 'right');
+    text(c, periodX, y, withUnit(row.period, row), 9, 'bold', INK, 'right');
+    text(c, allX, y, withUnit(row.all_time, row), 9, 'regular', INK, 'right');
   }
   if (rows.length > COUNTS_SHOWN) {
     y += 12 * k;
@@ -287,7 +313,7 @@ const QR_MAX = 104;
 const QR_CELL_MAX = 1.6;
 
 function qrLayout(invoice: Invoice) {
-  const matrix = qrMatrix(qrPayloadV1(invoice));
+  const matrix = qrMatrix(qrPayload(invoice));
   const cell = Math.min(QR_CELL_MAX, QR_MAX / matrix.length);
   return { matrix, cell, size: cell * matrix.length };
 }
