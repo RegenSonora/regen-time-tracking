@@ -3,7 +3,7 @@
 A lightweight, offline phone app for people who work for Regenerating Sonora, Inc.: Community Health Workers and other roles, as contractors or employees. You log time against your role's funding sources, then create an invoice (contractors) or a timesheet (employees) as a PDF, a picture of its first page and two CSV files, to sign and email.
 
 - Live app: https://regensonora.github.io/regen-time-tracking/
-- Status: **0.13.0.** Regen Generalist Contractor and Resilience Contractor roles, with LEHR resets paid $140.00 per reset in 0.25 steps and their hours tracked, not billed (decisions 0038–0040). Pause and resume on the timer (decision 0037). Certified CHW (Employee) and CHW Trainee (Employee) on Regen General Operating came in 0.12.0 (decisions 0035, 0036). Roles, counts per task, employee timesheets and grant periods came in 0.11.0 (decisions 0027–0034, [roles plan](docs/roles-plan.md)). Split from CHW Time Tracker Historic (decision 0020).
+- Status: **0.14.0.** My Tasks for Resilience Team Leads: office tasks with a priority, your own tasks, status and notes, shared as pictures (decision 0041). Regen Generalist Contractor and Resilience Contractor roles, with LEHR resets paid $140.00 per reset in 0.25 steps and their hours tracked, not billed, came in 0.13.0 (decisions 0038–0040). Pause and resume on the timer (decision 0037). Certified CHW (Employee) and CHW Trainee (Employee) on Regen General Operating came in 0.12.0 (decisions 0035, 0036). Roles, counts per task, employee timesheets and grant periods came in 0.11.0 (decisions 0027–0034, [roles plan](docs/roles-plan.md)). Split from CHW Time Tracker Historic (decision 0020).
 - Product spec: [docs/SPEC.md](docs/SPEC.md). Build plans: [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md), [docs/roles-plan.md](docs/roles-plan.md). Decisions: [docs/decisions/](docs/decisions/).
 
 ## Using the app
@@ -38,6 +38,7 @@ Your role can't be changed later on the phone. If you picked the wrong one, invo
 - Pick the budget line (when your role has more than one) and check every task you did. With two or more tasks, split your time between them.
 - Add counts if you like: the app shows the counts for the tasks you checked. Add notes if you like; notes appear on the timesheet: **don't include client names.** Then **Save**.
 - Tap an entry on Home to fix or delete it, until it is invoiced or submitted.
+- **My Tasks** (Team Leads): the office's tasks with their priority, plus any you add. Set each task's status and type notes; they save on this phone as you go. **Share progress** sends a picture of every task (more than one picture when notes are long).
 - **My stats** on Home shows the hours you've invoiced (or submitted), with hours still waiting, and your all-time counts. CHW Trainees also see the hrs needed for the pay increase (240) and for CHW Cert eligibility (480). It counts invoices and timesheets made on this phone.
 - At 240 hours, CHW Trainees are reminded to invoice or submit, then change their rate to $23.00 in **Settings**.
 
@@ -79,6 +80,26 @@ _For office staff. Roles live in [`src/roles/roles.json`](src/roles/roles.json);
 - **Retire a role:** mark it `"retired": true`. With `"replaced_by": "<new role id>"`, everyone in it moves to the new role on their next open and sees a one-time notice; rates are not changed, only noted. With no `replaced_by`, its people can still invoice or submit waiting hours but can't log new time ("Your role is no longer active. Ask the office."). Never delete a role.
 - **Contractor to employee (or back):** create the new role and retire the old one with `replaced_by`. Hours already logged go out under the old role first.
 - **Grant dates:** a source's `period_start` and `period_end`, or an earlier `ends` on a role's funding entry. Time can't be dated outside them; hours inside can still be billed after the end. When all of a role's sources have ended, Home says "No active funding for your role. Ask the office."
+
+### My Tasks
+
+Roles listed in [`src/roles/my-tasks.json`](src/roles/my-tasks.json) get **My Tasks** on Home (decision 0041). Today that is R-TL01, with no office tasks yet. Bump the file's `version` with each change.
+
+```json
+{
+  "id": "walk-plots",
+  "title": "Walk Pinal garden plots",
+  "priority": "high",
+  "details": "Check every bed before the freeze."
+}
+```
+
+- **Add a task:** add it to the role's list with a new `id` (lowercase, hyphens), a `title` and a `priority`: `low` (green), `medium` (amber) or `high` (red). `details` is optional. Tasks show in the order listed.
+- **Change a priority or title:** edit it and keep the `id`. People keep their status and notes; they can't change the priority.
+- **Remove a task:** mark it `"retired": true`. Never delete it or reuse its `id`. It leaves the screen; what people typed for it stays on their phones.
+- **Give another role My Tasks:** add its role id with a list, even an empty one.
+
+Build messages name the role and task: `no role with this id in roles.json`, `task "…" is listed twice`, or a missing or misspelled `priority`.
 
 **When the build fails**, the message names the role and the field. Common ones:
 

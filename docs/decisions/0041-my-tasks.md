@@ -19,6 +19,11 @@
 6. **Office task rules** match counts and roles: a task `id` never changes and is never reused. To remove a task, mark it `"retired": true`. It disappears from the screen, and what the person typed for it stays on the phone. Renaming keeps the `id`, so progress carries over.
 7. **Stored on the phone only** (data format version 6 adds a `task_progress` store). No backup or sync (SPEC §11). Clearing the browser's data, or changing phones, loses the notes.
 
+## Exceptions to SPEC §10
+
+- **Status is a dropdown**, as Chris asked, not a list. Phones open it as a large native picker.
+- **People type their own task names**, besides notes.
+
 ## Why
 
 Team Leads track a few ongoing jobs that don't fit time entries, and report on them by text or email. A picture is the easiest thing to send from the field and needs no server.
