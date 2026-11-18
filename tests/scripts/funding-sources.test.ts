@@ -93,8 +93,8 @@ describe('grant periods and the Resilience Team Lead (roles plan R1, decisions 0
     );
   });
 
-  it('Regen General Operating has no start or end date, at version 4', () => {
-    expect(regen['version']).toBe(4);
+  it('Regen General Operating has no start or end date, at version 5', () => {
+    expect(regen['version']).toBe(5);
     expect(regen['period_start']).toBeNull();
     expect(regen['period_end']).toBeNull();
   });
@@ -130,8 +130,28 @@ describe('grant periods and the Resilience Team Lead (roles plan R1, decisions 0
     ]);
   });
 
+  it('then adds 7 tasks and the Community Care Work line for Regen Generalists (decision 0038)', () => {
+    expect(regen.tasks).toHaveLength(70);
+    expect(regen.tasks.slice(63)).toEqual(
+      [
+        ['gleaning', 'Gleaning'],
+        ['food-processing', 'Food processing'],
+        ['eat-local-marketing', 'Eat Local marketing'],
+        ['lehr-reset', 'LEHR reset'],
+        ['garden-maintenance', 'Garden maintenance'],
+        ['eat-local-grower-support', 'Eat Local grower support'],
+        ['lehr-installation', 'LEHR installation'],
+      ].map(([id, name]) => ({ id, name, core_competency: null })),
+    );
+    expect(regen.budget_lines).toHaveLength(25);
+    expect(regen.budget_lines.at(-1)).toEqual({
+      id: 'community-care-work',
+      name: 'Community Care Work',
+    });
+  });
+
   it('then adds 26 tasks, 5 lines and an employee certification for Certified CHWs (decision 0035)', () => {
-    expect(regen.tasks).toHaveLength(63);
+    expect(regen.tasks.slice(0, 63)).toHaveLength(63);
     expect(regen.budget_lines.slice(18, 23)).toEqual([
       { id: 'community-health-work', name: 'Community Health Work' },
       { id: 'leos', name: "Leo's" },
@@ -139,7 +159,7 @@ describe('grant periods and the Resilience Team Lead (roles plan R1, decisions 0
       { id: 'admin', name: 'Admin' },
       { id: 'other', name: 'Other' },
     ]);
-    const added = regen.tasks.slice(37);
+    const added = regen.tasks.slice(37, 63);
     expect(added.every((t) => t['core_competency'] === null)).toBe(true);
     expect(added.map((t) => t['name'])).toEqual([
       'Transportation service',
@@ -175,7 +195,7 @@ describe('grant periods and the Resilience Team Lead (roles plan R1, decisions 0
   });
 
   it('then adds CHW experience hours for CHW Trainee (Employee) (decision 0036)', () => {
-    expect(regen.budget_lines).toHaveLength(24);
+    expect(regen.budget_lines.length).toBeGreaterThanOrEqual(24);
     expect(regen.budget_lines[23]).toEqual(tisupp.budget_lines[12]);
     expect(regen.budget_lines[23]).toEqual({
       id: 'chw-experience-hours',

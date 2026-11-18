@@ -34,7 +34,7 @@ describe('sourceTaskChoices (SPEC §5 "recent tasks first")', () => {
 
   it('has no recent group the first time', () => {
     expect(sourceTaskChoices(regen, []).recent).toEqual([]);
-    expect(sourceTaskChoices(regen, []).all).toHaveLength(63);
+    expect(sourceTaskChoices(regen, []).all).toHaveLength(70);
   });
 });
 
