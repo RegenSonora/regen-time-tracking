@@ -76,6 +76,8 @@ export interface CountDef {
   label: string;
   /** Shown after the number, e.g. "gal". */
   unit?: string;
+  /** quarter: steps by 0.25, stored as whole quarter-units (decision 0039). */
+  step?: 'quarter';
   retired?: true;
 }
 
@@ -120,9 +122,17 @@ export interface RoleTask {
   id: string;
   /** Counts this task shows, by id from the shared list. */
   count_ids: string[];
+  /** Paid by this count instead of by the hour; the task's hours are tracked, not billed (0039). */
+  flat_rate?: FlatRate;
 }
 
-/** Count values by count id (decision 0029). Whole numbers. */
+/** A task paid per count (decision 0039). */
+export interface FlatRate {
+  count_id: string;
+  cents_per_unit: number;
+}
+
+/** Count values by count id (decision 0029). Whole numbers; quarter-step counts in quarter-units (0039). */
 export type CountValues = Record<string, number>;
 
 /** The CHW's details (SPEC §4). */
@@ -194,6 +204,8 @@ export interface InvoiceTaskShare {
   task_name: string;
   core_competency: string | null;
   quarters: number;
+  /** false: a flat-rate task, its hours tracked, not billed. Absent means billed (decision 0039). */
+  billed?: false;
 }
 
 /** An entry as frozen into an invoice, with the names it was billed under. */
@@ -219,6 +231,20 @@ export interface InvoiceLine {
   budget_line_name: string;
   quarters: number;
   rate_cents: number;
+  amount_cents: number;
+}
+
+/** A flat-rate task's fee on an invoice: its count × the cents per unit (decision 0039). */
+export interface InvoiceFlatLine {
+  budget_line_id: string;
+  budget_line_name: string;
+  task_id: string;
+  task_name: string;
+  count_id: string;
+  count_label: string;
+  /** The count summed over the invoice, in quarter-units (a whole count of 3 is 12). */
+  units_quarters: number;
+  cents_per_unit: number;
   amount_cents: number;
 }
 
@@ -264,9 +290,15 @@ export interface Invoice {
   rate_cents: number;
   /** Sorted by start, then id. */
   entries: InvoiceEntry[];
-  /** In the source's budget line order (decision 0002). */
+  /** Hourly rows, in the source's budget line order (decision 0002). */
   lines: InvoiceLine[];
+  /** Flat-rate rows, in budget line order. Absent on invoices made before decision 0039. */
+  flat_lines?: InvoiceFlatLine[];
+  /** Billed quarter-hours: the sum of the hourly rows. */
   total_quarters: number;
+  /** Hours of flat-rate tasks, tracked, not billed. Absent before decision 0039. */
+  unbilled_quarters?: number;
+  /** Hourly rows plus flat rows. */
   total_cents: number;
   counts_period: Counts;
   /** This source on this phone, including this invoice. */

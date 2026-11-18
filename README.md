@@ -3,7 +3,7 @@
 A lightweight, offline phone app for people who work for Regenerating Sonora, Inc.: Community Health Workers and other roles, as contractors or employees. You log time against your role's funding sources, then create an invoice (contractors) or a timesheet (employees) as a PDF, a picture of its first page and two CSV files, to sign and email.
 
 - Live app: https://regensonora.github.io/regen-time-tracking/
-- Status: **0.12.0.** Certified CHW (Employee) role, and CHW Trainee (Employee) on Regen General Operating with one raise over both sources (decisions 0035, 0036). Roles, counts per task, employee timesheets and grant periods came in 0.11.0 (decisions 0027–0034, [roles plan](docs/roles-plan.md)). Split from CHW Time Tracker Historic (decision 0020).
+- Status: **0.13.0.** Regen Generalist Contractor and Resilience Contractor roles, with LEHR resets paid $140.00 per reset in 0.25 steps and their hours tracked, not billed (decisions 0038–0040). Pause and resume on the timer (decision 0037). Certified CHW (Employee) and CHW Trainee (Employee) on Regen General Operating came in 0.12.0 (decisions 0035, 0036). Roles, counts per task, employee timesheets and grant periods came in 0.11.0 (decisions 0027–0034, [roles plan](docs/roles-plan.md)). Split from CHW Time Tracker Historic (decision 0020).
 - Product spec: [docs/SPEC.md](docs/SPEC.md). Build plans: [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md), [docs/roles-plan.md](docs/roles-plan.md). Decisions: [docs/decisions/](docs/decisions/).
 
 ## Using the app
@@ -73,7 +73,8 @@ _For office staff. Roles live in [`src/roles/roles.json`](src/roles/roles.json);
 
 - **Add a role:** add an entry under `roles` with a new `id` (lowercase, hyphens) and `code`. Every budget line and task it lists must already be in the source file; add new ones there first.
 - **Change what a role sees:** add or remove budget lines, tasks or `count_ids`. Everyone in the role sees the change after the update. Entries already logged keep their line, task and counts and can still be invoiced; editing one asks for a new pick.
-- **Add a count:** add it at the **end** of `counts`, with an `id` in lowercase with underscores (it becomes an entry log column) and a `label`; add a `unit` such as `"gal"` if it has one. Then list it in tasks' `count_ids`.
+- **Add a count:** add it at the **end** of `counts`, with an `id` in lowercase with underscores (it becomes an entry log column) and a `label`; add a `unit` such as `"gal"` if it has one, and `"step": "quarter"` if it counts in 0.25 steps (never change a step later). Then list it in tasks' `count_ids`.
+- **Pay a task by its count:** give the role's task `"flat_rate": { "count_id": "…", "cents_per_unit": 14000 }`. The count must be one of the task's; the task's hours are then tracked, not billed. Contractor roles only. For a quarter-step count, `cents_per_unit` must divide by 4.
 - **Retire a count:** take it out of every task and mark it `"retired": true`. Never delete or rename a count, and never reuse an id.
 - **Retire a role:** mark it `"retired": true`. With `"replaced_by": "<new role id>"`, everyone in it moves to the new role on their next open and sees a one-time notice; rates are not changed, only noted. With no `replaced_by`, its people can still invoice or submit waiting hours but can't log new time ("Your role is no longer active. Ask the office."). Never delete a role.
 - **Contractor to employee (or back):** create the new role and retire the old one with `replaced_by`. Hours already logged go out under the old role first.
@@ -81,19 +82,20 @@ _For office staff. Roles live in [`src/roles/roles.json`](src/roles/roles.json);
 
 **When the build fails**, the message names the role and the field. Common ones:
 
-| Message                                                                                                             | Fix                                                               |
-| ------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| `role X: id "…" is already used by role Y` / `code is used by more than one role`                                   | Give each role its own id and code, retired roles included.       |
-| `count "…": id is used more than once` / `label "…" matches count "…"`                                              | Each count needs its own id and a label no other count has.       |
-| `funding source "…" doesn't exist`                                                                                  | Use a source id from `src/funding-sources/`.                      |
-| `budget line "…" isn't in SOURCE` / `task "…" isn't in SOURCE`                                                      | Add the line or task to the source file first, or fix the id.     |
-| `count "…" isn't in the count list` / `count "…" is retired`                                                        | Add the count to `counts`, or stop listing a retired one.         |
-| `… is listed twice`                                                                                                 | Remove the repeated line, task or count.                          |
-| `nte_cents is set but SOURCE has no NTE`                                                                            | Remove `nte_cents` for that source.                               |
-| `employee role, but SOURCE has no employee_certification_text …`                                                    | Add `employee_certification_text` to the source file or the role. |
-| `certification_step is only for CHW roles (chw: true)`                                                              | Remove it, or set `chw: true`.                                    |
-| `replaced_by is set but the role isn't retired` / `replaced_by "…" doesn't exist` / `… is retired` / `forms a loop` | Point `replaced_by` from a retired role to an active one.         |
-| `ends … isn't a real date` / `is outside SOURCE's period`                                                           | Use a YYYY-MM-DD date inside the source's period.                 |
+| Message                                                                                                                               | Fix                                                               |
+| ------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `role X: id "…" is already used by role Y` / `code is used by more than one role`                                                     | Give each role its own id and code, retired roles included.       |
+| `count "…": id is used more than once` / `label "…" matches count "…"`                                                                | Each count needs its own id and a label no other count has.       |
+| `funding source "…" doesn't exist`                                                                                                    | Use a source id from `src/funding-sources/`.                      |
+| `budget line "…" isn't in SOURCE` / `task "…" isn't in SOURCE`                                                                        | Add the line or task to the source file first, or fix the id.     |
+| `count "…" isn't in the count list` / `count "…" is retired`                                                                          | Add the count to `counts`, or stop listing a retired one.         |
+| `… is listed twice`                                                                                                                   | Remove the repeated line, task or count.                          |
+| `nte_cents is set but SOURCE has no NTE`                                                                                              | Remove `nte_cents` for that source.                               |
+| `employee role, but SOURCE has no employee_certification_text …`                                                                      | Add `employee_certification_text` to the source file or the role. |
+| `certification_step is only for CHW roles (chw: true)`                                                                                | Remove it, or set `chw: true`.                                    |
+| `replaced_by is set but the role isn't retired` / `replaced_by "…" doesn't exist` / `… is retired` / `forms a loop`                   | Point `replaced_by` from a retired role to an active one.         |
+| `ends … isn't a real date` / `is outside SOURCE's period`                                                                             | Use a YYYY-MM-DD date inside the source's period.                 |
+| `flat_rate count "…" isn't one of the task's counts` / `flat_rate is only for contractor roles` / `cents_per_unit must divide by 4 …` | Fix the flat rate's count, role or amount.                        |
 
 ## For developers
 

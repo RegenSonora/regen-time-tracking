@@ -3,6 +3,7 @@
 // 0026, 0030, 0031, 0033).
 import { useState } from 'preact/hooks';
 import {
+  countText,
   formatDollars,
   fundingChoices,
   myStats,
@@ -19,7 +20,7 @@ import {
   type Role,
 } from '../../core';
 import { FUNDING_SOURCES } from '../../funding-sources';
-import { COUNT_DEFS } from '../../roles';
+import { COUNT_DEFS, ROLES } from '../../roles';
 import { phoneNow } from '../../storage';
 import {
   EntryRow,
@@ -188,7 +189,8 @@ export function RoleMyStats({ role }: { role: Role }) {
   const { data } = useApp();
   const rates = Object.fromEntries(data.settings.map((s) => [s.source_id, s.rate_cents]));
   const waiting = data.settings.reduce(
-    (sum, s) => sum + uninvoicedSummary(data.entries, s.source_id, s.rate_cents).quarters,
+    (sum, s) =>
+      sum + uninvoicedSummary(data.entries, s.source_id, s.rate_cents, ROLES, COUNT_DEFS).quarters,
     0,
   );
   const stats = myStats(COUNT_DEFS, role, rates, data.invoices, waiting);
@@ -207,7 +209,12 @@ export function RoleMyStats({ role }: { role: Role }) {
         {stats.counts.map((c) => (
           <div key={c.id} class="stat">
             <dt>{c.label}</dt>
-            <dd>{c.unit ? `${String(c.total)} ${c.unit}` : String(c.total)}</dd>
+            <dd>
+              {countText(c.total, {
+                ...(c.unit !== null && { unit: c.unit }),
+                ...(c.step && { step: c.step }),
+              })}
+            </dd>
           </div>
         ))}
       </dl>
@@ -286,7 +293,7 @@ export function Home() {
 
   const rate = data.settings.find((s) => s.source_id === selectedSource.id)?.rate_cents ?? null;
   const open = uninvoicedEntries(data.entries, selectedSource.id).reverse();
-  const summary = uninvoicedSummary(data.entries, selectedSource.id, rate);
+  const summary = uninvoicedSummary(data.entries, selectedSource.id, rate, ROLES, COUNT_DEFS);
   const employee = role?.employment === 'employee';
   const funding = role?.funding.find((f) => f.source_id === selectedSource.id);
   // The raise adds waiting hours over the role's raise sources (decision 0036).

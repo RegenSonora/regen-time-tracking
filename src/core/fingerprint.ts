@@ -6,9 +6,9 @@ import type { Counts, Invoice, InvoiceEntry, InvoiceTaskShare } from './types';
 /**
  * The version new invoices get. v2: several tasks per entry (decision 0024). v3: kind, role,
  * certification text and counts by id (roles plan R5, decisions 0029, 0031). v4: breaks
- * (decision 0037).
+ * (decision 0037). v5: flat-rate rows, unbilled hours and each share's billed flag (0039).
  */
-export const CANONICAL_VERSION = 4;
+export const CANONICAL_VERSION = 5;
 
 /** The fields an invoice is fingerprinted over: header, entries, lines, totals and rate. */
 export type FingerprintedInvoice = Omit<Invoice, 'fingerprint'>;
@@ -146,8 +146,11 @@ function countsFormV3(counts: Counts) {
   };
 }
 
-/** Forms v3 and v4 differ only by v4's breaks; v3's output must never change. */
-function formWithRole(invoice: FingerprintedInvoice, v: 3 | 4): string {
+/**
+ * Forms v3, v4 and v5 share this layout. v4 adds breaks; v5 adds each share's billed flag, the
+ * flat-rate rows and the unbilled hours. Earlier forms' output must never change.
+ */
+function formWithRole(invoice: FingerprintedInvoice, v: 3 | 4 | 5): string {
   const role = invoice.role;
   return canonicalJson({
     v,
@@ -184,7 +187,7 @@ function formWithRole(invoice: FingerprintedInvoice, v: 3 | 4): string {
       id: e.id,
       start: e.start,
       stop: e.stop,
-      ...(v === 4 && { breaks: e.breaks.map((b) => ({ start: b.start, stop: b.stop })) }),
+      ...(v >= 4 && { breaks: e.breaks.map((b) => ({ start: b.start, stop: b.stop })) }),
       entry_date: e.entry_date,
       quarters: e.quarters,
       tasks: e.tasks.map((t) => ({
@@ -192,6 +195,7 @@ function formWithRole(invoice: FingerprintedInvoice, v: 3 | 4): string {
         task_name: t.task_name,
         core_competency: t.core_competency,
         quarters: t.quarters,
+        ...(v >= 5 && { billed: t.billed !== false }),
       })),
       budget_line_id: e.budget_line_id,
       budget_line_name: e.budget_line_name,
@@ -205,6 +209,20 @@ function formWithRole(invoice: FingerprintedInvoice, v: 3 | 4): string {
       rate_cents: l.rate_cents,
       amount_cents: l.amount_cents,
     })),
+    ...(v >= 5 && {
+      flat_lines: (invoice.flat_lines ?? []).map((l) => ({
+        budget_line_id: l.budget_line_id,
+        budget_line_name: l.budget_line_name,
+        task_id: l.task_id,
+        task_name: l.task_name,
+        count_id: l.count_id,
+        count_label: l.count_label,
+        units_quarters: l.units_quarters,
+        cents_per_unit: l.cents_per_unit,
+        amount_cents: l.amount_cents,
+      })),
+      unbilled_quarters: invoice.unbilled_quarters ?? 0,
+    }),
     total_quarters: invoice.total_quarters,
     total_cents: invoice.total_cents,
   });
@@ -223,11 +241,20 @@ export function canonicalFormV4(invoice: FingerprintedInvoice): string {
   return formWithRole(invoice, 4);
 }
 
+/**
+ * Canonical form v5: as v4, plus each task share's billed flag, the flat-rate rows and the
+ * unbilled hours (decision 0039).
+ */
+export function canonicalFormV5(invoice: FingerprintedInvoice): string {
+  return formWithRole(invoice, 5);
+}
+
 const FORMS: Record<number, (invoice: FingerprintedInvoice) => string> = {
   1: canonicalFormV1,
   2: canonicalFormV2,
   3: canonicalFormV3,
   4: canonicalFormV4,
+  5: canonicalFormV5,
 };
 
 /** The canonical string for the invoice's own canonical version. */

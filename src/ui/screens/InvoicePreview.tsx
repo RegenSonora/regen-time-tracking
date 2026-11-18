@@ -4,6 +4,10 @@
 import { useState } from 'preact/hooks';
 import {
   buildInvoiceDraft,
+  countText,
+  flatRowName,
+  invoiceRows,
+  unbilledNote,
   formatDollars,
   formatQuarters,
   invoiceCounts,
@@ -132,7 +136,10 @@ export function InvoicePreview() {
     invoice.counts_all_time,
   ).map((c) => ({
     label: c.label,
-    value: c.unit ? `${String(c.period)} ${c.unit}` : String(c.period),
+    value: countText(c.period, {
+      ...(c.unit !== null && { unit: c.unit }),
+      ...(c.step && { step: c.step }),
+    }),
   }));
 
   const create = async () => {
@@ -211,13 +218,21 @@ export function InvoicePreview() {
           </tr>
         </thead>
         <tbody>
-          {invoice.lines.map((l) => (
-            <tr key={l.budget_line_id}>
-              <th scope="row">{l.budget_line_name}</th>
-              <td class="lines-hours">{formatQuarters(l.quarters)} hrs</td>
-              {!employee && <td class="lines-amount">{formatDollars(l.amount_cents)}</td>}
-            </tr>
-          ))}
+          {invoiceRows(invoice).map((row) =>
+            row.kind === 'hours' ? (
+              <tr key={row.line.budget_line_id}>
+                <th scope="row">{row.line.budget_line_name}</th>
+                <td class="lines-hours">{formatQuarters(row.line.quarters)} hrs</td>
+                {!employee && <td class="lines-amount">{formatDollars(row.line.amount_cents)}</td>}
+              </tr>
+            ) : (
+              <tr key={`${row.flat.budget_line_id} ${row.flat.task_id}`}>
+                <th scope="row">{flatRowName(row.flat)}</th>
+                <td class="lines-hours">× {formatDollars(row.flat.cents_per_unit)}</td>
+                <td class="lines-amount">{formatDollars(row.flat.amount_cents)}</td>
+              </tr>
+            ),
+          )}
           <tr class="lines-total">
             <th scope="row">Total</th>
             <td class="lines-hours">{formatQuarters(invoice.total_quarters)} hrs</td>
@@ -225,6 +240,8 @@ export function InvoicePreview() {
           </tr>
         </tbody>
       </table>
+
+      {unbilledNote(invoice) && <p class="hint">{unbilledNote(invoice)}.</p>}
 
       {!employee && <ContractLimit nte={invoice.nte} />}
 

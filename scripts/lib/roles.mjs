@@ -7,7 +7,7 @@ import { isRealDate } from './funding-sources.mjs';
 import { readJson } from './json.mjs';
 
 /**
- * @typedef {{ id: string, count_ids: string[] }} RoleTask
+ * @typedef {{ id: string, count_ids: string[], flat_rate?: { count_id: string, cents_per_unit: number } }} RoleTask
  * @typedef {{ id: string, tasks: RoleTask[] }} RoleLine
  * @typedef {{ after_quarters: number, rate_cents: number }} RateStep
  * @typedef {{ source_id: string, nte_cents?: number, rate_step?: RateStep, ends?: string,
@@ -15,7 +15,7 @@ import { readJson } from './json.mjs';
  * @typedef {{ id: string, code: string, employment: string, chw: boolean,
  *   certification_step?: object, employee_certification_text?: string,
  *   retired?: true, replaced_by?: string, funding: Funding[] }} Role
- * @typedef {{ id: string, label: string, retired?: true }} Count
+ * @typedef {{ id: string, label: string, step?: string, retired?: true }} Count
  * @typedef {{ counts: Count[], roles: Role[] }} RolesFile
  * @typedef {{ id: string, code: string, has_nte: boolean, period_start: string | null,
  *   period_end: string | null, employee_certification_text?: string,
@@ -188,9 +188,35 @@ export function checkRolesData(data, sourceFiles, schema) {
             else if (count.retired && !role.retired)
               problems.push(`${atTask}: count "${id}" is retired`);
           }
+          if (task.flat_rate) problems.push(...flatRateProblems(atTask, task, role, counts));
         }
       }
     }
+  }
+  return problems;
+}
+
+/**
+ * A flat rate pays one of the task's own counts, for contractors only, in cents a quarter-step
+ * count can divide without rounding (decision 0039).
+ * @param {string} at
+ * @param {RoleTask} task
+ * @param {Role} role
+ * @param {Map<string, Count>} counts
+ * @returns {string[]}
+ */
+function flatRateProblems(at, task, role, counts) {
+  const flat = /** @type {{ count_id: string, cents_per_unit: number }} */ (task.flat_rate);
+  /** @type {string[]} */
+  const problems = [];
+  if (!task.count_ids.includes(flat.count_id)) {
+    problems.push(`${at}: flat_rate count "${flat.count_id}" isn't one of the task's counts`);
+  }
+  if (role.employment !== 'contractor') {
+    problems.push(`${at}: flat_rate is only for contractor roles`);
+  }
+  if (counts.get(flat.count_id)?.step === 'quarter' && flat.cents_per_unit % 4 !== 0) {
+    problems.push(`${at}: flat_rate cents_per_unit must divide by 4 for a quarter-step count`);
   }
   return problems;
 }

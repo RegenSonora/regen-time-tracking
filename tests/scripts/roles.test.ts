@@ -6,6 +6,7 @@ import { checkRoles, checkRolesData, makeRolesValidator } from '../../scripts/li
 interface RoleTask {
   id: string;
   count_ids: string[];
+  flat_rate?: { count_id: string; cents_per_unit: number };
 }
 interface RoleLine {
   id: string;
@@ -34,6 +35,7 @@ interface Count {
   id: string;
   label: string;
   unit?: string;
+  step?: string;
   retired?: boolean;
 }
 interface RolesFile {
@@ -210,6 +212,95 @@ const TEAM_LEAD_LINES: [string, [string, string[]][]][] = [
   ['other-contractors', [['other', []]]],
 ];
 
+// Resilience Contractor lines, in the source's line order (decision 0040).
+const CONTRACTOR_LINES: [string, [string, string[]][]][] = [
+  [
+    'fire-risk-reduction-work',
+    [
+      ['residential-fuel-reduction', ['Trailer loads removed']],
+      ['municipal-fuel-reduction', ['Trailer loads removed']],
+      ['dump-runs', ['Trailer loads removed']],
+    ],
+  ],
+  [
+    'maintenance-labor',
+    [
+      ['pinal-garden-maintenance', []],
+      ['regen-lot-clean-and-maintenance', []],
+      ['lehr-reset', ['LEHRs reset']],
+      ['leos-maintenance', []],
+    ],
+  ],
+  [
+    'resilient-home-services-contracting',
+    TEAM_LEAD_LINES.find(([id]) => id === 'resilient-home-services-contracting')?.[1] ?? [],
+  ],
+  ['other-contractors', [['other', []]]],
+];
+
+// Regen Generalist Contractor lines, in the source's line order (decision 0038).
+const GENERALIST_LINES: [string, [string, string[]][]][] = [
+  [
+    'resilient-home-services-contracting',
+    TEAM_LEAD_LINES.find(([id]) => id === 'resilient-home-services-contracting')?.[1] ?? [],
+  ],
+  ['other-contractors', [['other', []]]],
+  [
+    'leos',
+    [
+      ['hosting-open-hours', ['People helped at open hours']],
+      ['cooking-monday-breakfast', ['Meals cooked']],
+      ['hosting-monday-breakfast', ['People at events hosted']],
+      ['serving-monday-dinner', ['Meals served']],
+      ['cooking-wednesday-dinner', ['Meals cooked']],
+      ['serving-wednesday-dinner', ['Meals served']],
+      ['hosting-wednesday-dinner', ['People at events hosted']],
+      ['hosting-special-event', ['Special events hosted', 'People at events hosted']],
+      ['leos-internal-meetings', []],
+      ['leos-maintenance', []],
+      ['leos-marketing', ['Flyers posted']],
+      ['leos-other', []],
+    ],
+  ],
+  [
+    'eat-local-network',
+    [
+      ['eat-local-forum-event-assistance', ['Event attendees']],
+      ['full-moon-garden-party-event-support', ['Event attendees']],
+      ['green-thumb-warriors-event-support', ['Event attendees']],
+      ['gleaning', ['Food gleaned']],
+      ['food-processing', ['Food processed']],
+      ['eat-local-marketing', ['Flyers posted']],
+      ['lehr-reset', ['LEHRs reset', 'Soil harvested']],
+      ['garden-maintenance', []],
+      ['lehr-maintenance', ['LEHR homes supported']],
+      ['eat-local-grower-support', ['Growers supported']],
+      ['lehr-installation', ['LEHRs installed']],
+      ['eat-local-network-other', []],
+    ],
+  ],
+  [
+    'community-care-work',
+    [
+      [
+        'domestic-support',
+        ['Homes cleaned', 'In-home meals made', 'People helped with domestic support'],
+      ],
+      [
+        'transportation-service',
+        [
+          'Rides provided',
+          'Medical appointments driven to',
+          'Miles driven',
+          'Resource appointments driven to',
+          'Rides dispatched',
+        ],
+      ],
+      ['other', []],
+    ],
+  ],
+];
+
 describe('roles file (roles plan Part 2, decisions 0027, 0029)', () => {
   it('matches the schema', () => {
     expect(validate(rolesFile)).toEqual([]);
@@ -229,10 +320,13 @@ describe('roles file (roles plan Part 2, decisions 0027, 0029)', () => {
       ['grow_space_added', 'sq ft'],
       ['miles_driven', 'mi'],
       ['resource_value_unlocked', 'dollars'],
+      ['food_gleaned', 'lb'],
+      ['food_processed', 'lb'],
+      ['soil_harvested', 'gal'],
     ]);
   });
 
-  it('ships four active roles: two CHW Trainees, a Certified CHW and the Resilience Team Lead', () => {
+  it('ships six active roles: two CHW Trainees, a Certified CHW, the Resilience Team Lead, the Regen Generalist and the Resilience Contractor', () => {
     expect(
       rolesFile.roles.map((r) => [r.id, r.code, r.name, r.employment, r.chw, r.retired ?? false]),
     ).toEqual([
@@ -240,6 +334,8 @@ describe('roles file (roles plan Part 2, decisions 0027, 0029)', () => {
       ['chw-te01', 'CHW-TE01', 'CHW Trainee (Employee)', 'employee', true, false],
       ['chw-ce01', 'CHW-CE01', 'Certified CHW (Employee)', 'employee', false, false],
       ['r-tl01', 'R-TL01', 'Resilience Team Lead', 'contractor', false, false],
+      ['r-gc01', 'R-GC01', 'Regen Generalist Contractor', 'contractor', false, false],
+      ['r-c01', 'R-C01', 'Resilience Contractor', 'contractor', false, false],
     ]);
   });
 
@@ -294,6 +390,80 @@ describe('roles file (roles plan Part 2, decisions 0027, 0029)', () => {
       })),
     );
   });
+
+  it('Regen Generalist Contractor bills Regen General Operating with no preset rate (0038)', () => {
+    const r = role('R-GC01');
+    expect(r.certification_step).toBeUndefined();
+    expect(r.funding).toHaveLength(1);
+    const [funding] = r.funding;
+    expect(funding?.source_id).toBe('regen-general-operating');
+    expect(funding?.rate_cents).toBeUndefined();
+    expect(funding?.rate_step).toBeUndefined();
+    expect(funding?.nte_cents).toBeUndefined();
+    const plain = funding?.budget_lines.map((l) => ({
+      id: l.id,
+      tasks: l.tasks.map((t) => ({ id: t.id, count_ids: t.count_ids })),
+    }));
+    expect(plain).toEqual(
+      GENERALIST_LINES.map(([id, tasks]) => ({
+        id,
+        tasks: tasks.map(([task, labels]) => ({ id: task, count_ids: countIds(labels) })),
+      })),
+    );
+  });
+
+  it('pays the Regen Generalist and Resilience Contractor $140.00 per LEHR reset (0039, 0040)', () => {
+    const flatOf = (code: string) =>
+      role(code)
+        .funding.flatMap((f) => f.budget_lines)
+        .flatMap((l) => l.tasks.filter((t) => t.flat_rate).map((t) => [l.id, t.id, t.flat_rate]));
+    const rate = { count_id: 'lehrs_reset', cents_per_unit: 14000 };
+    expect(flatOf('R-GC01')).toEqual([['eat-local-network', 'lehr-reset', rate]]);
+    expect(flatOf('R-C01')).toEqual([['maintenance-labor', 'lehr-reset', rate]]);
+    // A count's step never changes after release.
+    expect(rolesFile.counts.filter((c) => c.step).map((c) => [c.id, c.step])).toEqual([
+      ['lehrs_reset', 'quarter'],
+    ]);
+    // Every other role is paid by the hour only.
+    for (const r of rolesFile.roles.filter((x) => x.id !== 'r-gc01' && x.id !== 'r-c01'))
+      for (const f of r.funding)
+        for (const l of f.budget_lines)
+          for (const t of l.tasks) expect(t.flat_rate, `${r.code} ${t.id}`).toBeUndefined();
+  });
+
+  it('Resilience Contractor bills Regen General Operating with no preset rate (0040)', () => {
+    const r = role('R-C01');
+    expect(r.certification_step).toBeUndefined();
+    expect(r.funding).toHaveLength(1);
+    const [funding] = r.funding;
+    expect(funding?.source_id).toBe('regen-general-operating');
+    expect(funding?.rate_cents).toBeUndefined();
+    expect(funding?.rate_step).toBeUndefined();
+    expect(funding?.nte_cents).toBeUndefined();
+    const plain = funding?.budget_lines.map((l) => ({
+      id: l.id,
+      tasks: l.tasks.map((t) => ({ id: t.id, count_ids: t.count_ids })),
+    }));
+    expect(plain).toEqual(
+      CONTRACTOR_LINES.map(([id, tasks]) => ({
+        id,
+        tasks: tasks.map(([task, labels]) => ({ id: task, count_ids: countIds(labels) })),
+      })),
+    );
+  });
+
+  it('adds the eight Regen Generalist counts at the end of the list (0038)', () => {
+    expect(rolesFile.counts.slice(-8).map((c) => c.label)).toEqual([
+      'Flyers posted',
+      'Food gleaned',
+      'Food processed',
+      'LEHRs reset',
+      'Soil harvested',
+      'LEHR homes supported',
+      'Growers supported',
+      'LEHRs installed',
+    ]);
+  });
 });
 
 describe('roles schema', () => {
@@ -327,6 +497,19 @@ describe('roles schema', () => {
     expect(
       changed((f) => (((first(f).funding[0] as Funding).budget_lines[0] as RoleLine).tasks = [])),
     ).not.toEqual([]);
+  });
+
+  it('accepts only the quarter step and a flat rate in whole cents (decision 0039)', () => {
+    expect(changed((f) => ((f.counts[0] as Count).step = 'half'))).not.toEqual([]);
+    expect(changed((f) => ((f.counts[0] as Count).step = 'quarter'))).toEqual([]);
+    const t = (f: RolesFile) =>
+      (first(f).funding[0] as Funding).budget_lines[0]?.tasks[0] as RoleTask;
+    expect(
+      changed((f) => (t(f).flat_rate = { count_id: 'contacts', cents_per_unit: 12.5 })),
+    ).not.toEqual([]);
+    expect(
+      changed((f) => (t(f).flat_rate = { count_id: 'contacts', cents_per_unit: 100 })),
+    ).toEqual([]);
   });
 
   it('rejects a blank unit or label, and an end date that is not a date', () => {
@@ -549,6 +732,38 @@ describe('build checks against the source files (roles plan R1)', () => {
     expect(
       broken((f) => {
         delete regenOf(te(f)).rate_step;
+      }),
+    ).toEqual([]);
+  });
+  it('checks flat rates: a count of the task, contractors only, cents that divide by 4 (0039)', () => {
+    const gc = (f: RolesFile) => byId(f, 'r-gc01');
+    const reset = (f: RolesFile) =>
+      funding(gc(f))
+        .budget_lines.flatMap((l) => l.tasks)
+        .find((t) => t.id === 'lehr-reset') as RoleTask;
+    const at =
+      'role R-GC01, funding regen-general-operating, budget line eat-local-network, task lehr-reset';
+    expect(
+      broken((f) => {
+        reset(f).flat_rate = { count_id: 'trees_planted', cents_per_unit: 14000 };
+      }),
+    ).toContain(`${at}: flat_rate count "trees_planted" isn't one of the task's counts`);
+    expect(
+      broken((f) => {
+        gc(f).employment = 'employee';
+        gc(f).funding[0] = { ...funding(gc(f)) };
+      }),
+    ).toContain(`${at}: flat_rate is only for contractor roles`);
+    expect(
+      broken((f) => {
+        reset(f).flat_rate = { count_id: 'lehrs_reset', cents_per_unit: 14001 };
+      }),
+    ).toContain(`${at}: flat_rate cents_per_unit must divide by 4 for a quarter-step count`);
+    expect(
+      broken((f) => {
+        const lehrs = f.counts.find((c) => c.id === 'lehrs_reset') as Count;
+        delete lehrs.step;
+        reset(f).flat_rate = { count_id: 'lehrs_reset', cents_per_unit: 14001 };
       }),
     ).toEqual([]);
   });

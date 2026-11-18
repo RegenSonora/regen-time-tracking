@@ -191,10 +191,10 @@ describe('several tasks per entry (decision 0024)', () => {
     }
   });
 
-  it('new invoices use the current canonical form (v4) and verify', async () => {
+  it('new invoices use the current canonical form (v5) and verify', async () => {
     const result = await createInvoice(splitSampleInput());
     if (!result.ok) throw new Error(result.reason);
-    expect(result.invoice.canonical_version).toBe(4);
+    expect(result.invoice.canonical_version).toBe(5);
     expect(await verifyFingerprint(result.invoice)).toBe(true);
   });
 });
@@ -542,11 +542,11 @@ describe('certification text by role (decision 0031)', () => {
     expect(result.invoice.nte).toEqual({ state: 'none' });
   });
 
-  it('a new timesheet freezes the employee text and seals it with form v4', async () => {
+  it('a new timesheet freezes the employee text and seals it with form v5', async () => {
     const result = await createInvoice(sampleInput({ role: employee }));
     if (!result.ok) throw new Error(result.reason);
     expect(result.invoice.source.certification_text).toBe(tisupp.employee_certification_text);
-    expect(result.invoice.canonical_version).toBe(4);
+    expect(result.invoice.canonical_version).toBe(5);
   });
 });
 

@@ -59,6 +59,7 @@ export interface CountTotal {
   id: string;
   label: string;
   unit: string | null;
+  step: 'quarter' | null;
   total: number;
 }
 
@@ -119,7 +120,13 @@ export function myStats(
   );
   const counts = countDefs
     .filter((c) => shown.has(c.id) && (all.values[c.id] ?? 0) > 0)
-    .map((c) => ({ id: c.id, label: c.label, unit: c.unit ?? null, total: all.values[c.id] ?? 0 }));
+    .map((c) => ({
+      id: c.id,
+      label: c.label,
+      unit: c.unit ?? null,
+      step: c.step ?? null,
+      total: all.values[c.id] ?? 0,
+    }));
 
   return {
     invoiced_quarters: invoiced,

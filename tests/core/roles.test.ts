@@ -38,6 +38,8 @@ describe('roleChoices', () => {
       'CHW-TE01',
       'CHW-CE01',
       'R-TL01',
+      'R-GC01',
+      'R-C01',
     ]);
   });
 
@@ -257,6 +259,16 @@ describe('prefillRate (decision 0030)', () => {
     expect(prefillRate(certified, funding(certified, 'tisupp'), tisupp)).toBe(2500);
     expect(prefillRate(certified, funding(certified, 'regen-general-operating'), regen)).toBe(2500);
     expect(prefillRate(lead, entry, regen)).toBe(2200);
+    // The Regen Generalist types their own rate (decision 0038).
+    const generalist = role('r-gc01');
+    expect(
+      prefillRate(generalist, funding(generalist, 'regen-general-operating'), regen),
+    ).toBeNull();
+    // So does the Resilience Contractor (decision 0040).
+    const contractor = role('r-c01');
+    expect(
+      prefillRate(contractor, funding(contractor, 'regen-general-operating'), regen),
+    ).toBeNull();
   });
 });
 
@@ -293,11 +305,19 @@ describe('invoiceCounts (decision 0029)', () => {
         },
       ),
     ).toEqual([
-      { id: 'trees_planted', label: 'Trees planted', unit: null, period: 6, all_time: 41 },
+      {
+        id: 'trees_planted',
+        label: 'Trees planted',
+        unit: null,
+        step: null,
+        period: 6,
+        all_time: 41,
+      },
       {
         id: 'water_capacity_added',
         label: 'Water capacity added',
         unit: 'gal',
+        step: null,
         period: 500,
         all_time: 1500,
       },
@@ -330,7 +350,7 @@ describe('invoiceCounts (decision 0029)', () => {
           ],
         },
       ),
-    ).toEqual([{ id: null, label: 'Flyers', unit: null, period: 20, all_time: 50 }]);
+    ).toEqual([{ id: null, label: 'Flyers', unit: null, step: null, period: 20, all_time: 50 }]);
   });
 });
 

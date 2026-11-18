@@ -1,0 +1,224 @@
+[
+  {
+    "name": "Regen Generalist: mixed LEHR reset entry, a reset-only entry, Leo's hours",
+    "invoice": {
+      "id": "00000000-0000-4000-8000-000000000500",
+      "number": "CC-2026-004",
+      "sequence": 4,
+      "kind": "invoice",
+      "role": {
+        "id": "r-gc01",
+        "code": "R-GC01",
+        "name": "Regen Generalist Contractor",
+        "employment": "contractor",
+        "chw": false
+      },
+      "source": {
+        "id": "regen-general-operating",
+        "code": "REGEN-GO",
+        "name": "Regen General Operating",
+        "version": 5,
+        "certification_text": "I certify that the services listed were performed on the dates shown on the attached timesheet pages, the hours are accurate, and no participant names are included."
+      },
+      "chw": {
+        "name": "Carmen Cruz",
+        "initials": "CC",
+        "mailing_address": ""
+      },
+      "invoice_date": "2026-11-07",
+      "period_start": "2026-11-02",
+      "period_end": "2026-11-04",
+      "rate_cents": 2000,
+      "entries": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "start": "2026-11-02T09:00:00-07:00",
+          "stop": "2026-11-02T10:00:00-07:00",
+          "breaks": [],
+          "entry_date": "2026-11-02",
+          "quarters": 4,
+          "tasks": [
+            {
+              "task_id": "lehr-reset",
+              "task_name": "LEHR reset",
+              "core_competency": null,
+              "quarters": 2,
+              "billed": false
+            },
+            {
+              "task_id": "garden-maintenance",
+              "task_name": "Garden maintenance",
+              "core_competency": null,
+              "quarters": 2
+            }
+          ],
+          "budget_line_id": "eat-local-network",
+          "budget_line_name": "Eat Local Network",
+          "counts": {
+            "values": {
+              "contacts": 0,
+              "referrals_given": 0,
+              "referral_followups": 0,
+              "rides_provided": 0,
+              "applications_completed": 0,
+              "lehrs_reset": 10,
+              "soil_harvested": 30
+            },
+            "other": []
+          },
+          "notes": "",
+          "created_at": "2026-11-02T09:00:00-07:00",
+          "updated_at": "2026-11-02T09:00:00-07:00"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "start": "2026-11-03T09:00:00-07:00",
+          "stop": "2026-11-03T11:00:00-07:00",
+          "breaks": [],
+          "entry_date": "2026-11-03",
+          "quarters": 8,
+          "tasks": [
+            {
+              "task_id": "lehr-reset",
+              "task_name": "LEHR reset",
+              "core_competency": null,
+              "quarters": 8,
+              "billed": false
+            }
+          ],
+          "budget_line_id": "eat-local-network",
+          "budget_line_name": "Eat Local Network",
+          "counts": {
+            "values": {
+              "contacts": 0,
+              "referrals_given": 0,
+              "referral_followups": 0,
+              "rides_provided": 0,
+              "applications_completed": 0,
+              "lehrs_reset": 4
+            },
+            "other": []
+          },
+          "notes": "",
+          "created_at": "2026-11-03T09:00:00-07:00",
+          "updated_at": "2026-11-03T09:00:00-07:00"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000003",
+          "start": "2026-11-04T17:00:00-07:00",
+          "stop": "2026-11-04T18:30:00-07:00",
+          "breaks": [],
+          "entry_date": "2026-11-04",
+          "quarters": 6,
+          "tasks": [
+            {
+              "task_id": "hosting-open-hours",
+              "task_name": "Hosting open hours",
+              "core_competency": null,
+              "quarters": 6
+            }
+          ],
+          "budget_line_id": "leos",
+          "budget_line_name": "Leo's",
+          "counts": {
+            "values": {
+              "contacts": 0,
+              "referrals_given": 0,
+              "referral_followups": 0,
+              "rides_provided": 0,
+              "applications_completed": 0,
+              "people_helped_open_hours": 7
+            },
+            "other": []
+          },
+          "notes": "",
+          "created_at": "2026-11-04T17:00:00-07:00",
+          "updated_at": "2026-11-04T17:00:00-07:00"
+        }
+      ],
+      "lines": [
+        {
+          "budget_line_id": "leos",
+          "budget_line_name": "Leo's",
+          "quarters": 6,
+          "rate_cents": 2000,
+          "amount_cents": 3000
+        },
+        {
+          "budget_line_id": "eat-local-network",
+          "budget_line_name": "Eat Local Network",
+          "quarters": 2,
+          "rate_cents": 2000,
+          "amount_cents": 1000
+        }
+      ],
+      "flat_lines": [
+        {
+          "budget_line_id": "eat-local-network",
+          "budget_line_name": "Eat Local Network",
+          "task_id": "lehr-reset",
+          "task_name": "LEHR reset",
+          "count_id": "lehrs_reset",
+          "count_label": "LEHRs reset",
+          "units_quarters": 14,
+          "cents_per_unit": 14000,
+          "amount_cents": 49000
+        }
+      ],
+      "total_quarters": 8,
+      "unbilled_quarters": 10,
+      "total_cents": 53000,
+      "counts_period": {
+        "values": {
+          "contacts": 0,
+          "referrals_given": 0,
+          "referral_followups": 0,
+          "rides_provided": 0,
+          "applications_completed": 0,
+          "lehrs_reset": 14,
+          "soil_harvested": 30,
+          "people_helped_open_hours": 7
+        },
+        "other": []
+      },
+      "counts_all_time": {
+        "values": {
+          "contacts": 0,
+          "referrals_given": 0,
+          "referral_followups": 0,
+          "rides_provided": 0,
+          "applications_completed": 0,
+          "lehrs_reset": 14,
+          "soil_harvested": 30,
+          "people_helped_open_hours": 7
+        },
+        "other": []
+      },
+      "count_defs": [
+        {
+          "id": "people_helped_open_hours",
+          "label": "People helped at open hours"
+        },
+        {
+          "id": "lehrs_reset",
+          "label": "LEHRs reset",
+          "step": "quarter"
+        },
+        {
+          "id": "soil_harvested",
+          "label": "Soil harvested",
+          "unit": "gal"
+        }
+      ],
+      "nte": {
+        "state": "none"
+      },
+      "canonical_version": 5,
+      "created_at": "2026-11-07T16:00:00-07:00",
+      "updated_at": "2026-11-07T16:00:00-07:00",
+      "fingerprint": "95722d13579547d54b07c229a14df61f570fd4808ed52fba760ba98bbf2d96f0"
+    },
+    "canonical": "{\"chw\":{\"initials\":\"CC\",\"mailing_address\":\"\",\"name\":\"Carmen Cruz\"},\"entries\":[{\"breaks\":[],\"budget_line_id\":\"eat-local-network\",\"budget_line_name\":\"Eat Local Network\",\"counts\":{\"other\":[],\"values\":{\"lehrs_reset\":10,\"soil_harvested\":30}},\"entry_date\":\"2026-11-02\",\"id\":\"00000000-0000-4000-8000-000000000001\",\"notes\":\"\",\"quarters\":4,\"start\":\"2026-11-02T09:00:00-07:00\",\"stop\":\"2026-11-02T10:00:00-07:00\",\"tasks\":[{\"billed\":false,\"core_competency\":null,\"quarters\":2,\"task_id\":\"lehr-reset\",\"task_name\":\"LEHR reset\"},{\"billed\":true,\"core_competency\":null,\"quarters\":2,\"task_id\":\"garden-maintenance\",\"task_name\":\"Garden maintenance\"}]},{\"breaks\":[],\"budget_line_id\":\"eat-local-network\",\"budget_line_name\":\"Eat Local Network\",\"counts\":{\"other\":[],\"values\":{\"lehrs_reset\":4}},\"entry_date\":\"2026-11-03\",\"id\":\"00000000-0000-4000-8000-000000000002\",\"notes\":\"\",\"quarters\":8,\"start\":\"2026-11-03T09:00:00-07:00\",\"stop\":\"2026-11-03T11:00:00-07:00\",\"tasks\":[{\"billed\":false,\"core_competency\":null,\"quarters\":8,\"task_id\":\"lehr-reset\",\"task_name\":\"LEHR reset\"}]},{\"breaks\":[],\"budget_line_id\":\"leos\",\"budget_line_name\":\"Leo's\",\"counts\":{\"other\":[],\"values\":{\"people_helped_open_hours\":7}},\"entry_date\":\"2026-11-04\",\"id\":\"00000000-0000-4000-8000-000000000003\",\"notes\":\"\",\"quarters\":6,\"start\":\"2026-11-04T17:00:00-07:00\",\"stop\":\"2026-11-04T18:30:00-07:00\",\"tasks\":[{\"billed\":true,\"core_competency\":null,\"quarters\":6,\"task_id\":\"hosting-open-hours\",\"task_name\":\"Hosting open hours\"}]}],\"flat_lines\":[{\"amount_cents\":49000,\"budget_line_id\":\"eat-local-network\",\"budget_line_name\":\"Eat Local Network\",\"cents_per_unit\":14000,\"count_id\":\"lehrs_reset\",\"count_label\":\"LEHRs reset\",\"task_id\":\"lehr-reset\",\"task_name\":\"LEHR reset\",\"units_quarters\":14}],\"id\":\"00000000-0000-4000-8000-000000000500\",\"invoice_date\":\"2026-11-07\",\"kind\":\"invoice\",\"lines\":[{\"amount_cents\":3000,\"budget_line_id\":\"leos\",\"budget_line_name\":\"Leo's\",\"quarters\":6,\"rate_cents\":2000},{\"amount_cents\":1000,\"budget_line_id\":\"eat-local-network\",\"budget_line_name\":\"Eat Local Network\",\"quarters\":2,\"rate_cents\":2000}],\"number\":\"CC-2026-004\",\"period_end\":\"2026-11-04\",\"period_start\":\"2026-11-02\",\"rate_cents\":2000,\"role\":{\"chw\":false,\"code\":\"R-GC01\",\"employment\":\"contractor\",\"id\":\"r-gc01\",\"name\":\"Regen Generalist Contractor\"},\"sequence\":4,\"source\":{\"certification_text\":\"I certify that the services listed were performed on the dates shown on the attached timesheet pages, the hours are accurate, and no participant names are included.\",\"code\":\"REGEN-GO\",\"id\":\"regen-general-operating\",\"name\":\"Regen General Operating\",\"version\":5},\"total_cents\":53000,\"total_quarters\":8,\"unbilled_quarters\":10,\"v\":5}",
+    "fingerprint": "95722d13579547d54b07c229a14df61f570fd4808ed52fba760ba98bbf2d96f0"
+  }
+]

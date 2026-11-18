@@ -2,6 +2,7 @@
 // and the golden test keeps v1 producing the same text.
 import type { Invoice } from '../../core/types';
 
+/** The layout every invoice without flat-rate rows still gets. */
 export const QR_PAYLOAD_VERSION = 1;
 
 /** Compact JSON: invoice #, period, [budget line id, quarter-hours, cents] per line, fingerprint. */
@@ -18,4 +19,41 @@ export function qrPayloadV1(
     `"p":[${str(invoice.period_start)},${str(invoice.period_end)}],` +
     `"l":[${lines}],"f":${str(invoice.fingerprint)}}`
   );
+}
+
+/**
+ * v2 (decision 0039): v1 plus "x", [budget line id, task id, count in quarter-units, cents] per
+ * flat-rate row. Used only when an invoice has flat-rate rows.
+ */
+export function qrPayloadV2(
+  invoice: Pick<
+    Invoice,
+    'number' | 'period_start' | 'period_end' | 'lines' | 'flat_lines' | 'fingerprint'
+  >,
+): string {
+  const str = (s: string) => JSON.stringify(s);
+  const lines = invoice.lines
+    .map((l) => `[${str(l.budget_line_id)},${String(l.quarters)},${String(l.amount_cents)}]`)
+    .join(',');
+  const flat = (invoice.flat_lines ?? [])
+    .map(
+      (l) =>
+        `[${str(l.budget_line_id)},${str(l.task_id)},${String(l.units_quarters)},${String(l.amount_cents)}]`,
+    )
+    .join(',');
+  return (
+    `{"v":2,"n":${str(invoice.number)},` +
+    `"p":[${str(invoice.period_start)},${str(invoice.period_end)}],` +
+    `"l":[${lines}],"x":[${flat}],"f":${str(invoice.fingerprint)}}`
+  );
+}
+
+/** The payload an invoice prints: v2 when it has flat-rate rows, v1 otherwise (decision 0039). */
+export function qrPayload(
+  invoice: Pick<
+    Invoice,
+    'number' | 'period_start' | 'period_end' | 'lines' | 'flat_lines' | 'fingerprint'
+  >,
+): string {
+  return (invoice.flat_lines ?? []).length > 0 ? qrPayloadV2(invoice) : qrPayloadV1(invoice);
 }

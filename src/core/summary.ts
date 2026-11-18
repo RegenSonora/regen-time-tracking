@@ -1,8 +1,9 @@
 // Home's "Not yet invoiced" line (SPEC §5): entry count, hours and amount for one source.
 import { uninvoicedEntries } from './invoice';
-import { lineAmountCents, sumCents } from './money';
+import { flatAmountCents, lineAmountCents, sumCents } from './money';
+import { flatRates } from './roles';
 import { checkEntryTimes } from './time';
-import type { Entry } from './types';
+import type { CountDef, Entry, Role } from './types';
 
 export interface UninvoicedSummary {
   count: number;
@@ -12,26 +13,54 @@ export interface UninvoicedSummary {
 }
 
 /**
- * Rounded the way the invoice is: quarters summed per budget line, each line amount rounded
- * once, then added (SPEC §6). So this always equals the invoice the Generate button would make.
+ * Rounded the way the invoice is: billed quarters summed per budget line, each line amount
+ * rounded once, plus flat-rate fees, then added (SPEC §6, decision 0039). So this always equals
+ * the invoice the Generate button would make. `quarters` counts every tracked hour, billed or not.
  */
 export function uninvoicedSummary(
   entries: readonly Entry[],
   sourceId: string,
   rateCents: number | null,
+  roles: readonly Role[] = [],
+  countDefs: readonly Pick<CountDef, 'id' | 'step'>[] = [],
 ): UninvoicedSummary {
   const open = uninvoicedEntries(entries, sourceId);
   const perLine = new Map<string, number>();
+  // Flat quarter-units per role, line, task and count, summed before the fee is worked out.
+  const flatUnits = new Map<string, { units: number; cents: number }>();
+  let quarters = 0;
   for (const e of open) {
     const times = checkEntryTimes(e.start, e.stop, e.breaks);
-    const quarters = times.ok ? times.quarters : 0;
-    perLine.set(e.budget_line_id, (perLine.get(e.budget_line_id) ?? 0) + quarters);
+    if (!times.ok) continue;
+    quarters += times.quarters;
+    const rates = flatRates(
+      roles.find((r) => r.id === e.role_id),
+      sourceId,
+    ).get(e.budget_line_id);
+    let billed = 0;
+    for (const share of e.tasks) {
+      const rate = rates?.get(share.task_id);
+      if (!rate) {
+        billed += share.quarters;
+        continue;
+      }
+      const key = [e.role_id, e.budget_line_id, share.task_id, rate.count_id].join('|');
+      const seen = flatUnits.get(key) ?? { units: 0, cents: rate.cents_per_unit };
+      const perUnit = countDefs.find((c) => c.id === rate.count_id)?.step === 'quarter' ? 1 : 4;
+      seen.units += (e.counts.values[rate.count_id] ?? 0) * perUnit;
+      flatUnits.set(key, seen);
+    }
+    perLine.set(e.budget_line_id, (perLine.get(e.budget_line_id) ?? 0) + billed);
   }
-  const lines = [...perLine.values()];
   return {
     count: open.length,
-    quarters: lines.reduce((sum, q) => sum + q, 0),
+    quarters,
     amount_cents:
-      rateCents === null ? null : sumCents(lines.map((q) => lineAmountCents(q, rateCents))),
+      rateCents === null
+        ? null
+        : sumCents([
+            ...[...perLine.values()].map((q) => lineAmountCents(q, rateCents)),
+            ...[...flatUnits.values()].map((f) => flatAmountCents(f.units, f.cents)),
+          ]),
   };
 }

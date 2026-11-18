@@ -2,6 +2,7 @@
 // storage, version.
 import { useLayoutEffect, useState } from 'preact/hooks';
 import {
+  flatRateNotes,
   formatDollars,
   formatInvoiceNumber,
   normalizeInitials,
@@ -11,6 +12,7 @@ import {
   type SourceSettings,
 } from '../../core';
 import { FUNDING_SOURCES } from '../../funding-sources';
+import { COUNT_DEFS } from '../../roles';
 import { Confirm, Field, Page } from '../components';
 import { paperWord, plural, roleLabel, versionLabel } from '../format';
 import { sourceById, useApp } from '../store';
@@ -320,6 +322,11 @@ export function Settings() {
                 />
               )}
             </Field>
+            {flatRateNotes(role, source, COUNT_DEFS).map((note) => (
+              <p key={note} class="hint">
+                {note}
+              </p>
+            ))}
             {employee ? null : source.has_nte ? (
               <Field
                 label={`Not-to-exceed amount for ${source.code}`}

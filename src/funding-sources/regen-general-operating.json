@@ -3,7 +3,7 @@
   "id": "regen-general-operating",
   "code": "REGEN-GO",
   "name": "Regen General Operating",
-  "version": 4,
+  "version": 5,
   "has_nte": false,
   "default_rate_cents": null,
   "period_start": null,
@@ -325,6 +325,41 @@
       "id": "admin-staffing",
       "name": "Admin: staffing",
       "core_competency": null
+    },
+    {
+      "id": "gleaning",
+      "name": "Gleaning",
+      "core_competency": null
+    },
+    {
+      "id": "food-processing",
+      "name": "Food processing",
+      "core_competency": null
+    },
+    {
+      "id": "eat-local-marketing",
+      "name": "Eat Local marketing",
+      "core_competency": null
+    },
+    {
+      "id": "lehr-reset",
+      "name": "LEHR reset",
+      "core_competency": null
+    },
+    {
+      "id": "garden-maintenance",
+      "name": "Garden maintenance",
+      "core_competency": null
+    },
+    {
+      "id": "eat-local-grower-support",
+      "name": "Eat Local grower support",
+      "core_competency": null
+    },
+    {
+      "id": "lehr-installation",
+      "name": "LEHR installation",
+      "core_competency": null
     }
   ],
   "budget_lines": [
@@ -424,6 +459,10 @@
     {
       "id": "chw-experience-hours",
       "name": "CHW experience hours"
+    },
+    {
+      "id": "community-care-work",
+      "name": "Community Care Work"
     }
   ]
 }

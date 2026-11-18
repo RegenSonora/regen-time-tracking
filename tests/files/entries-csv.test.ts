@@ -32,7 +32,7 @@ describe('entry log CSV (SPEC §7, decisions 0001, 0024 and 0029)', () => {
   });
 
   it('has the fixed columns, then one per count in list order, for every invoice', async () => {
-    expect(COLUMNS.slice(0, 15)).toEqual([
+    expect(COLUMNS.slice(0, 16)).toEqual([
       'invoice_number',
       'fingerprint',
       'funding_source',
@@ -44,12 +44,13 @@ describe('entry log CSV (SPEC §7, decisions 0001, 0024 and 0029)', () => {
       'raw_duration',
       'paused',
       'billed_hours',
+      'unbilled_hours',
       'task',
       'core_competency',
       'budget_line',
       'rate',
     ]);
-    expect(COLUMNS.slice(15, -4)).toEqual(countDefs.map((c) => c.id));
+    expect(COLUMNS.slice(16, -4)).toEqual(countDefs.map((c) => c.id));
     expect(COLUMNS.slice(-4)).toEqual(['other_counts', 'notes', 'created_at', 'updated_at']);
     const one = await invoiceFrom({
       entries: [
@@ -64,7 +65,7 @@ describe('entry log CSV (SPEC §7, decisions 0001, 0024 and 0029)', () => {
   it('keeps a retired count as a column (decision 0029)', async () => {
     const retired: CountDef[] = [...countDefs, { id: 'old_count', label: 'Old', retired: true }];
     const header = csvText(entriesCsv(await sampleInvoice(), retired)).split('\r\n')[0];
-    expect(header).toContain(',green_thumb_warriors_sessions_supported,old_count,other_counts,');
+    expect(header).toContain(',lehrs_installed,old_count,other_counts,');
   });
 
   it("writes a Team Lead's counts by id, blank where unused", async () => {
@@ -94,6 +95,42 @@ describe('entry log CSV (SPEC §7, decisions 0001, 0024 and 0029)', () => {
     expect(cell('trees_planted')).toBe('');
     expect(cell('contacts')).toBe('');
     expect(cell('core_competency')).toBe('');
+  });
+
+  it('puts a flat-rate share in unbilled_hours and writes 2.5 LEHRs reset (decision 0039)', async () => {
+    const generalist = findTestRole('r-gc01');
+    const invoice = await invoiceFrom({
+      source: regen,
+      role: generalist,
+      settings: { source_id: regen.id, rate_cents: 2000, nte_cents: null },
+      entries: [
+        makeEntry('2026-11-02', '09:00:00', '10:00:00', 'lehr-reset', 'eat-local-network', {
+          source_id: regen.id,
+          role_id: generalist.id,
+          tasks: [
+            { task_id: 'lehr-reset', quarters: 2 },
+            { task_id: 'garden-maintenance', quarters: 2 },
+          ],
+          counts: { values: { lehrs_reset: 10, soil_harvested: 30 }, other: [] },
+        }),
+      ],
+      prior_invoices: [],
+    });
+    const rows = rowsOf(entriesCsv(invoice, countDefs));
+    const cell = (r: number, c: string) => rows[r]?.[COLUMNS.indexOf(c)];
+    expect([cell(0, 'task'), cell(0, 'billed_hours'), cell(0, 'unbilled_hours')]).toEqual([
+      'LEHR reset',
+      '0.00',
+      '0.50',
+    ]);
+    expect([cell(1, 'task'), cell(1, 'billed_hours'), cell(1, 'unbilled_hours')]).toEqual([
+      'Garden maintenance',
+      '0.50',
+      '0.00',
+    ]);
+    expect(cell(0, 'lehrs_reset')).toBe('2.5');
+    expect(cell(0, 'soil_harvested')).toBe('30');
+    expect(cell(1, 'lehrs_reset')).toBe('');
   });
 
   it('writes one row per task share; billed hours add up, counts and notes are on part 1', async () => {

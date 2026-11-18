@@ -1,10 +1,12 @@
 // Role choices on setup and the new-entry screen, rate prefill and counts per task
 // (decisions 0027, 0028, 0029, 0030, 0033).
+import { formatDollars } from './money';
 import { RECENT_TASKS_SHOWN } from './picks';
 import type {
   BudgetLine,
   CountDef,
   Counts,
+  FlatRate,
   FundingSourceConfig,
   OtherCount,
   Role,
@@ -186,6 +188,8 @@ export interface InvoiceCount {
   id: string | null;
   label: string;
   unit: string | null;
+  /** quarter: values are quarter-units, shown as decimals (decision 0039). */
+  step: 'quarter' | null;
   period: number;
   all_time: number;
 }
@@ -218,6 +222,7 @@ export function invoiceCounts(
       id: c.id,
       label: c.label,
       unit: c.unit ?? null,
+      step: c.step ?? null,
       period: period.values[c.id] ?? 0,
       all_time: allTime.values[c.id] ?? 0,
     }));
@@ -228,6 +233,7 @@ export function invoiceCounts(
       id: null,
       label,
       unit: null,
+      step: null,
       period: value,
       all_time: allOther.get(key)?.value ?? 0,
     });
@@ -294,4 +300,47 @@ export function roleUpdate(
     }
   }
   return { state: 'replaced', from, role, add_settings, rate_notes };
+}
+
+/**
+ * The role's flat-rate tasks on a source, by budget line id, then task id (decision 0039).
+ * A flat-rate task's hours are tracked, not billed; its count is billed instead.
+ */
+export function flatRates(
+  role: Pick<Role, 'funding'> | null | undefined,
+  sourceId: string,
+): Map<string, Map<string, FlatRate>> {
+  const out = new Map<string, Map<string, FlatRate>>();
+  const funding = role?.funding.find((f) => f.source_id === sourceId);
+  for (const line of funding?.budget_lines ?? []) {
+    for (const task of line.tasks) {
+      if (!task.flat_rate) continue;
+      const tasks = out.get(line.id) ?? new Map<string, FlatRate>();
+      tasks.set(task.id, { ...task.flat_rate });
+      out.set(line.id, tasks);
+    }
+  }
+  return out;
+}
+
+/**
+ * How the role's flat-rate tasks on a source are paid, for Settings: "LEHR reset: $140.00 each,
+ * by the “LEHRs reset” count. Its hours are tracked, not billed." (decision 0039).
+ */
+export function flatRateNotes(
+  role: Pick<Role, 'funding'> | null | undefined,
+  source: Pick<FundingSourceConfig, 'id' | 'tasks'>,
+  countDefs: readonly Pick<CountDef, 'id' | 'label'>[],
+): string[] {
+  const notes = new Set<string>();
+  for (const tasks of flatRates(role, source.id).values()) {
+    for (const [taskId, rate] of tasks) {
+      const task = source.tasks.find((t) => t.id === taskId)?.name ?? taskId;
+      const count = countDefs.find((c) => c.id === rate.count_id)?.label ?? rate.count_id;
+      notes.add(
+        `${task}: ${formatDollars(rate.cents_per_unit)} each, by the “${count}” count. Its hours are tracked, not billed.`,
+      );
+    }
+  }
+  return [...notes];
 }
