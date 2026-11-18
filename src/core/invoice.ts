@@ -2,7 +2,8 @@
 import { sumCounts } from './counts';
 import { CANONICAL_VERSION, fingerprintOf, type FingerprintedInvoice } from './fingerprint';
 import { formatInvoiceNumber, normalizeInitials, takeNumber } from './invoice-number';
-import { lineAmountCents, sumCents } from './money';
+import { flatAmountCents, lineAmountCents, sumCents } from './money';
+import { flatRates } from './roles';
 import { sharesMatch } from './task-split';
 import { checkEntryTimes, entryDateOf, parseIso } from './time';
 import type {
@@ -12,6 +13,7 @@ import type {
   Invoice,
   InvoiceCounter,
   InvoiceEntry,
+  InvoiceFlatLine,
   InvoiceLine,
   NteStatus,
   Profile,
@@ -110,6 +112,10 @@ export function buildInvoiceDraft(input: InvoiceInput): InvoiceDraftResult {
   );
   if (billed.length === 0) return { ok: false, reason: 'no_entries' };
 
+  // Flat-rate tasks: hours tracked, not billed; the count is billed instead (decision 0039).
+  const flat = flatRates(input.role, source.id);
+  const isFlat = (lineId: string, taskId: string) => flat.get(lineId)?.has(taskId) === true;
+
   const frozen: InvoiceEntry[] = [];
   for (const e of billed) {
     const line = lines.get(e.budget_line_id);
@@ -136,6 +142,7 @@ export function buildInvoiceDraft(input: InvoiceInput): InvoiceDraftResult {
           task_name: task.name,
           core_competency: task.core_competency,
           quarters: s.quarters,
+          ...(isFlat(e.budget_line_id, s.task_id) && { billed: false as const }),
         };
       }),
       budget_line_id: line.id,
@@ -152,12 +159,19 @@ export function buildInvoiceDraft(input: InvoiceInput): InvoiceDraftResult {
       (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
   );
 
-  // One line per budget line with hours, in the source's order (decision 0002).
+  // One line per budget line with billed hours, in the source's order (decision 0002).
+  const sharesOf = (lineId: string) =>
+    frozen.filter((e) => e.budget_line_id === lineId).flatMap((e) => e.tasks);
   const invoiceLines: InvoiceLine[] = [];
+  const flatLines: InvoiceFlatLine[] = [];
+  let unbilledQuarters = 0;
   for (const line of source.budget_lines) {
-    const quarters = frozen
-      .filter((e) => e.budget_line_id === line.id)
-      .reduce((sum, e) => sum + e.quarters, 0);
+    const shares = sharesOf(line.id);
+    const quarters = shares.filter((t) => t.billed !== false).reduce((n, t) => n + t.quarters, 0);
+    unbilledQuarters += shares
+      .filter((t) => t.billed === false)
+      .reduce((n, t) => n + t.quarters, 0);
+    flatLines.push(...flatLinesOf(line, flat.get(line.id), frozen, tasks, input.count_defs));
     if (quarters === 0) continue;
     invoiceLines.push({
       budget_line_id: line.id,
@@ -167,7 +181,10 @@ export function buildInvoiceDraft(input: InvoiceInput): InvoiceDraftResult {
       amount_cents: lineAmountCents(quarters, settings.rate_cents),
     });
   }
-  const totalCents = sumCents(invoiceLines.map((l) => l.amount_cents));
+  const totalCents = sumCents([
+    ...invoiceLines.map((l) => l.amount_cents),
+    ...flatLines.map((l) => l.amount_cents),
+  ]);
   const totalQuarters = invoiceLines.reduce((sum, l) => sum + l.quarters, 0);
 
   const earlier = input.prior_invoices.filter((i) => i.source.id === source.id);
@@ -222,7 +239,9 @@ export function buildInvoiceDraft(input: InvoiceInput): InvoiceDraftResult {
       rate_cents: settings.rate_cents,
       entries: frozen,
       lines: invoiceLines,
+      flat_lines: flatLines,
       total_quarters: totalQuarters,
+      unbilled_quarters: unbilledQuarters,
       total_cents: totalCents,
       counts_period: countsPeriod,
       counts_all_time: countsAllTime,
@@ -233,6 +252,43 @@ export function buildInvoiceDraft(input: InvoiceInput): InvoiceDraftResult {
       updated_at: input.now,
     },
   };
+}
+
+/**
+ * One row per flat-rate task of the line that has a count this period: the count summed over
+ * the entries that checked the task, × the cents per unit (decision 0039).
+ */
+function flatLinesOf(
+  line: { id: string; name: string },
+  rates: ReadonlyMap<string, { count_id: string; cents_per_unit: number }> | undefined,
+  frozen: readonly InvoiceEntry[],
+  tasks: ReadonlyMap<string, { name: string }>,
+  countDefs: readonly CountDef[],
+): InvoiceFlatLine[] {
+  const rows: InvoiceFlatLine[] = [];
+  for (const [taskId, rate] of rates ?? []) {
+    const units = frozen
+      .filter((e) => e.budget_line_id === line.id && e.tasks.some((t) => t.task_id === taskId))
+      .reduce((n, e) => n + (e.counts.values[rate.count_id] ?? 0), 0);
+    if (units === 0) continue;
+    const def = countDefs.find((c) => c.id === rate.count_id);
+    rows.push({
+      budget_line_id: line.id,
+      budget_line_name: line.name,
+      task_id: taskId,
+      task_name: tasks.get(taskId)?.name ?? '',
+      count_id: rate.count_id,
+      count_label: def?.label ?? rate.count_id,
+      units_quarters: units,
+      cents_per_unit: rate.cents_per_unit,
+      amount_cents: flatAmountCents(
+        units,
+        rate.cents_per_unit,
+        def?.step === 'quarter' ? 'quarter' : 'whole',
+      ),
+    });
+  }
+  return rows;
 }
 
 /**

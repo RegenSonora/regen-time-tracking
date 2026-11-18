@@ -5,6 +5,7 @@ import type {
   BudgetLine,
   CountDef,
   Counts,
+  FlatRate,
   FundingSourceConfig,
   OtherCount,
   Role,
@@ -294,4 +295,25 @@ export function roleUpdate(
     }
   }
   return { state: 'replaced', from, role, add_settings, rate_notes };
+}
+
+/**
+ * The role's flat-rate tasks on a source, by budget line id, then task id (decision 0039).
+ * A flat-rate task's hours are tracked, not billed; its count is billed instead.
+ */
+export function flatRates(
+  role: Pick<Role, 'funding'> | null | undefined,
+  sourceId: string,
+): Map<string, Map<string, FlatRate>> {
+  const out = new Map<string, Map<string, FlatRate>>();
+  const funding = role?.funding.find((f) => f.source_id === sourceId);
+  for (const line of funding?.budget_lines ?? []) {
+    for (const task of line.tasks) {
+      if (!task.flat_rate) continue;
+      const tasks = out.get(line.id) ?? new Map<string, FlatRate>();
+      tasks.set(task.id, { ...task.flat_rate });
+      out.set(line.id, tasks);
+    }
+  }
+  return out;
 }

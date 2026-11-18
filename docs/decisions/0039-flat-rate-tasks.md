@@ -14,7 +14,7 @@
    - Only contractor roles may have flat-rate tasks. Timesheets stay hours only.
 2. **The flat-rate task's hours are tracked, not billed.**
    - An entry can mix LEHR reset with other tasks. Only the LEHR reset share of the hours goes unbilled; the other shares bill hourly as usual (decision 0024).
-   - The hours still show on the entry, in the entry log and in My stats.
+   - The hours still show on the entry, in the entry log and in Home's waiting hours. My stats keeps counting invoiced (billed) hours, as before.
 3. **The fee is its own invoice row**, right after its budget line's hourly row: "Eat Local Network · LEHR resets 2.5 × $140.00 = $350.00".
    - A line with only flat fees shows no hourly row.
    - The invoice total adds the hourly rows and the flat rows.
@@ -27,7 +27,7 @@
 
 ## Decided during the build
 
-- **Fingerprint:** canonical form v5 adds each task share's billed flag, the flat rows, the unbilled hours and the quarter-step count ids. v1–v4 are unchanged, and older invoices keep verifying.
+- **Fingerprint:** canonical form v5 adds each task share's billed flag, the flat rows (count id, units in quarter-units, cents per unit, amount) and the unbilled hours. v1–v4 are unchanged, and older invoices keep verifying.
 - **QR:** payload v2 adds the flat rows. It is used only when an invoice has flat rows; every other invoice keeps payload v1.
 - **Stored invoices are not rewritten:**
   - An invoice without flat rows reads as having none.

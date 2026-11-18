@@ -64,12 +64,13 @@ describe('page 1 as shapes, for the picture (decision 0018)', () => {
     // Re-pinned for decision 0035: the entry log's new count columns.
     // Re-pinned for decision 0037: canonical v4 and the entry log's paused column.
     // Re-pinned for decision 0038: the entry log's new count columns.
+    // Re-pinned for decision 0039: canonical v5.
     const invoice = await invoiceFrom({ source: { ...tisupp, version: 1 } });
     const files = buildInvoiceFiles(invoice, tisupp, countDefs);
     expect(await Promise.all(files.map((f) => sha256(f.bytes)))).toEqual([
-      '20f4f05b29cecf203d9ac87b7432937e47ae2f293ec46af4f518fe25b85b2f0e',
-      '4f7fde8d41df146a2b47a701041386616426b6d19ffd917be9ad300847e40641',
-      '62cb18baa4bcc2f671269a49fa73b1abf7802af9bcdce72dec384af927ede12f',
+      'f42501d5e23bdbdc4242106bdccbd94fc766d63219e69c559078747bdbde2031',
+      '03c31c6e91c1adb77f91c88301b2812273dbfbe45b0eadc5537d4cebde02da14',
+      'ba19cc393ac3ed5d4aa6c5b17965d3d671019cb0131cbe56df1eb27ce3a50fc4',
     ]);
   });
 });

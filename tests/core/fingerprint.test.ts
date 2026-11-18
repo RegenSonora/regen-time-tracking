@@ -7,6 +7,7 @@ import {
   canonicalFormV2,
   canonicalFormV3,
   canonicalFormV4,
+  canonicalFormV5,
   fingerprintOf,
   sha256Hex,
   shortFingerprint,
@@ -20,6 +21,7 @@ import goldenV1 from './golden/fingerprint-v1.json';
 import goldenV2 from './golden/fingerprint-v2.json';
 import goldenV3 from './golden/fingerprint-v3.json';
 import goldenV4 from './golden/fingerprint-v4.json';
+import goldenV5 from './golden/fingerprint-v5.json';
 
 // Pinned forever (CLAUDE.md rule 8). If a test here fails, the canonical form changed:
 // add a new canonical version instead of editing this file.
@@ -51,6 +53,8 @@ const casesV2: Golden[] = storedV2.map((c) => upgrade(c, 3));
 const casesV3: Golden[] = (goldenV3 as unknown as StoredGolden[]).map((c) => upgrade(c, 4));
 /** v4 golden invoices are stored as data v5. */
 const casesV4 = goldenV4 as unknown as Golden[];
+/** v5 golden invoices: flat-rate rows (decision 0039). */
+const casesV5 = goldenV5 as unknown as Golden[];
 
 describe('canonicalJson', () => {
   it('sorts keys at every level and drops whitespace', () => {
@@ -94,8 +98,8 @@ describe('canonicalJson', () => {
 });
 
 describe('fingerprint v1 golden files, after the data v3 upgrade', () => {
-  it('new invoices use canonical version 4 (decision 0037)', () => {
-    expect(CANONICAL_VERSION).toBe(4);
+  it('new invoices use canonical version 5 (decision 0039)', () => {
+    expect(CANONICAL_VERSION).toBe(5);
   });
 
   it('the upgrade turns each entry into a single task share', () => {
@@ -202,7 +206,7 @@ describe('what the fingerprint covers', () => {
   });
 
   it('refuses an unknown canonical version', () => {
-    expect(() => canonicalForm({ ...base, canonical_version: 5 })).toThrow();
+    expect(() => canonicalForm({ ...base, canonical_version: 6 })).toThrow();
   });
 });
 
@@ -311,6 +315,71 @@ describe('fingerprint v4 golden files (decision 0037)', () => {
           start: '2026-10-21T13:10:00-07:00',
           stop: '2026-10-21T13:12:00-07:00',
         }),
+    ];
+    for (const edit of edits) {
+      const copy = structuredClone(base);
+      edit(copy);
+      expect(await fingerprintOf(copy)).not.toBe(base.fingerprint);
+    }
+  });
+});
+
+describe('fingerprint v5 golden files (decision 0039)', () => {
+  it.each(casesV5.map((c) => [c.name, c] as const))('%s: canonical form is unchanged', (_, c) => {
+    expect(c.invoice.canonical_version).toBe(5);
+    expect(canonicalFormV5(c.invoice)).toBe(c.canonical);
+    expect(canonicalForm(c.invoice)).toBe(c.canonical);
+  });
+
+  it.each(casesV5.map((c) => [c.name, c] as const))(
+    '%s: fingerprint is unchanged',
+    async (_, c) => {
+      expect(await sha256Hex(c.canonical)).toBe(c.fingerprint);
+      expect(await verifyFingerprint(c.invoice)).toBe(true);
+    },
+  );
+
+  it('is form v4 plus billed flags, flat rows and unbilled hours', () => {
+    const c = must(casesV5[0]);
+    const v4 = JSON.parse(canonicalFormV4(c.invoice)) as Record<string, unknown> & {
+      entries: { tasks: Record<string, unknown>[] }[];
+    };
+    const v5 = JSON.parse(c.canonical) as Record<string, unknown> & {
+      entries: { tasks: Record<string, unknown>[] }[];
+    };
+    expect(v5['v']).toBe(5);
+    expect(v5['unbilled_quarters']).toBe(10);
+    expect(v5['flat_lines']).toEqual(c.invoice.flat_lines);
+    expect(v5.entries.map((e) => e.tasks.map((t) => t['billed']))).toEqual([
+      [false, true],
+      [false],
+      [true],
+    ]);
+    const stripped = v5.entries.map((e) => ({
+      ...e,
+      tasks: e.tasks.map((t) => {
+        const copy = { ...t };
+        delete copy['billed'];
+        return copy;
+      }),
+    }));
+    expect(stripped).toEqual(v4.entries);
+  });
+
+  it('a v4 invoice with no flat rows still verifies: v4 never reads them', async () => {
+    const c = must(casesV4[0]);
+    expect(c.invoice.flat_lines).toBeUndefined();
+    expect(await verifyFingerprint(c.invoice)).toBe(true);
+  });
+
+  it('changes when a flat row, a billed flag or the unbilled hours change', async () => {
+    const base = must(casesV5[0]).invoice;
+    const edits: ((i: Invoice) => void)[] = [
+      (i) => (must(i.flat_lines?.[0]).units_quarters = 11),
+      (i) => (must(i.flat_lines?.[0]).cents_per_unit = 14400),
+      (i) => (i.flat_lines = []),
+      (i) => delete must(must(i.entries[0]).tasks[0]).billed,
+      (i) => (i.unbilled_quarters = 9),
     ];
     for (const edit of edits) {
       const copy = structuredClone(base);

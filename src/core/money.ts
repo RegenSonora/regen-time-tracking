@@ -15,6 +15,22 @@ export function lineAmountCents(quarters: number, rateCents: number): number {
   return Math.floor((product + 2) / 4);
 }
 
+/**
+ * A flat fee (decision 0039): quarter-units × cents per unit ÷ 4, rounded half up to the cent.
+ * The build makes quarter-step rates divide by 4, so shipped fees never round.
+ */
+export function flatAmountCents(
+  units: number,
+  centsPerUnit: number,
+  step: 'quarter' | 'whole',
+): number {
+  assertCount('units', units);
+  assertCount('centsPerUnit', centsPerUnit);
+  const product = units * centsPerUnit;
+  if (!Number.isSafeInteger(product + 2)) throw new RangeError('Amount too large');
+  return step === 'quarter' ? Math.floor((product + 2) / 4) : product;
+}
+
 /** Sum of integer cents; the invoice total is the sum of rounded line amounts. */
 export function sumCents(values: readonly number[]): number {
   let total = 0;
