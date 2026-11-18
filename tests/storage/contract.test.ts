@@ -200,6 +200,7 @@ describe.each(adapters)('$name adapter', (adapter) => {
             values: { contacts: 1 },
             other: [{ label: 'Food boxes', value: 2 }],
           },
+          fees: { 'wednesday-dinner-service': '150.00' },
           notes: 'Library',
         },
       };

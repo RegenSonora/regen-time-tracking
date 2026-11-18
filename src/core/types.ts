@@ -192,6 +192,8 @@ export interface Entry {
   tasks: TaskShare[];
   budget_line_id: string;
   counts: Counts;
+  /** Service fees in cents by task id, set when saved, for tasks with a fee (decision 0043). */
+  fees: Record<string, number>;
   notes: string;
   /** Set when invoiced; the entry is then locked (CLAUDE.md rule 5). */
   invoice_id: string | null;
@@ -228,6 +230,8 @@ export interface InvoiceEntry {
   budget_line_id: string;
   budget_line_name: string;
   counts: Counts;
+  /** The entry's service fees in cents by task id. Absent before decision 0043. */
+  fees?: Record<string, number>;
   notes: string;
   created_at: string;
   updated_at: string;

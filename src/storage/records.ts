@@ -10,8 +10,9 @@ import type { StoreName, StoredRecord, Tx } from './types';
  * `role` and `count_defs` (roles plan R3).
  * v5: entries and the running timer get `breaks`; the timer gets `paused_at` (decision 0037).
  * v6: a `task_progress` store for My Tasks status and notes (decision 0041).
+ * v7: entries and entry drafts get `fees`, service fees by task id (decision 0043).
  */
-export const DATA_VERSION = 6;
+export const DATA_VERSION = 7;
 
 /** The stores of v1. Later versions keep the same stores. */
 export const STORES_V1: readonly StoreName[] = [

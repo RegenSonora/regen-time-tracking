@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { emptyCounts } from '../../src/core/counts';
 import type { EntryDraft } from '../../src/storage';
-import { buildEntry } from '../../src/ui/draft';
+import { buildEntry, editDraft } from '../../src/ui/draft';
 import { at, countDefs, findTestRole, regen, tisupp } from '../core/fixtures/wireframe-sample';
 
 const trainee = findTestRole('chw-tc01');
@@ -22,6 +22,7 @@ function draft(patch: Partial<EntryDraft> = {}): EntryDraft {
     tasks: [{ task_id: 'dump-runs', quarters: 4 }],
     budget_line_id: 'fire-risk-reduction-work',
     counts: emptyCounts(),
+    fees: {},
     notes: '',
     ...patch,
   };
@@ -115,5 +116,62 @@ describe('after the office edits a role (roles plan R7)', () => {
     const counts = { values: { trees_planted: 2 }, other: [] };
     const result = build(draft({ counts }), lead);
     expect(result.ok && result.entry.counts.values).toEqual({ trees_planted: 2 });
+  });
+});
+
+describe('service fees on save (decision 0043)', () => {
+  const catering = findTestRole('r-cc01');
+  const dinner = (patch: Partial<EntryDraft> = {}) =>
+    draft({
+      budget_line_id: 'leos',
+      tasks: [
+        { task_id: 'wednesday-dinner-service', quarters: 2 },
+        { task_id: 'leos-maintenance', quarters: 2 },
+      ],
+      ...patch,
+    });
+  const saved = (d: EntryDraft) => {
+    const result = build(d, catering);
+    if (!result.ok) throw new Error(result.problem);
+    return result.entry;
+  };
+
+  it('keeps the full $200.00 when the fee is left as it is', () => {
+    expect(saved(dinner()).fees).toEqual({ 'wednesday-dinner-service': 20000 });
+  });
+
+  it('keeps a lower fee as typed, down to $0.00', () => {
+    expect(saved(dinner({ fees: { 'wednesday-dinner-service': '150' } })).fees).toEqual({
+      'wednesday-dinner-service': 15000,
+    });
+    expect(saved(dinner({ fees: { 'wednesday-dinner-service': '0.00' } })).fees).toEqual({
+      'wednesday-dinner-service': 0,
+    });
+  });
+
+  it('refuses more than the fee, or text that is not an amount', () => {
+    for (const text of ['200.01', '250', '', 'abc']) {
+      expect(build(dinner({ fees: { 'wednesday-dinner-service': text } }), catering)).toEqual({
+        ok: false,
+        problem: 'fee',
+      });
+    }
+  });
+
+  it('drops the fee of a task that is no longer checked, and has none for hourly tasks', () => {
+    const entry = saved(
+      dinner({
+        tasks: [{ task_id: 'leos-maintenance', quarters: 4 }],
+        fees: { 'wednesday-dinner-service': '150' },
+      }),
+    );
+    expect(entry.fees).toEqual({});
+    const hourly = build(draft());
+    expect(hourly.ok && hourly.entry.fees).toEqual({});
+  });
+
+  it('editing shows the saved fee as typed', () => {
+    const entry = saved(dinner({ fees: { 'wednesday-dinner-service': '150' } }));
+    expect(editDraft(entry).fees).toEqual({ 'wednesday-dinner-service': '150.00' });
   });
 });

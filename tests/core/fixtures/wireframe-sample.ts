@@ -101,6 +101,7 @@ export function makeEntry(
     tasks: [{ task_id, quarters: times.ok ? times.quarters : 0 }],
     budget_line_id,
     counts: counts(),
+    fees: {},
     notes: '',
     invoice_id: null,
     created_at: startIso,

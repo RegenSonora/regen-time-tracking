@@ -6,6 +6,9 @@ import {
   clipBreaks,
   emptyCounts,
   entryCountChoices,
+  entryFees,
+  feeFromText,
+  formatCentsPlain,
   entryDateOf,
   finalShares,
   findOverlaps,
@@ -44,6 +47,7 @@ export function newTimerDraft(
     tasks: [],
     budget_line_id: budgetLineId,
     counts: emptyCounts(),
+    fees: {},
     notes: '',
   };
 }
@@ -72,6 +76,9 @@ export function editDraft(entry: Entry): EntryDraft {
     tasks: entry.tasks.map((s) => ({ ...s })),
     budget_line_id: entry.budget_line_id,
     counts: structuredClone(entry.counts),
+    fees: Object.fromEntries(
+      Object.entries(entry.fees).map(([id, cents]) => [id, formatCentsPlain(cents)]),
+    ),
     notes: entry.notes,
   };
 }
@@ -131,7 +138,9 @@ export type DraftProblem =
   /** A custom count has a number but no name. */
   | 'count_label'
   /** A custom count repeats one of the entry's counts (decision 0029). */
-  | 'count_duplicate';
+  | 'count_duplicate'
+  /** A service fee that isn't an amount, or is more than the task's fee (decision 0043). */
+  | 'fee';
 
 /** Custom counts with no name and no number are dropped; names are trimmed. */
 export function cleanCounts(counts: Counts): Counts | null {
@@ -187,6 +196,14 @@ export function buildEntry(
       return { ok: false, problem: 'count_duplicate' };
     }
   }
+  // Service fees of the checked tasks, kept on the entry as saved (decision 0043).
+  const fees: Record<string, number> = {};
+  for (const [taskId, fee] of (lineId ? entryFees(role, source.id).get(lineId) : undefined) ?? []) {
+    if (!taskIds.includes(taskId)) continue;
+    const typed = feeFromText(draft.fees[taskId], fee);
+    if (!typed.ok) return { ok: false, problem: 'fee' };
+    fees[taskId] = typed.cents;
+  }
   return {
     ok: true,
     entry: {
@@ -200,6 +217,7 @@ export function buildEntry(
       tasks,
       budget_line_id: draft.budget_line_id,
       counts,
+      fees,
       notes: draft.notes.trim(),
       invoice_id: null,
       created_at: existing?.created_at ?? now,

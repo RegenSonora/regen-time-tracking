@@ -61,6 +61,8 @@ export interface EntryDraft {
   tasks: TaskShare[];
   budget_line_id: string | null;
   counts: Counts;
+  /** Service fees as typed, by task id; a task with no text gets its full fee (decision 0043). */
+  fees: Record<string, string>;
   notes: string;
 }
 

@@ -1,11 +1,12 @@
 // Role choices on setup and the new-entry screen, rate prefill and counts per task
 // (decisions 0027, 0028, 0029, 0030, 0033).
-import { formatDollars } from './money';
+import { formatDollars, parseDollars } from './money';
 import { RECENT_TASKS_SHOWN } from './picks';
 import type {
   BudgetLine,
   CountDef,
   Counts,
+  EntryFee,
   FlatRate,
   FundingSourceConfig,
   OtherCount,
@@ -339,6 +340,74 @@ export function flatRateNotes(
       const count = countDefs.find((c) => c.id === rate.count_id)?.label ?? rate.count_id;
       notes.add(
         `${task}: ${formatDollars(rate.cents_per_unit)} each, by the “${count}” count. Its hours are tracked, not billed.`,
+      );
+    }
+  }
+  return [...notes];
+}
+
+/** The role's service-fee tasks on a source, by budget line id, then task id (decision 0043). */
+export function entryFees(
+  role: Pick<Role, 'funding'> | null | undefined,
+  sourceId: string,
+): Map<string, Map<string, EntryFee>> {
+  const out = new Map<string, Map<string, EntryFee>>();
+  const funding = role?.funding.find((f) => f.source_id === sourceId);
+  for (const line of funding?.budget_lines ?? []) {
+    for (const task of line.tasks) {
+      if (!task.entry_fee) continue;
+      const tasks = out.get(line.id) ?? new Map<string, EntryFee>();
+      tasks.set(task.id, { ...task.entry_fee });
+      out.set(line.id, tasks);
+    }
+  }
+  return out;
+}
+
+/**
+ * Tasks of a line whose hours are tracked, not billed: those paid by a count or by a service fee
+ * (decisions 0039, 0043).
+ */
+export function unbilledTaskIds(
+  role: Pick<Role, 'funding'> | null | undefined,
+  sourceId: string,
+  lineId: string,
+): Set<string> {
+  return new Set([
+    ...(flatRates(role, sourceId).get(lineId)?.keys() ?? []),
+    ...(entryFees(role, sourceId).get(lineId)?.keys() ?? []),
+  ]);
+}
+
+export type FeeText = { ok: true; cents: number } | { ok: false; reason: 'bad' | 'over' };
+
+/**
+ * A service fee as typed (decision 0043): untouched (undefined) means the full fee; otherwise an
+ * amount from $0.00 up to the fee.
+ */
+export function feeFromText(text: string | undefined, fee: EntryFee): FeeText {
+  if (text === undefined) return { ok: true, cents: fee.max_cents };
+  const cents = parseDollars(text);
+  if (cents === null) return { ok: false, reason: 'bad' };
+  if (cents > fee.max_cents) return { ok: false, reason: 'over' };
+  return { ok: true, cents };
+}
+
+/**
+ * How the role's service-fee tasks on a source are paid, for Settings: "Wednesday dinner service:
+ * up to $200.00 each entry. Lower it on the entry if you charged less. Its hours are tracked,
+ * not billed." (decision 0043).
+ */
+export function entryFeeNotes(
+  role: Pick<Role, 'funding'> | null | undefined,
+  source: Pick<FundingSourceConfig, 'id' | 'tasks'>,
+): string[] {
+  const notes = new Set<string>();
+  for (const tasks of entryFees(role, source.id).values()) {
+    for (const [taskId, fee] of tasks) {
+      const task = source.tasks.find((t) => t.id === taskId)?.name ?? taskId;
+      notes.add(
+        `${task}: up to ${formatDollars(fee.max_cents)} each entry. Lower it on the entry if you charged less. Its hours are tracked, not billed.`,
       );
     }
   }
