@@ -115,7 +115,10 @@ export function EditEntry() {
       <CountsAndNotes
         draft={draft}
         countError={
-          problem === 'count_label' || problem === 'count_duplicate' || problem === 'fee'
+          problem === 'count_label' ||
+          problem === 'count_duplicate' ||
+          problem === 'fee' ||
+          problem === 'miles'
             ? PROBLEM_TEXT[problem]
             : null
         }

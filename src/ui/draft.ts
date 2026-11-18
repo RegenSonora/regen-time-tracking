@@ -7,6 +7,7 @@ import {
   emptyCounts,
   entryCountChoices,
   entryFees,
+  entryTrip,
   feeFromText,
   formatCentsPlain,
   entryDateOf,
@@ -140,7 +141,9 @@ export type DraftProblem =
   /** A custom count repeats one of the entry's counts (decision 0029). */
   | 'count_duplicate'
   /** A service fee that isn't an amount, or is more than the task's fee (decision 0043). */
-  | 'fee';
+  | 'fee'
+  /** A trip with no miles: the trip fee needs them (decision 0045). */
+  | 'miles';
 
 /** Custom counts with no name and no number are dropped; names are trimmed. */
 export function cleanCounts(counts: Counts): Counts | null {
@@ -195,6 +198,10 @@ export function buildEntry(
     if (counts.other.some((o) => duplicateCountLabel(o.label, shown))) {
       return { ok: false, problem: 'count_duplicate' };
     }
+  }
+  // One entry is one trip, paid by its miles, so a trip needs them (decision 0045).
+  if (lineId && entryTrip(role, source.id, lineId, taskIds, counts.values).state === 'missing') {
+    return { ok: false, problem: 'miles' };
   }
   // Service fees of the checked tasks, kept on the entry as saved (decision 0043).
   const fees: Record<string, number> = {};
