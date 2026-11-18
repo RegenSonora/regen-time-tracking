@@ -88,14 +88,15 @@ Each funding source is a JSON file in the repo, validated against a JSON Schema 
 
 - **Grant period:** none.
 - **NTE:** none. No contract tracking box on its invoices.
-- **Tasks (63):** the first 21 TISUPP tasks plus **Domestic support**, which have core competencies (Domestic support blank), plus 15 Resilience Team Lead tasks with none: Firewise assessing, Residential fuel reduction, Municipal fuel reduction, Dump runs, LEHR maintenance, Pinal garden maintenance, Regen lot clean and maintenance, Transport and supply runs, Plant propagation, Tree planting, Tree removal, Water harvesting, Garden support, Paid training, Other. Then 26 Certified CHW tasks with none (decision 0035), listed under their lines below.
-- **Budget lines (24):** the 12 TISUPP lines plus **Domestic support**, plus Fire risk reduction work, Maintenance labor, Resilient Home Services contracting, Team development, and Other contractors (shown in the app as "Other"), plus the Certified CHW lines (decision 0035):
+- **Tasks (70):** the first 21 TISUPP tasks plus **Domestic support**, which have core competencies (Domestic support blank), plus 15 Resilience Team Lead tasks with none: Firewise assessing, Residential fuel reduction, Municipal fuel reduction, Dump runs, LEHR maintenance, Pinal garden maintenance, Regen lot clean and maintenance, Transport and supply runs, Plant propagation, Tree planting, Tree removal, Water harvesting, Garden support, Paid training, Other. Then 26 Certified CHW tasks with none (decision 0035), listed under their lines below. Then 7 Regen Generalist tasks with none (decision 0038): Gleaning, Food processing, Eat Local marketing, LEHR reset, Garden maintenance, Eat Local grower support, LEHR installation.
+- **Budget lines (25):** the 12 TISUPP lines plus **Domestic support**, plus Fire risk reduction work, Maintenance labor, Resilient Home Services contracting, Team development, and Other contractors (shown in the app as "Other"), plus the Certified CHW lines (decision 0035):
   - **Community Health Work:** 13 existing tasks (Interview and intake, Screening and referrals, Resource research, Resource acquisition, Application assistance, Advocacy, Technical assistance, Client check in, Client follow up, Domestic support, Documentation, Developing tools/processes, Other), plus Transportation service, Social support, Leo's CHW support, CHW partnership building, Marketing and outreach, CHW internal meetings.
   - **Leo's:** Hosting open hours, Cooking Monday breakfast, Hosting Monday breakfast, Serving Monday dinner, Cooking Wednesday dinner, Serving Wednesday dinner, Hosting Wednesday dinner, Hosting special event, Leo's internal meetings, Leo's maintenance, Leo's marketing, Leo's other.
   - **Eat Local Network:** Eat Local meetings, Eat Local Forum event assistance, Full Moon Garden Party event support, Green Thumb Warriors event support, Green Thumb Warriors planning, Eat Local Network: other.
   - **Admin:** Admin: marketing, Admin: staffing.
   - **Other:** Other.
 - **CHW experience hours (decision 0036):** the same line as TISUPP's, for CHW Trainee (Employee). Its tasks are the 21 trainee tasks above.
+- **Community Care Work (decision 0038):** for the Regen Generalist: Domestic support, Transportation service, Other.
 - **Certification text:** "I certify that the services listed were performed on the dates shown on the attached timesheet pages, the hours are accurate, and no participant names are included." The CHW always signs and certifies.
 - **Employee certification text (decision 0035):** "I certify that the hours shown on this timesheet were worked on the dates listed, the hours are accurate, no participant names are included, and these hours have not been reported under any other funding source."
 
@@ -103,7 +104,7 @@ Each funding source is a JSON file in the repo, validated against a JSON Schema 
 
 `src/roles/roles.json`, checked at build time against the funding sources. Each role lists its funding sources, the budget lines under each, and the tasks under each line with the counts each task shows (decision 0029). Roles never name a person.
 
-- **Shared count list (decision 0029):** Contacts, Referrals given, Referral follow-ups, Rides provided, Applications completed, Client goals achieved, Quick wins provided, Screenings conducted, Applications approved (CHW Trainees); Trailer loads removed, Assessments completed, LEHR resets completed, Plants propagated, Trees planted, Trees removed, Water capacity added (gal), Grow space added (sq ft), Certifications earned (Resilience Team Lead); 38 for the Certified CHW (decision 0035), from Homes cleaned to Green Thumb Warriors sessions supported, including Miles driven (mi) and Value of resources unlocked (dollars). Ids never change; a count taken out of use is retired, not deleted.
+- **Shared count list (decision 0029):** Contacts, Referrals given, Referral follow-ups, Rides provided, Applications completed, Client goals achieved, Quick wins provided, Screenings conducted, Applications approved (CHW Trainees); Trailer loads removed, Assessments completed, LEHR resets completed, Plants propagated, Trees planted, Trees removed, Water capacity added (gal), Grow space added (sq ft), Certifications earned (Resilience Team Lead); 38 for the Certified CHW (decision 0035), from Homes cleaned to Green Thumb Warriors sessions supported, including Miles driven (mi) and Value of resources unlocked (dollars); 8 for the Regen Generalist (decision 0038): Flyers posted, Food gleaned (lb), Food processed (lb), LEHRs reset (in 0.25 steps, decision 0039), Soil harvested (gal), LEHR homes supported, Growers supported, LEHRs installed. Ids never change; a count taken out of use is retired, not deleted.
 
 | Code | Name | Type | `chw` | Funding | Rate | NTE | Raise | Certification |
 |---|---|---|---|---|---|---|---|---|
@@ -111,7 +112,9 @@ Each funding source is a JSON file in the repo, validated against a JSON Schema 
 | CHW-TE01 | CHW Trainee (Employee) | Employee | true | TISUPP and Regen General Operating · CHW experience hours, all 21 tasks on each (decision 0036) | $20.00 on each | none | $23.00 after 240 hrs, added over both sources | 480 hrs |
 | CHW-CE01 | Certified CHW (Employee) | Employee | false | Regen General Operating · Community Health Work, Leo's, Eat Local Network, Admin, Other; TISUPP · TISUPP Grant (decision 0035) | $25.00 | none | none | none |
 | R-TL01 | Resilience Team Lead | Contractor | false | Regen General Operating · the 5 Team Lead lines and 15 tasks | $22.00 | none | none | none |
+| R-GC01 | Regen Generalist Contractor | Contractor | false | Regen General Operating · Resilient Home Services contracting, Other, Leo's, Eat Local Network, Community Care Work (decision 0038) | none (typed at setup) | none | none | none |
 
+- **Flat-rate tasks (decision 0039):** a role's task can be paid by one of its counts instead of by the hour (`flat_rate` in the roles file). R-GC01's LEHR reset pays $140.00 per LEHR reset, in 0.25 steps. Its hours are tracked, not billed. Contractor roles only.
 - **One raise per role (decision 0036):** the raise counts hours invoiced or submitted (and waiting) on every source of the role that has the raise, added together. The reminder shows on each of those sources until that source's rate is changed. My stats shows the raise reached until every one of them is changed. Every raise on a role must match, which the build checks. CHW Certification and the Work Hours Report already add up every source of the role.
 - **Office changes:** editing a role changes what everyone in it sees after the update; retiring it with `replaced_by` moves everyone in it; retiring it with no replacement stops new time (§5, decision 0027).
 
@@ -139,8 +142,8 @@ Each funding source is a JSON file in the repo, validated against a JSON Schema 
 - **Entry flow (decision 0028):** Stop (or enter times) → budget line and tasks (the role's lines for the source; the line defaults to the last one used, or is picked for you when the role has only one; the role's tasks for that line, recent tasks first) → split your time (only when two or more tasks are checked) → counts and notes → Save. A typical entry is 4 taps.
 - **Grant periods (decision 0033):** Enter times says "None of your funding takes time on this date. Ask the office." when no source of the role covers the date. When every source has ended, Home says "No active funding for your role. Ask the office.", hides Start timer, and keeps Record time for dates inside a period.
 - **One option (decision 0028):** a funding source or budget line with only one choice is picked for you and shown as a plain label, never a control: "Billed to: TISUPP", or "Billed to: TISUPP · CHW experience hours" when both have one choice. With one funding source, Home shows the same label in place of the funding source chip.
-- **Several tasks (decision 0024):** tasks are check boxes. With two or more checked, "Split your time" gives each a share in 0.25 h steps, starting with all hours on the first checked task, and shows what is left ("0.50 h left", "0.25 h too many", "All 1.50 h assigned"). Next is blocked until the shares add up to the entry's billed hours. A task left at 0 h is dropped. One checked task gets all the hours and skips the step.
-- **Counts (all optional, default 0; decision 0029):** the counts of the checked tasks, in the shared list's order, with units, plus any count that already has a value, plus "Add another count" (label + number). An added label that matches one of the entry's counts, ignoring case and spaces, is refused: "Trees planted is already a count above. Use that one." Phones with no role show the five CHW counts.
+- **Several tasks (decision 0024):** tasks are check boxes. With two or more checked, "Split your time" gives each a share in 0.25 h steps, starting with all hours on the first checked task, and shows what is left ("0.50 h left", "0.25 h too many", "All 1.50 h assigned"). Next is blocked until the shares add up to the entry's billed hours. A task left at 0 h is dropped. One checked task gets all the hours and skips the step. A flat-rate task reads "(tracked, not billed)" (decision 0039).
+- **Counts (all optional, default 0; decision 0029):** whole numbers, except a quarter-step count, which steps by 0.25 and shows as a decimal (decision 0039). The counts of the checked tasks, in the shared list's order, with units, plus any count that already has a value, plus "Add another count" (label + number). An added label that matches one of the entry's counts, ignoring case and spaces, is refused: "Trees planted is already a count above. Use that one." Phones with no role show the five CHW counts.
 - **Notes:** optional, with the warning "Don't include client names. Notes appear on the timesheet."
 - **Editing:** entries can be edited or deleted until invoiced, then are locked. Save and delete show Undo. If the billed hours change, a one-task entry follows them; a split entry must be split again before saving. Changing the times clips an entry's breaks to them; **Remove breaks** clears them (decision 0037).
 - **Home:** "Not yet invoiced" ("Not yet submitted" for employees) list for the selected funding source with entry count, hours and amount. With nothing waiting it says "Start timer and start working or record time." Below it, **My stats**, then Past invoices (Past timesheets), then Generate Regen Invoice (Submit timesheet) (decisions 0026, 0031). Hour amounts read "hrs" ("4.5 hrs").
@@ -155,7 +158,8 @@ Each funding source is a JSON file in the repo, validated against a JSON Schema 
 - **Generate button:** shown only when the selected source has at least one uninvoiced entry; labelled "Generate Regen Invoice", or "Submit timesheet" when the next hours are an employee's (decisions 0025, 0031); a row under Past invoices, the same size, light green with dark gold text (decision 0026).
 - **Invoice number:** `<INITIALS>-<YYYY>-<NNN>`, for example `CC-2026-004`; timesheets use the same counter ("Timesheet CC-2026-004"). One counter shared by all funding sources. It keeps counting across years and is never reset by changing initials. YYYY is the invoice date's year.
 - **Invoice date:** the day it is generated. **Service period:** first entry date to last entry date.
-- **Lines:** one per budget line: hours, rate, amount. Line amount = quarter-hours × rate in cents ÷ 4, rounded half up to the cent. Invoice total = sum of line amounts.
+- **Lines:** one per budget line with billed hours: hours, rate, amount. Line amount = quarter-hours × rate in cents ÷ 4, rounded half up to the cent.
+- **Flat-rate rows (decision 0039):** each flat-rate task with a count this period gets its own row right after its budget line's hourly row: "Eat Local Network: 2.5 LEHRs reset", rate $140.00, amount $350.00. Its hours are left out of the line's hours and noted under the total as tracked, not billed. Invoice total = sum of the hourly rows and the flat rows. Home's waiting amount counts the same way.
 - **NTE tracker (TISUPP contractors only; none on timesheets):** NTE amount; billed before this invoice (sum of earlier invoices for this source on this phone); this invoice; remaining. Over the limit: a warning only ("OVER CONTRACT LIMIT: do not pay without an amendment" on the PDF), never a block. No NTE entered: "Enter your not-to-exceed amount in Settings."
 - **Counts (decision 0029):** only counts with a value this period, each with its all-time total for this funding source on this phone (including this invoice). The record freezes the labels and units of its counts.
 - **Role and kind:** the record freezes its role (id, code, name, employment, `chw`) and its kind, `invoice` or `timesheet`.
@@ -174,7 +178,7 @@ One "Create invoice files" (or "Create timesheet files") action produces four fi
 
 ### PDF page 1 (invoice)
 
-Title and funding source name; invoice #, invoice date, service period; From (contractor name, mailing address); Bill to (Regenerating Sonora, Inc., PO Box 154, Superior, AZ 85173); lines by budget line and amount due; counts with a value this period, with all-time totals and units (at most 10; decision 0029); NTE tracker (when the source has one); certification text; **Contractor** signature box and date (decision 0034); **Services received (reviewer)** printed name, title, signature box, date; office box: Reviewed by / Date, Approved by / Date, Payment date / Check or transaction #; QR code; fingerprint; "Page 1 of N".
+Title and funding source name; invoice #, invoice date, service period; From (contractor name, mailing address); Bill to (Regenerating Sonora, Inc., PO Box 154, Superior, AZ 85173); lines by budget line, flat-rate rows and amount due, with any hours tracked, not billed (decision 0039); counts with a value this period, with all-time totals and units (at most 10; decision 0029); NTE tracker (when the source has one); certification text; **Contractor** signature box and date (decision 0034); **Services received (reviewer)** printed name, title, signature box, date; office box: Reviewed by / Date, Approved by / Date, Payment date / Check or transaction #; QR code; fingerprint; "Page 1 of N".
 
 ### PDF page 1 (timesheet summary, employees; decision 0031)
 
@@ -185,6 +189,7 @@ Title and funding source name; invoice #, invoice date, service period; From (co
 - Each page holds the next **7 unique dates that have entries**. Dates with no entries get no column.
 - Rows are task + budget line pairs used on that page (a split entry adds each task share to its own row, and its notes to each of those rows); columns: Task, Core competency (CHW roles only, decision 0032), Budget line, one column per date, Total, Notes.
 - Notes from the entries combined into a row are joined.
+- A flat-rate task's row reads "(not billed)" after the task (decision 0039).
 - Under the grid: total hours per date, subtotal by budget line for the page, page total.
 - Footer: "Contractor initials" or "Employee initials" line (decision 0034), fingerprint, invoice #, "Page X of N".
 - Header: "Dates worked A–B of C", date range, name, "Invoice # · Rate" or "Timesheet # · Pay rate".
@@ -235,12 +240,13 @@ Total hours,,,1.50,1.50,
 | `stop` | 2026-10-30T10:37:10-07:00 | |
 | `raw_duration` | 1:25:06 | Worked time, h:mm:ss before rounding, for the whole entry (start to stop less breaks) |
 | `paused` | 0:20:00 | Total of the entry's breaks, h:mm:ss (decision 0037) |
-| `billed_hours` | 1.00 | This row's task share, in 0.25 h; the column adds up to the invoice hours |
+| `billed_hours` | 1.00 | This row's task share, in 0.25 h; the column adds up to the invoice hours. 0.00 for a flat-rate task |
+| `unbilled_hours` | 0.00 | A flat-rate task's share, tracked, not billed (decision 0039) |
 | `task` | Client check in | |
 | `core_competency` | Interpersonal & Relationship-Building | Blank for Domestic support |
 | `budget_line` | CHW referrals | |
 | `rate` | 20.00 | The invoice's or timesheet's rate |
-| one column per count id, e.g. `contacts`, … `certifications_earned` | 1 | Every count in the roles file, in list order, retired ones included; blank unless above 0 (decision 0029) |
+| one column per count id, e.g. `contacts`, … `certifications_earned` | 1 | Every count in the roles file, in list order, retired ones included; blank unless above 0 (decision 0029); quarter-step counts as decimals, e.g. 2.5 (decision 0039) |
 | `other_counts` | Food boxes=2; Library cards=1 | Custom counts joined with "; " |
 | `notes` | Met at the library table | |
 | `created_at` | ISO 8601 with offset | |
@@ -252,8 +258,8 @@ Total hours,,,1.50,1.50,
 
 ### Fingerprint and QR code
 
-- **Fingerprint:** SHA-256 over a canonical JSON form of the invoice (header, entries, lines, totals, rate). Shown short on the PDF (`3F9A-21C7`), full in both CSVs and the QR code. The canonical form is versioned and must never change silently. v1 has one task per entry; v2 (decision 0024) lists each entry's task shares; v3 (decision 0031) adds the kind, the role, the certification text and counts by id; v4 (decision 0037) adds each entry's breaks. Invoices keep the version they were made with.
-- **QR code:** invoice #, period, hours and amount by budget line, fingerprint. Readable after printing or scanning so a later system can match paper to data.
+- **Fingerprint:** SHA-256 over a canonical JSON form of the invoice (header, entries, lines, totals, rate). Shown short on the PDF (`3F9A-21C7`), full in both CSVs and the QR code. The canonical form is versioned and must never change silently. v1 has one task per entry; v2 (decision 0024) lists each entry's task shares; v3 (decision 0031) adds the kind, the role, the certification text and counts by id; v4 (decision 0037) adds each entry's breaks; v5 (decision 0039) adds each task share's billed flag, the flat-rate rows and the unbilled hours. Invoices keep the version they were made with.
+- **QR code:** invoice #, period, hours and amount by budget line, fingerprint. Invoices with flat-rate rows use payload v2, which adds them (decision 0039). Readable after printing or scanning so a later system can match paper to data.
 
 ## 8. Signatures (outside the app)
 
@@ -285,7 +291,7 @@ Install gate (iPhone) · Setup: details, Pick your role, Your role (review) · H
 
 ## 11. Out of scope
 
-Expenses or mileage (time only) · "nature of the activity" field · service area · agreement # · backup and restore · server, sync or push notifications · in-app signatures · Excel export · Spanish · logo (slot only) · supplemental invoices for retroactive raises · contractor onboarding documents.
+Expenses or mileage (time only, except flat-rate tasks, decision 0039) · "nature of the activity" field · service area · agreement # · backup and restore · server, sync or push notifications · in-app signatures · Excel export · Spanish · logo (slot only) · supplemental invoices for retroactive raises · contractor onboarding documents.
 
 ## 12. Open questions (ask Chris before building the affected part)
 
