@@ -2,7 +2,11 @@
 import { useState } from 'preact/hooks';
 import {
   countText,
-  flatRates,
+  entryFees,
+  feeFromText,
+  formatCentsPlain,
+  formatDollars,
+  unbilledTaskIds,
   budgetLineChoices,
   carryPicks,
   checkTask,
@@ -295,7 +299,7 @@ export function SplitEditor({ draft, error }: { draft: EntryDraft; error?: strin
   const flat =
     draft.budget_line_id === null
       ? undefined
-      : flatRates(role, source.id).get(draft.budget_line_id);
+      : unbilledTaskIds(role, source.id, draft.budget_line_id);
   const total = useDraftQuarters(draft);
   const status = splitStatus(total, draft.tasks);
   return (
@@ -365,6 +369,7 @@ export function CountsAndNotes({
   const repeats = (label: string) => (shown ? duplicateCountLabel(label, shown) : null);
   return (
     <>
+      <FeeFields draft={draft} />
       <div>
         <h2 class="step-title">Counts</h2>
         <p class="hint">
@@ -549,6 +554,60 @@ export function TimesFields({ draft }: { draft: EntryDraft }) {
   );
 }
 
+/** Message under a service fee as typed, or null when it can be saved (decision 0043). */
+export function feeError(text: string | undefined, maxCents: number): string | null {
+  const typed = feeFromText(text, { max_cents: maxCents });
+  if (typed.ok) return null;
+  return typed.reason === 'over'
+    ? `The fee can't be more than ${formatDollars(maxCents)}.`
+    : 'Type an amount like 150.00.';
+}
+
+/** A money field per checked service-fee task, prefilled with the full fee (decision 0043). */
+function FeeFields({ draft }: { draft: EntryDraft }) {
+  const { role, actions } = useApp();
+  const source = sourceById(draft.source_id);
+  const fees = draft.budget_line_id
+    ? entryFees(role, source.id).get(draft.budget_line_id)
+    : undefined;
+  const checked = draft.tasks.flatMap((s) => {
+    const fee = fees?.get(s.task_id);
+    return fee ? [{ task_id: s.task_id, fee }] : [];
+  });
+  if (checked.length === 0) return null;
+  return (
+    <div>
+      <h2 class="step-title">Service fee</h2>
+      {checked.map(({ task_id, fee }) => {
+        const name = source.tasks.find((t) => t.id === task_id)?.name ?? 'this task';
+        const text = draft.fees[task_id];
+        return (
+          <Field
+            key={task_id}
+            label={`Fee for ${name}`}
+            hint={`Up to ${formatDollars(fee.max_cents)}. Lower it if you charged less.`}
+            error={feeError(text, fee.max_cents) ?? undefined}
+          >
+            {(p) => (
+              <input
+                {...p}
+                class="inp inp-money"
+                inputMode="decimal"
+                value={text ?? formatCentsPlain(fee.max_cents)}
+                onInput={(e) => {
+                  void actions.updateDraft({
+                    fees: { ...draft.fees, [task_id]: e.currentTarget.value },
+                  });
+                }}
+              />
+            )}
+          </Field>
+        );
+      })}
+    </div>
+  );
+}
+
 export const PROBLEM_TEXT = {
   task: 'Check what you did.',
   split: 'Split all the hours between your tasks.',
@@ -558,4 +617,5 @@ export const PROBLEM_TEXT = {
   source_period: 'Pick a funding source that takes time on this date.',
   no_funding: 'None of your funding takes time on this date. Ask the office.',
   times: 'Check the times.',
+  fee: 'Check the service fee.',
 } as const;

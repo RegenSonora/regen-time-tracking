@@ -1,7 +1,7 @@
 // Home's "Not yet invoiced" line (SPEC §5): entry count, hours and amount for one source.
 import { uninvoicedEntries } from './invoice';
 import { flatAmountCents, lineAmountCents, sumCents } from './money';
-import { flatRates } from './roles';
+import { entryFees, flatRates } from './roles';
 import { checkEntryTimes } from './time';
 import type { CountDef, Entry, Role } from './types';
 
@@ -28,22 +28,26 @@ export function uninvoicedSummary(
   const perLine = new Map<string, number>();
   // Flat quarter-units per role, line, task and count, summed before the fee is worked out.
   const flatUnits = new Map<string, { units: number; cents: number }>();
+  // Service fees as saved on each entry (decision 0043).
+  const feeCents: number[] = [];
   let quarters = 0;
   for (const e of open) {
     const times = checkEntryTimes(e.start, e.stop, e.breaks);
     if (!times.ok) continue;
     quarters += times.quarters;
-    const rates = flatRates(
-      roles.find((r) => r.id === e.role_id),
-      sourceId,
-    ).get(e.budget_line_id);
+    const role = roles.find((r) => r.id === e.role_id);
+    const rates = flatRates(role, sourceId).get(e.budget_line_id);
+    const fees = entryFees(role, sourceId).get(e.budget_line_id);
     let billed = 0;
     for (const share of e.tasks) {
       const rate = rates?.get(share.task_id);
-      if (!rate) {
+      const fee = fees?.has(share.task_id) === true;
+      if (!rate && !fee) {
         billed += share.quarters;
         continue;
       }
+      if (fee) feeCents.push(e.fees[share.task_id] ?? 0);
+      if (!rate) continue;
       const key = [e.role_id, e.budget_line_id, share.task_id, rate.count_id].join('|');
       const seen = flatUnits.get(key) ?? { units: 0, cents: rate.cents_per_unit };
       const perUnit = countDefs.find((c) => c.id === rate.count_id)?.step === 'quarter' ? 1 : 4;
@@ -61,6 +65,7 @@ export function uninvoicedSummary(
         : sumCents([
             ...[...perLine.values()].map((q) => lineAmountCents(q, rateCents)),
             ...[...flatUnits.values()].map((f) => flatAmountCents(f.units, f.cents)),
+            ...feeCents,
           ]),
   };
 }

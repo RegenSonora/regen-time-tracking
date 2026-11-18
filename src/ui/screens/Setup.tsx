@@ -7,7 +7,7 @@ import {
   normalizeInitials,
   parseDollars,
   prefillRate,
-  roleChoices,
+  roleGroups,
   taskChoices,
   type FundingSourceConfig,
   type RateStep,
@@ -15,7 +15,7 @@ import {
   type SourceSettings,
 } from '../../core';
 import { FUNDING_SOURCES } from '../../funding-sources';
-import { findRole, ROLES } from '../../roles';
+import { findRole, ROLES_FILE } from '../../roles';
 import type { SetupDraft } from '../../storage';
 import { Field, Page } from '../components';
 import { lineName, roleLabel } from '../format';
@@ -184,29 +184,45 @@ export function Setup() {
   );
 }
 
-/** Pick your role: active roles by code and name (decision 0027). */
+/** Pick your role: active roles by code and name (decision 0027), under bold headings (0044). */
 function PickRole({ onPick, onBack }: { onPick: (role: Role) => void; onBack: () => void }) {
   return (
     <Page key="role" title="Pick your role" back onBack={onBack}>
       <p class="lead">Pick the role on your agreement. Ask the office if you're not sure.</p>
-      <ul class="role-list">
-        {roleChoices(ROLES).map((r) => (
-          <li key={r.id}>
-            <button
-              type="button"
-              class="card nav-row role-row"
-              onClick={() => {
-                onPick(r);
-              }}
-            >
-              <span class="check-text">
-                <span class="check-name">{r.code}</span>
-                <span class="check-detail">{r.name}</span>
-              </span>
-            </button>
-          </li>
-        ))}
-      </ul>
+      {roleGroups(ROLES_FILE).map((group, i) => {
+        const headingId = `role-group-${String(i)}`;
+        return (
+          <section
+            key={group.name ?? headingId}
+            class="role-group"
+            aria-labelledby={group.name ? headingId : undefined}
+          >
+            {group.name && (
+              <h2 class="role-group-name" id={headingId}>
+                {group.name}
+              </h2>
+            )}
+            <ul class="role-list">
+              {group.roles.map((r) => (
+                <li key={r.id}>
+                  <button
+                    type="button"
+                    class="card nav-row role-row"
+                    onClick={() => {
+                      onPick(r);
+                    }}
+                  >
+                    <span class="check-text">
+                      <span class="check-name">{r.code}</span>
+                      <span class="check-detail">{r.name}</span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        );
+      })}
     </Page>
   );
 }

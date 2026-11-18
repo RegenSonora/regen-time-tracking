@@ -1,0 +1,246 @@
+[
+  {
+    "name": "Regen Catering: Wednesday dinner with cakes, a lowered Full Moon fee with generators, vehicle hours",
+    "invoice": {
+      "id": "00000000-0000-4000-8000-000000000500",
+      "number": "CC-2026-004",
+      "sequence": 4,
+      "kind": "invoice",
+      "role": {
+        "id": "r-cc01",
+        "code": "R-CC01",
+        "name": "Regen Catering Contractor",
+        "employment": "contractor",
+        "chw": false
+      },
+      "source": {
+        "id": "regen-general-operating",
+        "code": "REGEN-GO",
+        "name": "Regen General Operating",
+        "version": 6,
+        "certification_text": "I certify that the services listed were performed on the dates shown on the attached timesheet pages, the hours are accurate, and no participant names are included."
+      },
+      "chw": {
+        "name": "Carmen Cruz",
+        "initials": "CC",
+        "mailing_address": ""
+      },
+      "invoice_date": "2026-11-14",
+      "period_start": "2026-11-04",
+      "period_end": "2026-11-10",
+      "rate_cents": 2000,
+      "entries": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "start": "2026-11-04T15:00:00-07:00",
+          "stop": "2026-11-04T18:00:00-07:00",
+          "breaks": [],
+          "entry_date": "2026-11-04",
+          "quarters": 12,
+          "tasks": [
+            {
+              "task_id": "wednesday-dinner-service",
+              "task_name": "Wednesday dinner service",
+              "core_competency": null,
+              "quarters": 12,
+              "billed": false
+            }
+          ],
+          "budget_line_id": "leos",
+          "budget_line_name": "Leo's",
+          "counts": {
+            "values": {
+              "contacts": 0,
+              "referrals_given": 0,
+              "referral_followups": 0,
+              "rides_provided": 0,
+              "applications_completed": 0,
+              "meals_cooked": 40,
+              "cakes_made": 3
+            },
+            "other": []
+          },
+          "fees": {
+            "wednesday-dinner-service": 20000
+          },
+          "notes": "",
+          "created_at": "2026-11-04T15:00:00-07:00",
+          "updated_at": "2026-11-04T15:00:00-07:00"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "start": "2026-11-08T16:00:00-07:00",
+          "stop": "2026-11-08T20:00:00-07:00",
+          "breaks": [],
+          "entry_date": "2026-11-08",
+          "quarters": 16,
+          "tasks": [
+            {
+              "task_id": "full-moon-garden-party-event-support",
+              "task_name": "Full Moon Garden Party event support",
+              "core_competency": null,
+              "quarters": 16,
+              "billed": false
+            }
+          ],
+          "budget_line_id": "eat-local-network",
+          "budget_line_name": "Eat Local Network",
+          "counts": {
+            "values": {
+              "contacts": 0,
+              "referrals_given": 0,
+              "referral_followups": 0,
+              "rides_provided": 0,
+              "applications_completed": 0,
+              "generators_rented": 2
+            },
+            "other": []
+          },
+          "fees": {
+            "full-moon-garden-party-event-support": 15000
+          },
+          "notes": "",
+          "created_at": "2026-11-08T16:00:00-07:00",
+          "updated_at": "2026-11-08T16:00:00-07:00"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000003",
+          "start": "2026-11-10T09:00:00-07:00",
+          "stop": "2026-11-10T10:30:00-07:00",
+          "breaks": [],
+          "entry_date": "2026-11-10",
+          "quarters": 6,
+          "tasks": [
+            {
+              "task_id": "vehicle-maintenance",
+              "task_name": "Vehicle maintenance",
+              "core_competency": null,
+              "quarters": 6
+            }
+          ],
+          "budget_line_id": "maintenance-labor",
+          "budget_line_name": "Maintenance labor",
+          "counts": {
+            "values": {
+              "contacts": 0,
+              "referrals_given": 0,
+              "referral_followups": 0,
+              "rides_provided": 0,
+              "applications_completed": 0
+            },
+            "other": []
+          },
+          "fees": {},
+          "notes": "",
+          "created_at": "2026-11-10T09:00:00-07:00",
+          "updated_at": "2026-11-10T09:00:00-07:00"
+        }
+      ],
+      "lines": [
+        {
+          "budget_line_id": "maintenance-labor",
+          "budget_line_name": "Maintenance labor",
+          "quarters": 6,
+          "rate_cents": 2000,
+          "amount_cents": 3000
+        }
+      ],
+      "flat_lines": [
+        {
+          "budget_line_id": "leos",
+          "budget_line_name": "Leo's",
+          "task_id": "wednesday-dinner-service",
+          "task_name": "Wednesday dinner service",
+          "count_id": "cakes_made",
+          "count_label": "Cakes made",
+          "units_quarters": 12,
+          "cents_per_unit": 2500,
+          "amount_cents": 7500
+        },
+        {
+          "budget_line_id": "eat-local-network",
+          "budget_line_name": "Eat Local Network",
+          "task_id": "full-moon-garden-party-event-support",
+          "task_name": "Full Moon Garden Party event support",
+          "count_id": "generators_rented",
+          "count_label": "Generators rented",
+          "units_quarters": 8,
+          "cents_per_unit": 2500,
+          "amount_cents": 5000
+        }
+      ],
+      "fee_lines": [
+        {
+          "budget_line_id": "leos",
+          "budget_line_name": "Leo's",
+          "task_id": "wednesday-dinner-service",
+          "task_name": "Wednesday dinner service",
+          "entries": 1,
+          "max_cents": 20000,
+          "amount_cents": 20000
+        },
+        {
+          "budget_line_id": "eat-local-network",
+          "budget_line_name": "Eat Local Network",
+          "task_id": "full-moon-garden-party-event-support",
+          "task_name": "Full Moon Garden Party event support",
+          "entries": 1,
+          "max_cents": 20000,
+          "amount_cents": 15000
+        }
+      ],
+      "total_quarters": 6,
+      "unbilled_quarters": 28,
+      "total_cents": 50500,
+      "counts_period": {
+        "values": {
+          "contacts": 0,
+          "referrals_given": 0,
+          "referral_followups": 0,
+          "rides_provided": 0,
+          "applications_completed": 0,
+          "meals_cooked": 40,
+          "cakes_made": 3,
+          "generators_rented": 2
+        },
+        "other": []
+      },
+      "counts_all_time": {
+        "values": {
+          "contacts": 0,
+          "referrals_given": 0,
+          "referral_followups": 0,
+          "rides_provided": 0,
+          "applications_completed": 0,
+          "meals_cooked": 40,
+          "cakes_made": 3,
+          "generators_rented": 2
+        },
+        "other": []
+      },
+      "count_defs": [
+        {
+          "id": "meals_cooked",
+          "label": "Meals cooked"
+        },
+        {
+          "id": "cakes_made",
+          "label": "Cakes made"
+        },
+        {
+          "id": "generators_rented",
+          "label": "Generators rented"
+        }
+      ],
+      "nte": {
+        "state": "none"
+      },
+      "canonical_version": 6,
+      "created_at": "2026-11-14T16:00:00-07:00",
+      "updated_at": "2026-11-14T16:00:00-07:00",
+      "fingerprint": "a106e039c7fa8415408022cfe3bf4f4678d6d7b435e624bc70dde13344b1bcb4"
+    },
+    "canonical": "{\"chw\":{\"initials\":\"CC\",\"mailing_address\":\"\",\"name\":\"Carmen Cruz\"},\"entries\":[{\"breaks\":[],\"budget_line_id\":\"leos\",\"budget_line_name\":\"Leo's\",\"counts\":{\"other\":[],\"values\":{\"cakes_made\":3,\"meals_cooked\":40}},\"entry_date\":\"2026-11-04\",\"fees\":{\"wednesday-dinner-service\":20000},\"id\":\"00000000-0000-4000-8000-000000000001\",\"notes\":\"\",\"quarters\":12,\"start\":\"2026-11-04T15:00:00-07:00\",\"stop\":\"2026-11-04T18:00:00-07:00\",\"tasks\":[{\"billed\":false,\"core_competency\":null,\"quarters\":12,\"task_id\":\"wednesday-dinner-service\",\"task_name\":\"Wednesday dinner service\"}]},{\"breaks\":[],\"budget_line_id\":\"eat-local-network\",\"budget_line_name\":\"Eat Local Network\",\"counts\":{\"other\":[],\"values\":{\"generators_rented\":2}},\"entry_date\":\"2026-11-08\",\"fees\":{\"full-moon-garden-party-event-support\":15000},\"id\":\"00000000-0000-4000-8000-000000000002\",\"notes\":\"\",\"quarters\":16,\"start\":\"2026-11-08T16:00:00-07:00\",\"stop\":\"2026-11-08T20:00:00-07:00\",\"tasks\":[{\"billed\":false,\"core_competency\":null,\"quarters\":16,\"task_id\":\"full-moon-garden-party-event-support\",\"task_name\":\"Full Moon Garden Party event support\"}]},{\"breaks\":[],\"budget_line_id\":\"maintenance-labor\",\"budget_line_name\":\"Maintenance labor\",\"counts\":{\"other\":[],\"values\":{}},\"entry_date\":\"2026-11-10\",\"fees\":{},\"id\":\"00000000-0000-4000-8000-000000000003\",\"notes\":\"\",\"quarters\":6,\"start\":\"2026-11-10T09:00:00-07:00\",\"stop\":\"2026-11-10T10:30:00-07:00\",\"tasks\":[{\"billed\":true,\"core_competency\":null,\"quarters\":6,\"task_id\":\"vehicle-maintenance\",\"task_name\":\"Vehicle maintenance\"}]}],\"fee_lines\":[{\"amount_cents\":20000,\"budget_line_id\":\"leos\",\"budget_line_name\":\"Leo's\",\"entries\":1,\"max_cents\":20000,\"task_id\":\"wednesday-dinner-service\",\"task_name\":\"Wednesday dinner service\"},{\"amount_cents\":15000,\"budget_line_id\":\"eat-local-network\",\"budget_line_name\":\"Eat Local Network\",\"entries\":1,\"max_cents\":20000,\"task_id\":\"full-moon-garden-party-event-support\",\"task_name\":\"Full Moon Garden Party event support\"}],\"flat_lines\":[{\"amount_cents\":7500,\"budget_line_id\":\"leos\",\"budget_line_name\":\"Leo's\",\"cents_per_unit\":2500,\"count_id\":\"cakes_made\",\"count_label\":\"Cakes made\",\"task_id\":\"wednesday-dinner-service\",\"task_name\":\"Wednesday dinner service\",\"units_quarters\":12},{\"amount_cents\":5000,\"budget_line_id\":\"eat-local-network\",\"budget_line_name\":\"Eat Local Network\",\"cents_per_unit\":2500,\"count_id\":\"generators_rented\",\"count_label\":\"Generators rented\",\"task_id\":\"full-moon-garden-party-event-support\",\"task_name\":\"Full Moon Garden Party event support\",\"units_quarters\":8}],\"id\":\"00000000-0000-4000-8000-000000000500\",\"invoice_date\":\"2026-11-14\",\"kind\":\"invoice\",\"lines\":[{\"amount_cents\":3000,\"budget_line_id\":\"maintenance-labor\",\"budget_line_name\":\"Maintenance labor\",\"quarters\":6,\"rate_cents\":2000}],\"number\":\"CC-2026-004\",\"period_end\":\"2026-11-10\",\"period_start\":\"2026-11-04\",\"rate_cents\":2000,\"role\":{\"chw\":false,\"code\":\"R-CC01\",\"employment\":\"contractor\",\"id\":\"r-cc01\",\"name\":\"Regen Catering Contractor\"},\"sequence\":4,\"source\":{\"certification_text\":\"I certify that the services listed were performed on the dates shown on the attached timesheet pages, the hours are accurate, and no participant names are included.\",\"code\":\"REGEN-GO\",\"id\":\"regen-general-operating\",\"name\":\"Regen General Operating\",\"version\":6},\"total_cents\":50500,\"total_quarters\":6,\"unbilled_quarters\":28,\"v\":6}",
+    "fingerprint": "a106e039c7fa8415408022cfe3bf4f4678d6d7b435e624bc70dde13344b1bcb4"
+  }
+]

@@ -64,9 +64,17 @@ export interface BudgetLine {
 export interface RolesFile {
   format_version: 1;
   version: number;
+  /** Headings on Pick your role, each with its roles in order (decision 0044). */
+  role_groups?: RoleGroup[];
   /** Every count any task shows, in display and entry log column order. */
   counts: CountDef[];
   roles: Role[];
+}
+
+/** A heading on Pick your role and the roles under it (decision 0044). */
+export interface RoleGroup {
+  name: string;
+  role_ids: string[];
 }
 
 /** One count in the shared list (decision 0029). */
@@ -124,6 +132,13 @@ export interface RoleTask {
   count_ids: string[];
   /** Paid by this count instead of by the hour; the task's hours are tracked, not billed (0039). */
   flat_rate?: FlatRate;
+  /** A service fee per entry, up to max_cents; the task's hours are tracked, not billed (0043). */
+  entry_fee?: EntryFee;
+}
+
+/** A task paid a service fee per entry (decision 0043). */
+export interface EntryFee {
+  max_cents: number;
 }
 
 /** A task paid per count (decision 0039). */
@@ -185,6 +200,8 @@ export interface Entry {
   tasks: TaskShare[];
   budget_line_id: string;
   counts: Counts;
+  /** Service fees in cents by task id, set when saved, for tasks with a fee (decision 0043). */
+  fees: Record<string, number>;
   notes: string;
   /** Set when invoiced; the entry is then locked (CLAUDE.md rule 5). */
   invoice_id: string | null;
@@ -221,6 +238,8 @@ export interface InvoiceEntry {
   budget_line_id: string;
   budget_line_name: string;
   counts: Counts;
+  /** The entry's service fees in cents by task id. Absent before decision 0043. */
+  fees?: Record<string, number>;
   notes: string;
   created_at: string;
   updated_at: string;
@@ -231,6 +250,18 @@ export interface InvoiceLine {
   budget_line_name: string;
   quarters: number;
   rate_cents: number;
+  amount_cents: number;
+}
+
+/** A service-fee task's row on an invoice: the fees of its entries added up (decision 0043). */
+export interface InvoiceFeeLine {
+  budget_line_id: string;
+  budget_line_name: string;
+  task_id: string;
+  task_name: string;
+  /** Entries with a fee above $0.00. */
+  entries: number;
+  max_cents: number;
   amount_cents: number;
 }
 
@@ -294,11 +325,13 @@ export interface Invoice {
   lines: InvoiceLine[];
   /** Flat-rate rows, in budget line order. Absent on invoices made before decision 0039. */
   flat_lines?: InvoiceFlatLine[];
+  /** Service-fee rows, in budget line order. Absent on invoices made before decision 0043. */
+  fee_lines?: InvoiceFeeLine[];
   /** Billed quarter-hours: the sum of the hourly rows. */
   total_quarters: number;
   /** Hours of flat-rate tasks, tracked, not billed. Absent before decision 0039. */
   unbilled_quarters?: number;
-  /** Hourly rows plus flat rows. */
+  /** Hourly rows plus flat rows plus fee rows. */
   total_cents: number;
   counts_period: Counts;
   /** This source on this phone, including this invoice. */

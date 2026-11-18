@@ -7,6 +7,7 @@ interface RoleTask {
   id: string;
   count_ids: string[];
   flat_rate?: { count_id: string; cents_per_unit: number };
+  entry_fee?: { max_cents: number };
 }
 interface RoleLine {
   id: string;
@@ -39,6 +40,7 @@ interface Count {
   retired?: boolean;
 }
 interface RolesFile {
+  role_groups?: { name: string; role_ids: string[] }[];
   format_version: number;
   version: number;
   counts: Count[];
@@ -212,6 +214,45 @@ const TEAM_LEAD_LINES: [string, [string, string[]][]][] = [
   ['other-contractors', [['other', []]]],
 ];
 
+// Regen Catering Contractor lines, in the source's line order (decision 0042).
+const CATERING_LINES: [string, [string, string[]][]][] = [
+  [
+    'maintenance-labor',
+    [
+      ['leos-maintenance', []],
+      ['garden-maintenance', []],
+      ['vehicle-maintenance', []],
+      ['other-maintenance', []],
+    ],
+  ],
+  ['other-contractors', [['other', []]]],
+  [
+    'leos',
+    [
+      ['monday-breakfast-service', ['Meals cooked', 'Meals served']],
+      ['wednesday-dinner-service', ['Meals cooked', 'Meals served', 'Cakes made']],
+      ['leos-internal-meetings', []],
+      ['leos-maintenance', []],
+      ['hosting-special-event', ['Meals served', 'Special events hosted']],
+      ['leos-other', []],
+    ],
+  ],
+  [
+    'eat-local-network',
+    [
+      ['eat-local-forum-event-assistance', ['Event attendees']],
+      [
+        'full-moon-garden-party-event-support',
+        ['Meals cooked', 'Meals served', 'Generators rented'],
+      ],
+      ['gleaning', ['Food gleaned']],
+      ['food-processing', ['Food processed']],
+      ['garden-maintenance', []],
+      ['eat-local-network-other', []],
+    ],
+  ],
+];
+
 // Resilience Contractor lines, in the source's line order (decision 0040).
 const CONTRACTOR_LINES: [string, [string, string[]][]][] = [
   [
@@ -326,7 +367,15 @@ describe('roles file (roles plan Part 2, decisions 0027, 0029)', () => {
     ]);
   });
 
-  it('ships six active roles: two CHW Trainees, a Certified CHW, the Resilience Team Lead, the Regen Generalist and the Resilience Contractor', () => {
+  it('groups the roles for Pick your role (decision 0044)', () => {
+    expect(rolesFile.role_groups).toEqual([
+      { name: 'Community Care Team', role_ids: ['chw-tc01', 'chw-te01', 'chw-ce01'] },
+      { name: 'Community Resilience', role_ids: ['r-tl01', 'r-c01'] },
+      { name: 'Other Roles', role_ids: ['r-cc01', 'r-gc01'] },
+    ]);
+  });
+
+  it('ships seven active roles, the Regen Catering Contractor last', () => {
     expect(
       rolesFile.roles.map((r) => [r.id, r.code, r.name, r.employment, r.chw, r.retired ?? false]),
     ).toEqual([
@@ -336,6 +385,7 @@ describe('roles file (roles plan Part 2, decisions 0027, 0029)', () => {
       ['r-tl01', 'R-TL01', 'Resilience Team Lead', 'contractor', false, false],
       ['r-gc01', 'R-GC01', 'Regen Generalist Contractor', 'contractor', false, false],
       ['r-c01', 'R-C01', 'Resilience Contractor', 'contractor', false, false],
+      ['r-cc01', 'R-CC01', 'Regen Catering Contractor', 'contractor', false, false],
     ]);
   });
 
@@ -425,7 +475,8 @@ describe('roles file (roles plan Part 2, decisions 0027, 0029)', () => {
       ['lehrs_reset', 'quarter'],
     ]);
     // Every other role is paid by the hour only.
-    for (const r of rolesFile.roles.filter((x) => x.id !== 'r-gc01' && x.id !== 'r-c01'))
+    const flatRoles = ['r-gc01', 'r-c01', 'r-cc01'];
+    for (const r of rolesFile.roles.filter((x) => !flatRoles.includes(x.id)))
       for (const f of r.funding)
         for (const l of f.budget_lines)
           for (const t of l.tasks) expect(t.flat_rate, `${r.code} ${t.id}`).toBeUndefined();
@@ -452,8 +503,57 @@ describe('roles file (roles plan Part 2, decisions 0027, 0029)', () => {
     );
   });
 
-  it('adds the eight Regen Generalist counts at the end of the list (0038)', () => {
-    expect(rolesFile.counts.slice(-8).map((c) => c.label)).toEqual([
+  it('Regen Catering Contractor bills Regen GO at $20.00, with fees and flat rates (0042, 0043)', () => {
+    const r = role('R-CC01');
+    expect(r.certification_step).toBeUndefined();
+    expect(r.funding).toHaveLength(1);
+    const [funding] = r.funding;
+    expect(funding?.source_id).toBe('regen-general-operating');
+    expect(funding?.rate_cents).toBe(2000);
+    expect(funding?.rate_step).toBeUndefined();
+    expect(funding?.nte_cents).toBeUndefined();
+    const plain = funding?.budget_lines.map((l) => ({
+      id: l.id,
+      tasks: l.tasks.map((t) => ({ id: t.id, count_ids: t.count_ids })),
+    }));
+    expect(plain).toEqual(
+      CATERING_LINES.map(([id, tasks]) => ({
+        id,
+        tasks: tasks.map(([task, labels]) => ({ id: task, count_ids: countIds(labels) })),
+      })),
+    );
+    const paid = (funding?.budget_lines ?? []).flatMap((l) =>
+      l.tasks
+        .filter((t) => t.flat_rate || t.entry_fee)
+        .map((t) => [l.id, t.id, t.entry_fee ?? null, t.flat_rate ?? null]),
+    );
+    const fee = { max_cents: 20000 };
+    expect(paid).toEqual([
+      ['leos', 'monday-breakfast-service', fee, null],
+      ['leos', 'wednesday-dinner-service', fee, { count_id: 'cakes_made', cents_per_unit: 2500 }],
+      [
+        'eat-local-network',
+        'full-moon-garden-party-event-support',
+        fee,
+        { count_id: 'generators_rented', cents_per_unit: 2500 },
+      ],
+    ]);
+    // Only the catering contractor has service fees.
+    for (const other of rolesFile.roles.filter((x) => x.id !== 'r-cc01'))
+      for (const f of other.funding)
+        for (const l of f.budget_lines)
+          for (const t of l.tasks) expect(t.entry_fee, `${other.code} ${t.id}`).toBeUndefined();
+  });
+
+  it('adds Cakes made and Generators rented at the end of the list, whole numbers (0042)', () => {
+    expect(rolesFile.counts.slice(-2)).toEqual([
+      { id: 'cakes_made', label: 'Cakes made' },
+      { id: 'generators_rented', label: 'Generators rented' },
+    ]);
+  });
+
+  it('adds the eight Regen Generalist counts after the Certified CHW counts (0038)', () => {
+    expect(rolesFile.counts.slice(-10, -2).map((c) => c.label)).toEqual([
       'Flyers posted',
       'Food gleaned',
       'Food processed',
@@ -497,6 +597,14 @@ describe('roles schema', () => {
     expect(
       changed((f) => (((first(f).funding[0] as Funding).budget_lines[0] as RoleLine).tasks = [])),
     ).not.toEqual([]);
+  });
+
+  it('accepts a service fee in whole cents only (decision 0043)', () => {
+    const t = (f: RolesFile) =>
+      (first(f).funding[0] as Funding).budget_lines[0]?.tasks[0] as RoleTask;
+    expect(changed((f) => (t(f).entry_fee = { max_cents: 199.5 }))).not.toEqual([]);
+    expect(changed((f) => (t(f).entry_fee = { max_cents: 0 }))).not.toEqual([]);
+    expect(changed((f) => (t(f).entry_fee = { max_cents: 20000 }))).toEqual([]);
   });
 
   it('accepts only the quarter step and a flat rate in whole cents (decision 0039)', () => {
@@ -766,5 +874,40 @@ describe('build checks against the source files (roles plan R1)', () => {
         reset(f).flat_rate = { count_id: 'lehrs_reset', cents_per_unit: 14001 };
       }),
     ).toEqual([]);
+  });
+  it('puts every active role in exactly one group, and only known roles (decision 0044)', () => {
+    const groups = (f: RolesFile) => f.role_groups ?? [];
+    expect(
+      broken((f) => {
+        const other = groups(f).find((g) => g.name === 'Other Roles');
+        if (other) other.role_ids = ['r-cc01'];
+      }),
+    ).toContain('role R-GC01: not in any role group');
+    expect(
+      broken((f) => {
+        groups(f)[0]?.role_ids.push('r-gc01');
+      }),
+    ).toContain('role R-GC01: in more than one role group');
+    expect(
+      broken((f) => {
+        groups(f)[0]?.role_ids.push('r-zz99');
+      }),
+    ).toContain('role group "Community Care Team": role "r-zz99" doesn\'t exist');
+    expect(
+      broken((f) => {
+        groups(f).push({ name: 'Community Care Team', role_ids: [] });
+      }),
+    ).toContain('role group "Community Care Team": name is used more than once');
+  });
+
+  it('allows service fees on contractor roles only (decision 0043)', () => {
+    const cc = (f: RolesFile) => byId(f, 'r-cc01');
+    const at =
+      'role R-CC01, funding regen-general-operating, budget line leos, task monday-breakfast-service';
+    expect(
+      broken((f) => {
+        cc(f).employment = 'employee';
+      }),
+    ).toContain(`${at}: entry_fee is only for contractor roles`);
   });
 });

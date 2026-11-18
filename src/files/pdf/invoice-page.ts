@@ -3,7 +3,7 @@
 // bottom at a scale; when a long one doesn't fit, it is drawn again smaller.
 import { countText } from '../../core/counts';
 import { shortFingerprint } from '../../core/fingerprint';
-import { flatRowName, invoiceRows, unbilledNote } from '../../core/invoice';
+import { invoiceRowCells, invoiceRows, unbilledNote } from '../../core/invoice';
 import { formatDollars, formatQuarters } from '../../core/money';
 import { invoiceCounts } from '../../core/roles';
 import type { Invoice } from '../../core/types';
@@ -134,22 +134,21 @@ function layout(c: Ctx, invoice: Invoice, pageCount: number, footerTop: number):
   }
   y += 5 * k;
   c.page.line(LEFT, y, RIGHT, y, { width: 1.5, gray: INK });
-  // Hourly rows, each followed by its flat-rate rows: count × rate, no hours (decision 0039).
+  // Hourly rows, each followed by its fee and flat-rate rows, which have no hours
+  // (decisions 0039, 0043).
   for (const row of invoiceRows(invoice)) {
-    const name = row.kind === 'hours' ? row.line.budget_line_name : flatRowName(row.flat);
-    const names = wrapText(name, 'regular', 10 * k, nameWidth);
+    const cells = invoiceRowCells(row);
+    const names = wrapText(cells.name, 'regular', 10 * k, nameWidth);
     const first = y + 14 * k;
     names.forEach((n, i) => {
       text(c, LEFT, first + 12 * i * k, n, 10);
     });
-    if (row.kind === 'hours') {
-      text(c, hoursX, first, formatQuarters(row.line.quarters), 10, 'regular', INK, 'right');
+    if (cells.quarters !== null) {
+      text(c, hoursX, first, formatQuarters(cells.quarters), 10, 'regular', INK, 'right');
     }
     if (!timesheet) {
-      const rate = row.kind === 'hours' ? row.line.rate_cents : row.flat.cents_per_unit;
-      const amount = row.kind === 'hours' ? row.line.amount_cents : row.flat.amount_cents;
-      text(c, rateX, first, formatDollars(rate), 10, 'regular', INK, 'right');
-      text(c, RIGHT, first, formatDollars(amount), 10, 'regular', INK, 'right');
+      text(c, rateX, first, cells.rate, 10, 'regular', INK, 'right');
+      text(c, RIGHT, first, formatDollars(cells.amount_cents), 10, 'regular', INK, 'right');
     }
     y = first + (12 * (names.length - 1) + 6) * k;
     c.page.line(LEFT, y, RIGHT, y, { width: 0.5, gray: RULE });

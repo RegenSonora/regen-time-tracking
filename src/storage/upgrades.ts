@@ -184,10 +184,36 @@ export const v4ToV5: UpgradeStep = (snapshot) => ({
 /** v5 → v6 (decision 0041): an empty `task_progress` store; nothing else changes. */
 export const v5ToV6: UpgradeStep = (snapshot) => ({ ...snapshot, task_progress: [] });
 
+/**
+ * v6 → v7 (decision 0043): entries get `fees` (cents by task id) and entry drafts get `fees`
+ * (as typed), both empty. Frozen invoices are not rewritten.
+ */
+export const v6ToV7: UpgradeStep = (snapshot) => ({
+  ...snapshot,
+  entries: (snapshot['entries'] ?? []).map((e) => ({
+    ...e,
+    fees: (e as StoredRecord & { fees?: object }).fees ?? {},
+  })),
+  app_state: (snapshot['app_state'] ?? []).map((record) => {
+    const state = record as StoredRecord & { draft: { kind: string; fees?: object } | null };
+    return state.draft?.kind === 'entry'
+      ? { ...state, draft: { ...state.draft, fees: state.draft.fees ?? {} } }
+      : state;
+  }),
+});
+
 export const SCHEMA: Schema = {
   version: DATA_VERSION,
-  layouts: { 1: STORES_V1, 2: STORES_V1, 3: STORES_V1, 4: STORES_V1, 5: STORES_V1, 6: STORES_V6 },
-  steps: { 1: v1ToV2, 2: v2ToV3, 3: v3ToV4, 4: v4ToV5, 5: v5ToV6 },
+  layouts: {
+    1: STORES_V1,
+    2: STORES_V1,
+    3: STORES_V1,
+    4: STORES_V1,
+    5: STORES_V1,
+    6: STORES_V6,
+    7: STORES_V6,
+  },
+  steps: { 1: v1ToV2, 2: v2ToV3, 3: v3ToV4, 4: v4ToV5, 5: v5ToV6, 6: v6ToV7 },
 };
 
 /** Run every step from `from` up to `to`. Throws if one is missing or fails. */

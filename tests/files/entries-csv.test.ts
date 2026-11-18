@@ -32,7 +32,7 @@ describe('entry log CSV (SPEC §7, decisions 0001, 0024 and 0029)', () => {
   });
 
   it('has the fixed columns, then one per count in list order, for every invoice', async () => {
-    expect(COLUMNS.slice(0, 16)).toEqual([
+    expect(COLUMNS.slice(0, 17)).toEqual([
       'invoice_number',
       'fingerprint',
       'funding_source',
@@ -49,8 +49,9 @@ describe('entry log CSV (SPEC §7, decisions 0001, 0024 and 0029)', () => {
       'core_competency',
       'budget_line',
       'rate',
+      'fee',
     ]);
-    expect(COLUMNS.slice(16, -4)).toEqual(countDefs.map((c) => c.id));
+    expect(COLUMNS.slice(17, -4)).toEqual(countDefs.map((c) => c.id));
     expect(COLUMNS.slice(-4)).toEqual(['other_counts', 'notes', 'created_at', 'updated_at']);
     const one = await invoiceFrom({
       entries: [
@@ -65,7 +66,7 @@ describe('entry log CSV (SPEC §7, decisions 0001, 0024 and 0029)', () => {
   it('keeps a retired count as a column (decision 0029)', async () => {
     const retired: CountDef[] = [...countDefs, { id: 'old_count', label: 'Old', retired: true }];
     const header = csvText(entriesCsv(await sampleInvoice(), retired)).split('\r\n')[0];
-    expect(header).toContain(',lehrs_installed,old_count,other_counts,');
+    expect(header).toContain(',generators_rented,old_count,other_counts,');
   });
 
   it("writes a Team Lead's counts by id, blank where unused", async () => {
@@ -131,6 +132,41 @@ describe('entry log CSV (SPEC §7, decisions 0001, 0024 and 0029)', () => {
     expect(cell(0, 'lehrs_reset')).toBe('2.5');
     expect(cell(0, 'soil_harvested')).toBe('30');
     expect(cell(1, 'lehrs_reset')).toBe('');
+  });
+
+  it("writes each share's service fee in the fee column (decision 0043)", async () => {
+    const catering = findTestRole('r-cc01');
+    const invoice = await invoiceFrom({
+      source: regen,
+      role: catering,
+      settings: { source_id: regen.id, rate_cents: 2000, nte_cents: null },
+      entries: [
+        makeEntry('2026-11-04', '15:00:00', '17:00:00', 'leos-maintenance', 'leos', {
+          source_id: regen.id,
+          role_id: catering.id,
+          tasks: [
+            { task_id: 'leos-maintenance', quarters: 4 },
+            { task_id: 'wednesday-dinner-service', quarters: 4 },
+          ],
+          fees: { 'wednesday-dinner-service': 15000 },
+          counts: { values: { cakes_made: 3 }, other: [] },
+        }),
+      ],
+      prior_invoices: [],
+    });
+    const rows = rowsOf(entriesCsv(invoice, countDefs));
+    const cell = (r: number, c: string) => rows[r]?.[COLUMNS.indexOf(c)];
+    expect([cell(0, 'task'), cell(0, 'fee'), cell(0, 'billed_hours')]).toEqual([
+      "Leo's maintenance",
+      '',
+      '1.00',
+    ]);
+    expect([cell(1, 'task'), cell(1, 'fee'), cell(1, 'unbilled_hours')]).toEqual([
+      'Wednesday dinner service',
+      '150.00',
+      '1.00',
+    ]);
+    expect(cell(0, 'cakes_made')).toBe('3');
   });
 
   it('writes one row per task share; billed hours add up, counts and notes are on part 1', async () => {
@@ -241,7 +277,7 @@ describe('entry log CSV (SPEC §7, decisions 0001, 0024 and 0029)', () => {
       ',2026-10-01,2026-10-01T22:30:00-07:00,2026-10-02T00:15:00-07:00,1:45:00,0:00:00,1.75,',
     );
     expect(line).toContain(
-      `,Domestic support,,Domestic support,18.00,${','.repeat(countDefs.length)}Food boxes=2;`,
+      `,Domestic support,,Domestic support,18.00,,${','.repeat(countDefs.length)}Food boxes=2;`,
     );
     expect(line).toContain(`,Food boxes=2; Library cards=1,"'-not a formula, ""really""",`);
   });

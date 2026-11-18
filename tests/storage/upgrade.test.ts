@@ -16,6 +16,7 @@ import {
   v3ToV4,
   v4ToV5,
   v5ToV6,
+  v6ToV7,
   type Schema,
   type Snapshot,
 } from '../../src/storage/upgrades';
@@ -177,15 +178,28 @@ const releasedV4: Schema = {
 };
 
 /** What releases with data v5 (pause and resume) wrote and ran. */
+const releasedV6: Schema = {
+  version: 6,
+  layouts: { 1: STORES_V1, 2: STORES_V1, 3: STORES_V1, 4: STORES_V1, 5: STORES_V1, 6: STORES_V6 },
+  steps: { 1: v1ToV2, 2: v2ToV3, 3: v3ToV4, 4: v4ToV5, 5: v5ToV6 },
+};
+
 const releasedV5: Schema = {
   version: 5,
   layouts: { 1: STORES_V1, 2: STORES_V1, 3: STORES_V1, 4: STORES_V1, 5: STORES_V1 },
   steps: { 1: v1ToV2, 2: v2ToV3, 3: v3ToV4, 4: v4ToV5 },
 };
 
-/** An entry as data v4 stored it: no breaks. */
-function v4Entry(e: Entry) {
+/** An entry as data v6 stored it: no fees. */
+function v6Entry(e: Entry) {
   const copy: Record<string, unknown> = { ...e };
+  delete copy['fees'];
+  return copy;
+}
+
+/** An entry as data v4 stored it: no breaks, no fees. */
+function v4Entry(e: Entry) {
+  const copy: Record<string, unknown> = v6Entry(e);
   delete copy['breaks'];
   return copy;
 }
@@ -215,9 +229,9 @@ const v3Profile = {
 const byStart = (entries: readonly Entry[]) =>
   [...entries].sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
 
-describe('data format version 6', () => {
+describe('data format version 7', () => {
   it('is what this release writes', () => {
-    expect(DATA_VERSION).toBe(6);
+    expect(DATA_VERSION).toBe(7);
     expect(SCHEMA.version).toBe(DATA_VERSION);
     expect(SCHEMA.layouts[DATA_VERSION]).toEqual(STORES_V6);
   });
@@ -228,10 +242,10 @@ describe('data format version 6', () => {
     if (!opened.ok) throw new Error(opened.reason);
     opened.storage.close();
     const { version, data } = await rawDump(factory);
-    expect(version).toBe(6);
+    expect(version).toBe(7);
     expect(Object.keys(data).sort()).toEqual([...STORES_V6].sort());
     expect(data['meta']).toEqual([
-      { id: 'data', data_version: 6, created_at: NOW, updated_at: NOW },
+      { id: 'data', data_version: 7, created_at: NOW, updated_at: NOW },
     ]);
   });
 
@@ -297,7 +311,7 @@ describe('upgrading stored data', () => {
     expect(must(data['meta'])[0]).toMatchObject({ data_version: 2 });
   });
 
-  it('the current layout upgrades to a fake v7 and keeps its records', async () => {
+  it('the current layout upgrades to a fake v8 and keeps its records', async () => {
     const factory = new IDBFactory();
     const current = await open(factory);
     if (!current.ok) throw new Error(current.reason);
@@ -306,10 +320,10 @@ describe('upgrading stored data', () => {
     current.storage.close();
 
     const v7: Schema = {
-      version: 7,
-      layouts: { 6: STORES_V6, 7: STORES_V6 },
+      version: 8,
+      layouts: { 7: STORES_V6, 8: STORES_V6 },
       steps: {
-        6: (s) => ({
+        7: (s) => ({
           ...s,
           entries: (s['entries'] ?? []).map((e) => ({
             ...e,
@@ -327,7 +341,7 @@ describe('upgrading stored data', () => {
     opened.storage.close();
 
     const meta = must(must((await rawDump(factory)).data['meta'])[0]);
-    expect(meta).toMatchObject({ data_version: 7, created_at: NOW });
+    expect(meta).toMatchObject({ data_version: 8, created_at: NOW });
   });
 
   it('a failed upgrade leaves the old data and version untouched', async () => {
@@ -361,7 +375,7 @@ describe('upgrading stored data', () => {
 
   it('data from a newer app version is refused, never rewritten', async () => {
     const factory = new IDBFactory();
-    const newer: Schema = { version: 8, layouts: { 8: STORES_V6 }, steps: {} };
+    const newer: Schema = { version: 9, layouts: { 9: STORES_V6 }, steps: {} };
     const n = await open(factory, newer);
     if (!n.ok) throw new Error(n.reason);
     await n.storage.saveProfile({ ...profile });
@@ -415,8 +429,8 @@ describe('v1 → v2: app state gains draft', () => {
     opened.storage.close();
 
     const { version, data } = await rawDump(factory);
-    expect(version).toBe(6);
-    expect(must(data['meta'])[0]).toMatchObject({ data_version: 6 });
+    expect(version).toBe(7);
+    expect(must(data['meta'])[0]).toMatchObject({ data_version: 7 });
   });
 
   it('a phone with no v1 app state upgrades cleanly', async () => {
@@ -484,7 +498,7 @@ describe('v2 → v3: one task becomes a list of task shares (decision 0024)', ()
     const [invoice] = await opened.storage.listInvoices();
     expect(await verifyFingerprint(must(invoice))).toBe(true);
     opened.storage.close();
-    expect((await rawDump(factory)).version).toBe(6);
+    expect((await rawDump(factory)).version).toBe(DATA_VERSION);
   });
 
   it('a failed v2 → v3 upgrade leaves the v2 data untouched', async () => {
@@ -618,7 +632,7 @@ describe('v3 → v4: roles, counts by id, invoice kind (roles plan R3)', () => {
     expect(must(invoice).kind).toBe('invoice');
     expect(await verifyFingerprint(must(invoice))).toBe(true);
     opened.storage.close();
-    expect((await rawDump(factory)).version).toBe(6);
+    expect((await rawDump(factory)).version).toBe(DATA_VERSION);
   });
 
   it('a failed v3 → v4 upgrade leaves the v3 data untouched', async () => {
@@ -712,7 +726,7 @@ describe('v4 → v5: entries and the timer get breaks (decision 0037)', () => {
     const [invoice] = await opened.storage.listInvoices();
     expect(await verifyFingerprint(must(invoice))).toBe(true);
     opened.storage.close();
-    expect((await rawDump(factory)).version).toBe(6);
+    expect((await rawDump(factory)).version).toBe(DATA_VERSION);
   });
 
   it('a failed v4 → v5 upgrade leaves the v4 data untouched', async () => {
@@ -759,7 +773,7 @@ describe('v5 → v6: a store for My Tasks (decision 0041)', () => {
     expect(before.version).toBe(5);
     expect(Object.keys(before.data)).not.toContain('task_progress');
 
-    const opened = await open(factory);
+    const opened = await open(factory, releasedV6);
     if (!opened.ok) throw new Error(opened.reason);
     expect(await opened.storage.getProfile()).toEqual(profile);
     expect(await opened.storage.listEntries()).toEqual(byStart(splitSampleEntries));
@@ -774,7 +788,14 @@ describe('v5 → v6: a store for My Tasks (decision 0041)', () => {
   });
 
   it('every earlier release upgrades all the way to v6', async () => {
-    for (const released of [releasedV1, releasedV2, releasedV3, releasedV4, releasedV5]) {
+    for (const released of [
+      releasedV1,
+      releasedV2,
+      releasedV3,
+      releasedV4,
+      releasedV5,
+      releasedV6,
+    ]) {
       const factory = new IDBFactory();
       const old = await open(factory, released);
       if (!old.ok) throw new Error(old.reason);
@@ -783,7 +804,7 @@ describe('v5 → v6: a store for My Tasks (decision 0041)', () => {
       if (!opened.ok) throw new Error(`v${String(released.version)}: ${opened.reason}`);
       expect(await opened.storage.listTaskProgress()).toEqual([]);
       opened.storage.close();
-      expect((await rawDump(factory)).version).toBe(6);
+      expect((await rawDump(factory)).version).toBe(DATA_VERSION);
     }
   });
 
@@ -799,6 +820,67 @@ describe('v5 → v6: a store for My Tasks (decision 0041)', () => {
       steps: {
         ...SCHEMA.steps,
         5: () => {
+          throw new Error('bad step');
+        },
+      },
+    };
+    expect(await open(factory, broken)).toMatchObject({ ok: false, reason: 'upgrade_failed' });
+    expect(await rawDump(factory)).toEqual(before);
+  });
+});
+
+describe('v6 → v7: entries and entry drafts get service fees (decision 0043)', () => {
+  it('gives entries and entry drafts empty fees, keeps any fees, and leaves the rest alone', () => {
+    const base = { id: 's', created_at: NOW, updated_at: NOW };
+    const after = v6ToV7({
+      entries: [{ id: 'e1' }, { id: 'e2', fees: { x: 100 } }] as StoredRecord[],
+      invoices: [{ id: 'i1', entries: [{ id: 'e1' }] } as StoredRecord],
+      app_state: [
+        { ...base, draft: { kind: 'entry' } },
+        { ...base, id: 't', draft: { kind: 'setup' } },
+        { ...base, id: 'u', draft: null },
+      ] as unknown as StoredRecord[],
+      task_progress: [{ id: 'p' }],
+    });
+    expect(after['entries']).toEqual([
+      { id: 'e1', fees: {} },
+      { id: 'e2', fees: { x: 100 } },
+    ]);
+    expect(after['invoices']).toEqual([{ id: 'i1', entries: [{ id: 'e1' }] }]);
+    expect(after['app_state']).toEqual([
+      { ...base, draft: { kind: 'entry', fees: {} } },
+      { ...base, id: 't', draft: { kind: 'setup' } },
+      { ...base, id: 'u', draft: null },
+    ]);
+    expect(after['task_progress']).toEqual([{ id: 'p' }]);
+  });
+
+  it('a phone with released v6 data opens with every entry kept and no fees', async () => {
+    const factory = new IDBFactory();
+    const v6 = await open(factory, releasedV6);
+    if (!v6.ok) throw new Error(v6.reason);
+    v6.storage.close();
+    await rawPut(factory, 'entries', splitSampleEntries.map(v6Entry));
+    const opened = await open(factory);
+    if (!opened.ok) throw new Error(opened.reason);
+    expect(await opened.storage.listEntries()).toEqual(byStart(splitSampleEntries));
+    opened.storage.close();
+    expect((await rawDump(factory)).version).toBe(7);
+  });
+
+  it('a failed v6 → v7 upgrade leaves the v6 data untouched', async () => {
+    const factory = new IDBFactory();
+    const v6 = await open(factory, releasedV6);
+    if (!v6.ok) throw new Error(v6.reason);
+    v6.storage.close();
+    await rawPut(factory, 'entries', sampleEntries.map(v6Entry));
+    const before = await rawDump(factory);
+    expect(before.version).toBe(6);
+    const broken: Schema = {
+      ...SCHEMA,
+      steps: {
+        ...SCHEMA.steps,
+        6: () => {
           throw new Error('bad step');
         },
       },

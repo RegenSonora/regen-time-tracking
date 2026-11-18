@@ -16,6 +16,22 @@
       "type": "integer",
       "minimum": 1
     },
+    "role_groups": {
+      "description": "Headings on Pick your role, in order, each listing its roles in order. Every active role is in exactly one group (decision 0044). Without this list, roles show in file order with no headings.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "role_ids"],
+        "properties": {
+          "name": { "$ref": "#/$defs/text" },
+          "role_ids": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/slug" }
+          }
+        }
+      }
+    },
     "counts": {
       "description": "Every count any task shows, in display and entry log column order. Add new counts at the end; never delete one, mark it retired (decision 0029).",
       "type": "array",
@@ -179,6 +195,15 @@
                       "description": "Counts this task shows, by id from the shared list. May be empty.",
                       "type": "array",
                       "items": { "type": "string" }
+                    },
+                    "entry_fee": {
+                      "description": "A service fee per entry with this task, up to max_cents; the person may type less. The task's hours are tracked, not billed. Contractor roles only (decision 0043).",
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["max_cents"],
+                      "properties": {
+                        "max_cents": { "$ref": "#/$defs/cents" }
+                      }
                     },
                     "flat_rate": {
                       "description": "Pay this task by one of its counts instead of by the hour: the task's hours are tracked, not billed. Contractor roles only (decision 0039).",
