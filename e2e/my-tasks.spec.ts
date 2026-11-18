@@ -101,7 +101,15 @@ test('Share progress sends one picture, and more when notes are long', async ({ 
   ).join('\n');
   await card(page, 'Fix trailer hitch').getByLabel('Notes').fill(long);
   await page.getByRole('button', { name: 'Share progress' }).click();
-  await expect.poll(async () => (await sharedFiles(page)).length).toBe(2);
+  // Count shares in the page; copying every picture out on each poll is slow.
+  await expect
+    .poll(
+      () => page.evaluate(() => (window as unknown as { __shared: unknown[] }).__shared.length),
+      {
+        timeout: 20_000,
+      },
+    )
+    .toBe(2);
   shares = await sharedFiles(page);
   const names = shares.at(-1)?.map((f) => f.name) ?? [];
   expect(names.length).toBeGreaterThan(1);
