@@ -5,15 +5,22 @@ import { join } from 'node:path';
 import { build as esbuild } from 'esbuild';
 import { injectCsp } from './lib/csp.mjs';
 import { checkFundingSources } from './lib/funding-sources.mjs';
+import { checkMyTasks } from './lib/my-tasks.mjs';
 import { checkRoles } from './lib/roles.mjs';
 import { readJson } from './lib/json.mjs';
 
 const root = join(import.meta.dirname, '..');
 const dist = join(root, 'dist');
 
-// CLAUDE.md rule 6: funding sources, and the roles built on them, are validated at build time.
+// CLAUDE.md rule 6: funding sources, the roles built on them, and the roles' office tasks
+// (decision 0041) are validated at build time.
 const sourceProblems = checkFundingSources(root);
-const dataProblems = [...sourceProblems, ...(sourceProblems.length ? [] : checkRoles(root))];
+const roleProblems = sourceProblems.length ? [] : checkRoles(root);
+const dataProblems = [
+  ...sourceProblems,
+  ...roleProblems,
+  ...(sourceProblems.length || roleProblems.length ? [] : checkMyTasks(root)),
+];
 if (dataProblems.length) {
   console.error(`Funding source and role problems:\n- ${dataProblems.join('\n- ')}`);
   process.exit(1);
