@@ -180,6 +180,15 @@
                       "type": "array",
                       "items": { "type": "string" }
                     },
+                    "entry_fee": {
+                      "description": "A service fee per entry with this task, up to max_cents; the person may type less. The task's hours are tracked, not billed. Contractor roles only (decision 0043).",
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["max_cents"],
+                      "properties": {
+                        "max_cents": { "$ref": "#/$defs/cents" }
+                      }
+                    },
                     "flat_rate": {
                       "description": "Pay this task by one of its counts instead of by the hour: the task's hours are tracked, not billed. Contractor roles only (decision 0039).",
                       "type": "object",

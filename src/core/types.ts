@@ -124,6 +124,13 @@ export interface RoleTask {
   count_ids: string[];
   /** Paid by this count instead of by the hour; the task's hours are tracked, not billed (0039). */
   flat_rate?: FlatRate;
+  /** A service fee per entry, up to max_cents; the task's hours are tracked, not billed (0043). */
+  entry_fee?: EntryFee;
+}
+
+/** A task paid a service fee per entry (decision 0043). */
+export interface EntryFee {
+  max_cents: number;
 }
 
 /** A task paid per count (decision 0039). */

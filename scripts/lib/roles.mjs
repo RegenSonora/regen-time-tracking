@@ -7,7 +7,7 @@ import { isRealDate } from './funding-sources.mjs';
 import { readJson } from './json.mjs';
 
 /**
- * @typedef {{ id: string, count_ids: string[], flat_rate?: { count_id: string, cents_per_unit: number } }} RoleTask
+ * @typedef {{ id: string, count_ids: string[], flat_rate?: { count_id: string, cents_per_unit: number }, entry_fee?: { max_cents: number } }} RoleTask
  * @typedef {{ id: string, tasks: RoleTask[] }} RoleLine
  * @typedef {{ after_quarters: number, rate_cents: number }} RateStep
  * @typedef {{ source_id: string, nte_cents?: number, rate_step?: RateStep, ends?: string,
@@ -189,6 +189,9 @@ export function checkRolesData(data, sourceFiles, schema) {
               problems.push(`${atTask}: count "${id}" is retired`);
           }
           if (task.flat_rate) problems.push(...flatRateProblems(atTask, task, role, counts));
+          if (task.entry_fee && role.employment !== 'contractor') {
+            problems.push(`${atTask}: entry_fee is only for contractor roles`);
+          }
         }
       }
     }

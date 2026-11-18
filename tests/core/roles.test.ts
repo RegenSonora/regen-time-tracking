@@ -40,6 +40,7 @@ describe('roleChoices', () => {
       'R-TL01',
       'R-GC01',
       'R-C01',
+      'R-CC01',
     ]);
   });
 
@@ -269,6 +270,9 @@ describe('prefillRate (decision 0030)', () => {
     expect(
       prefillRate(contractor, funding(contractor, 'regen-general-operating'), regen),
     ).toBeNull();
+    // The Regen Catering Contractor starts at $20.00 (decision 0042).
+    const catering = role('r-cc01');
+    expect(prefillRate(catering, funding(catering, 'regen-general-operating'), regen)).toBe(2000);
   });
 });
 

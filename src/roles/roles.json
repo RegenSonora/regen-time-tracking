@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "version": 4,
+  "version": 5,
   "counts": [
     {
       "id": "contacts",
@@ -265,6 +265,14 @@
     {
       "id": "lehrs_installed",
       "label": "LEHRs installed"
+    },
+    {
+      "id": "cakes_made",
+      "label": "Cakes made"
+    },
+    {
+      "id": "generators_rented",
+      "label": "Generators rented"
     }
   ],
   "roles": [
@@ -1384,6 +1392,126 @@
               "tasks": [
                 {
                   "id": "other",
+                  "count_ids": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "r-cc01",
+      "code": "R-CC01",
+      "name": "Regen Catering Contractor",
+      "employment": "contractor",
+      "chw": false,
+      "funding": [
+        {
+          "source_id": "regen-general-operating",
+          "rate_cents": 2000,
+          "budget_lines": [
+            {
+              "id": "maintenance-labor",
+              "tasks": [
+                {
+                  "id": "leos-maintenance",
+                  "count_ids": []
+                },
+                {
+                  "id": "garden-maintenance",
+                  "count_ids": []
+                },
+                {
+                  "id": "vehicle-maintenance",
+                  "count_ids": []
+                },
+                {
+                  "id": "other-maintenance",
+                  "count_ids": []
+                }
+              ]
+            },
+            {
+              "id": "other-contractors",
+              "tasks": [
+                {
+                  "id": "other",
+                  "count_ids": []
+                }
+              ]
+            },
+            {
+              "id": "leos",
+              "tasks": [
+                {
+                  "id": "monday-breakfast-service",
+                  "count_ids": ["meals_cooked", "meals_served"],
+                  "entry_fee": {
+                    "max_cents": 20000
+                  }
+                },
+                {
+                  "id": "wednesday-dinner-service",
+                  "count_ids": ["meals_cooked", "meals_served", "cakes_made"],
+                  "entry_fee": {
+                    "max_cents": 20000
+                  },
+                  "flat_rate": {
+                    "count_id": "cakes_made",
+                    "cents_per_unit": 2500
+                  }
+                },
+                {
+                  "id": "leos-internal-meetings",
+                  "count_ids": []
+                },
+                {
+                  "id": "leos-maintenance",
+                  "count_ids": []
+                },
+                {
+                  "id": "hosting-special-event",
+                  "count_ids": ["meals_served", "special_events_hosted"]
+                },
+                {
+                  "id": "leos-other",
+                  "count_ids": []
+                }
+              ]
+            },
+            {
+              "id": "eat-local-network",
+              "tasks": [
+                {
+                  "id": "eat-local-forum-event-assistance",
+                  "count_ids": ["event_attendees"]
+                },
+                {
+                  "id": "full-moon-garden-party-event-support",
+                  "count_ids": ["meals_cooked", "meals_served", "generators_rented"],
+                  "entry_fee": {
+                    "max_cents": 20000
+                  },
+                  "flat_rate": {
+                    "count_id": "generators_rented",
+                    "cents_per_unit": 2500
+                  }
+                },
+                {
+                  "id": "gleaning",
+                  "count_ids": ["food_gleaned"]
+                },
+                {
+                  "id": "food-processing",
+                  "count_ids": ["food_processed"]
+                },
+                {
+                  "id": "garden-maintenance",
+                  "count_ids": []
+                },
+                {
+                  "id": "eat-local-network-other",
                   "count_ids": []
                 }
               ]
