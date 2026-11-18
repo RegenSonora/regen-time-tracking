@@ -44,7 +44,7 @@ test('setup picks a role, reviews it with the rate prefilled, and can pick again
 
   await expect(heading(page, 'Pick your role')).toBeVisible();
   await expectAccessible(page, 'pick your role');
-  for (const code of ['CHW-TC01', 'CHW-TE01', 'R-TL01']) {
+  for (const code of ['CHW-TC01', 'CHW-TE01', 'R-TL01', 'R-GC01']) {
     await expect(page.getByRole('button', { name: new RegExp(`^${code}`) })).toBeVisible();
   }
 
@@ -366,6 +366,80 @@ test("a Certified CHW: both sources, Leo's tasks, a timesheet with no core compe
   await page.getByRole('button', { name: 'Settings' }).click();
   await expect(page.getByText('CHW-CE01 · Certified CHW (Employee)')).toBeVisible();
   await expect(page.getByText('Work Hours Report')).toHaveCount(0);
+});
+
+test('a Regen Generalist: LEHR resets paid per reset, their hours tracked, not billed', async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await page.clock.install({ time: new Date('2026-11-17T09:00:00-07:00') });
+  await stubShare(page);
+  await page.goto('./');
+  await fillDetails(page);
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: /^R-GC01/ }).click();
+  await expect(heading(page, 'Your role')).toBeVisible();
+  await expect(page.getByText('R-GC01 · Regen Generalist Contractor')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Community Care Work' })).toBeVisible();
+  // No preset rate: the contractor types it (decision 0038).
+  await expect(page.getByLabel('Hourly rate for REGEN-GO')).toHaveValue('');
+  await page.getByLabel('Hourly rate for REGEN-GO').fill('20.00');
+  await expectAccessible(page, 'generalist review role');
+  await page.getByRole('button', { name: 'This is my role' }).click();
+  await expect(heading(page, 'Regen Time Tracking')).toBeVisible();
+
+  // 1 hr: LEHR reset 0.5 hr (not billed) and Garden maintenance 0.5 hr; 2.5 resets.
+  await recordTime(page, '2026-11-16', '09:00', '10:00');
+  await page.getByRole('button', { name: 'Next' }).click();
+  await pickLine(page, 'Eat Local Network');
+  await taskBox(page, 'LEHR reset').check();
+  await taskBox(page, 'Garden maintenance').check();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(heading(page, 'Split your time')).toBeVisible();
+  await expect(page.getByText('LEHR reset (tracked, not billed)')).toBeVisible();
+  await page.getByRole('button', { name: 'Less time on LEHR reset' }).click();
+  await page.getByRole('button', { name: 'Less time on LEHR reset' }).click();
+  await page.getByRole('button', { name: 'More time on Garden maintenance' }).click();
+  await page.getByRole('button', { name: 'More time on Garden maintenance' }).click();
+  await expectAccessible(page, 'generalist split step');
+  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(heading(page, 'Counts and notes')).toBeVisible();
+  const more = page.getByRole('button', { name: 'More lehrs reset' });
+  for (let i = 0; i < 10; i++) await more.click();
+  await expect(page.locator('.cnt', { hasText: 'LEHRs reset' }).locator('.val')).toHaveText('2.5');
+  await expectAccessible(page, 'generalist counts step');
+  await page.getByRole('button', { name: 'Save entry' }).click();
+  await expect(heading(page, 'Regen Time Tracking')).toBeVisible();
+  await expect(page.getByText(/1 entry · 1 hr · \$360\.00/)).toBeVisible();
+
+  await page.getByRole('button', { name: 'Generate Regen Invoice' }).click();
+  await expect(
+    page.getByRole('row', { name: /Eat Local Network: 2\.5 LEHRs reset/ }),
+  ).toContainText('$350.00');
+  await expect(page.getByText('0.50 hrs of LEHR reset tracked, not billed')).toBeVisible();
+  await expectAccessible(page, 'generalist invoice preview');
+  await page.getByRole('button', { name: 'Create invoice files' }).click();
+  await expect(heading(page, 'Invoice created')).toBeVisible();
+  await page.getByRole('button', { name: 'Share files' }).click();
+  await expect(page.getByRole('status')).toHaveText('Files shared.');
+  const [files] = await sharedFiles(page);
+  const pdf = await readPdf(new Uint8Array(files?.[0]?.bytes ?? []));
+  const page1 = pdf[0]?.text ?? '';
+  expect(page1).toContain('Eat Local Network 0.50 $20.00 $10.00');
+  expect(page1).toContain('Eat Local Network: 2.5 LEHRs reset $140.00 $350.00');
+  expect(page1).toContain('Amount due 0.50 $360.00');
+  expect(pdf[1]?.text).toContain('LEHR reset (not billed)');
+  const log = parseCsv(files?.[3]?.bytes ?? []);
+  const header = log[0] ?? [];
+  expect(log[1]?.[header.indexOf('lehrs_reset')]).toBe('2.5');
+  expect(log[1]?.[header.indexOf('unbilled_hours')]).toBe('0.50');
+  await page.getByRole('button', { name: 'Done' }).click();
+  await expect(stat(page, 'LEHRs reset')).toContainText('2.5');
+
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await expect(
+    page.getByText('LEHR reset: $140.00 each, by the “LEHRs reset” count.', { exact: false }),
+  ).toBeVisible();
 });
 
 /** Point the stored profile at another role id, as if the office's roles file changed. */
