@@ -64,7 +64,7 @@ describe('entry log CSV (SPEC §7, decisions 0001, 0024 and 0029)', () => {
   it('keeps a retired count as a column (decision 0029)', async () => {
     const retired: CountDef[] = [...countDefs, { id: 'old_count', label: 'Old', retired: true }];
     const header = csvText(entriesCsv(await sampleInvoice(), retired)).split('\r\n')[0];
-    expect(header).toContain(',green_thumb_warriors_sessions_supported,old_count,other_counts,');
+    expect(header).toContain(',lehrs_installed,old_count,other_counts,');
   });
 
   it("writes a Team Lead's counts by id, blank where unused", async () => {

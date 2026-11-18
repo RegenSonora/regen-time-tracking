@@ -210,6 +210,69 @@ const TEAM_LEAD_LINES: [string, [string, string[]][]][] = [
   ['other-contractors', [['other', []]]],
 ];
 
+// Regen Generalist Contractor lines, in the source's line order (decision 0038).
+const GENERALIST_LINES: [string, [string, string[]][]][] = [
+  [
+    'resilient-home-services-contracting',
+    TEAM_LEAD_LINES.find(([id]) => id === 'resilient-home-services-contracting')?.[1] ?? [],
+  ],
+  ['other-contractors', [['other', []]]],
+  [
+    'leos',
+    [
+      ['hosting-open-hours', ['People helped at open hours']],
+      ['cooking-monday-breakfast', ['Meals cooked']],
+      ['hosting-monday-breakfast', ['People at events hosted']],
+      ['serving-monday-dinner', ['Meals served']],
+      ['cooking-wednesday-dinner', ['Meals cooked']],
+      ['serving-wednesday-dinner', ['Meals served']],
+      ['hosting-wednesday-dinner', ['People at events hosted']],
+      ['hosting-special-event', ['Special events hosted', 'People at events hosted']],
+      ['leos-internal-meetings', []],
+      ['leos-maintenance', []],
+      ['leos-marketing', ['Flyers posted']],
+      ['leos-other', []],
+    ],
+  ],
+  [
+    'eat-local-network',
+    [
+      ['eat-local-forum-event-assistance', ['Event attendees']],
+      ['full-moon-garden-party-event-support', ['Event attendees']],
+      ['green-thumb-warriors-event-support', ['Event attendees']],
+      ['gleaning', ['Food gleaned']],
+      ['food-processing', ['Food processed']],
+      ['eat-local-marketing', ['Flyers posted']],
+      ['lehr-reset', ['LEHRs reset', 'Soil harvested']],
+      ['garden-maintenance', []],
+      ['lehr-maintenance', ['LEHR homes supported']],
+      ['eat-local-grower-support', ['Growers supported']],
+      ['lehr-installation', ['LEHRs installed']],
+      ['eat-local-network-other', []],
+    ],
+  ],
+  [
+    'community-care-work',
+    [
+      [
+        'domestic-support',
+        ['Homes cleaned', 'In-home meals made', 'People helped with domestic support'],
+      ],
+      [
+        'transportation-service',
+        [
+          'Rides provided',
+          'Medical appointments driven to',
+          'Miles driven',
+          'Resource appointments driven to',
+          'Rides dispatched',
+        ],
+      ],
+      ['other', []],
+    ],
+  ],
+];
+
 describe('roles file (roles plan Part 2, decisions 0027, 0029)', () => {
   it('matches the schema', () => {
     expect(validate(rolesFile)).toEqual([]);
@@ -229,10 +292,13 @@ describe('roles file (roles plan Part 2, decisions 0027, 0029)', () => {
       ['grow_space_added', 'sq ft'],
       ['miles_driven', 'mi'],
       ['resource_value_unlocked', 'dollars'],
+      ['food_gleaned', 'lb'],
+      ['food_processed', 'lb'],
+      ['soil_harvested', 'gal'],
     ]);
   });
 
-  it('ships four active roles: two CHW Trainees, a Certified CHW and the Resilience Team Lead', () => {
+  it('ships five active roles: two CHW Trainees, a Certified CHW, the Resilience Team Lead and the Regen Generalist', () => {
     expect(
       rolesFile.roles.map((r) => [r.id, r.code, r.name, r.employment, r.chw, r.retired ?? false]),
     ).toEqual([
@@ -240,6 +306,7 @@ describe('roles file (roles plan Part 2, decisions 0027, 0029)', () => {
       ['chw-te01', 'CHW-TE01', 'CHW Trainee (Employee)', 'employee', true, false],
       ['chw-ce01', 'CHW-CE01', 'Certified CHW (Employee)', 'employee', false, false],
       ['r-tl01', 'R-TL01', 'Resilience Team Lead', 'contractor', false, false],
+      ['r-gc01', 'R-GC01', 'Regen Generalist Contractor', 'contractor', false, false],
     ]);
   });
 
@@ -293,6 +360,36 @@ describe('roles file (roles plan Part 2, decisions 0027, 0029)', () => {
         tasks: tasks.map(([task, labels]) => ({ id: task, count_ids: countIds(labels) })),
       })),
     );
+  });
+
+  it('Regen Generalist Contractor bills Regen General Operating with no preset rate (0038)', () => {
+    const r = role('R-GC01');
+    expect(r.certification_step).toBeUndefined();
+    expect(r.funding).toHaveLength(1);
+    const [funding] = r.funding;
+    expect(funding?.source_id).toBe('regen-general-operating');
+    expect(funding?.rate_cents).toBeUndefined();
+    expect(funding?.rate_step).toBeUndefined();
+    expect(funding?.nte_cents).toBeUndefined();
+    expect(funding?.budget_lines).toEqual(
+      GENERALIST_LINES.map(([id, tasks]) => ({
+        id,
+        tasks: tasks.map(([task, labels]) => ({ id: task, count_ids: countIds(labels) })),
+      })),
+    );
+  });
+
+  it('adds the eight Regen Generalist counts at the end of the list (0038)', () => {
+    expect(rolesFile.counts.slice(-8).map((c) => c.label)).toEqual([
+      'Flyers posted',
+      'Food gleaned',
+      'Food processed',
+      'LEHRs reset',
+      'Soil harvested',
+      'LEHR homes supported',
+      'Growers supported',
+      'LEHRs installed',
+    ]);
   });
 });
 

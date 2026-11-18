@@ -38,6 +38,7 @@ describe('roleChoices', () => {
       'CHW-TE01',
       'CHW-CE01',
       'R-TL01',
+      'R-GC01',
     ]);
   });
 
@@ -257,6 +258,11 @@ describe('prefillRate (decision 0030)', () => {
     expect(prefillRate(certified, funding(certified, 'tisupp'), tisupp)).toBe(2500);
     expect(prefillRate(certified, funding(certified, 'regen-general-operating'), regen)).toBe(2500);
     expect(prefillRate(lead, entry, regen)).toBe(2200);
+    // The Regen Generalist types their own rate (decision 0038).
+    const generalist = role('r-gc01');
+    expect(
+      prefillRate(generalist, funding(generalist, 'regen-general-operating'), regen),
+    ).toBeNull();
   });
 });
 

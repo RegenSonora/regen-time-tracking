@@ -1,6 +1,6 @@
 {
   "format_version": 1,
-  "version": 2,
+  "version": 3,
   "counts": [
     {
       "id": "contacts",
@@ -229,6 +229,41 @@
     {
       "id": "green_thumb_warriors_sessions_supported",
       "label": "Green Thumb Warriors sessions supported"
+    },
+    {
+      "id": "flyers_posted",
+      "label": "Flyers posted"
+    },
+    {
+      "id": "food_gleaned",
+      "label": "Food gleaned",
+      "unit": "lb"
+    },
+    {
+      "id": "food_processed",
+      "label": "Food processed",
+      "unit": "lb"
+    },
+    {
+      "id": "lehrs_reset",
+      "label": "LEHRs reset"
+    },
+    {
+      "id": "soil_harvested",
+      "label": "Soil harvested",
+      "unit": "gal"
+    },
+    {
+      "id": "lehr_homes_supported",
+      "label": "LEHR homes supported"
+    },
+    {
+      "id": "growers_supported",
+      "label": "Growers supported"
+    },
+    {
+      "id": "lehrs_installed",
+      "label": "LEHRs installed"
     }
   ],
   "roles": [
@@ -1071,6 +1106,187 @@
             {
               "id": "other-contractors",
               "tasks": [
+                {
+                  "id": "other",
+                  "count_ids": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "r-gc01",
+      "code": "R-GC01",
+      "name": "Regen Generalist Contractor",
+      "employment": "contractor",
+      "chw": false,
+      "funding": [
+        {
+          "source_id": "regen-general-operating",
+          "budget_lines": [
+            {
+              "id": "resilient-home-services-contracting",
+              "tasks": [
+                {
+                  "id": "plant-propagation",
+                  "count_ids": ["plants_propagated"]
+                },
+                {
+                  "id": "tree-planting",
+                  "count_ids": ["trees_planted"]
+                },
+                {
+                  "id": "tree-removal",
+                  "count_ids": ["trees_removed"]
+                },
+                {
+                  "id": "water-harvesting",
+                  "count_ids": ["water_capacity_added"]
+                },
+                {
+                  "id": "garden-support",
+                  "count_ids": ["grow_space_added"]
+                }
+              ]
+            },
+            {
+              "id": "other-contractors",
+              "tasks": [
+                {
+                  "id": "other",
+                  "count_ids": []
+                }
+              ]
+            },
+            {
+              "id": "leos",
+              "tasks": [
+                {
+                  "id": "hosting-open-hours",
+                  "count_ids": ["people_helped_open_hours"]
+                },
+                {
+                  "id": "cooking-monday-breakfast",
+                  "count_ids": ["meals_cooked"]
+                },
+                {
+                  "id": "hosting-monday-breakfast",
+                  "count_ids": ["people_at_events_hosted"]
+                },
+                {
+                  "id": "serving-monday-dinner",
+                  "count_ids": ["meals_served"]
+                },
+                {
+                  "id": "cooking-wednesday-dinner",
+                  "count_ids": ["meals_cooked"]
+                },
+                {
+                  "id": "serving-wednesday-dinner",
+                  "count_ids": ["meals_served"]
+                },
+                {
+                  "id": "hosting-wednesday-dinner",
+                  "count_ids": ["people_at_events_hosted"]
+                },
+                {
+                  "id": "hosting-special-event",
+                  "count_ids": ["people_at_events_hosted", "special_events_hosted"]
+                },
+                {
+                  "id": "leos-internal-meetings",
+                  "count_ids": []
+                },
+                {
+                  "id": "leos-maintenance",
+                  "count_ids": []
+                },
+                {
+                  "id": "leos-marketing",
+                  "count_ids": ["flyers_posted"]
+                },
+                {
+                  "id": "leos-other",
+                  "count_ids": []
+                }
+              ]
+            },
+            {
+              "id": "eat-local-network",
+              "tasks": [
+                {
+                  "id": "eat-local-forum-event-assistance",
+                  "count_ids": ["event_attendees"]
+                },
+                {
+                  "id": "full-moon-garden-party-event-support",
+                  "count_ids": ["event_attendees"]
+                },
+                {
+                  "id": "green-thumb-warriors-event-support",
+                  "count_ids": ["event_attendees"]
+                },
+                {
+                  "id": "gleaning",
+                  "count_ids": ["food_gleaned"]
+                },
+                {
+                  "id": "food-processing",
+                  "count_ids": ["food_processed"]
+                },
+                {
+                  "id": "eat-local-marketing",
+                  "count_ids": ["flyers_posted"]
+                },
+                {
+                  "id": "lehr-reset",
+                  "count_ids": ["lehrs_reset", "soil_harvested"]
+                },
+                {
+                  "id": "garden-maintenance",
+                  "count_ids": []
+                },
+                {
+                  "id": "lehr-maintenance",
+                  "count_ids": ["lehr_homes_supported"]
+                },
+                {
+                  "id": "eat-local-grower-support",
+                  "count_ids": ["growers_supported"]
+                },
+                {
+                  "id": "lehr-installation",
+                  "count_ids": ["lehrs_installed"]
+                },
+                {
+                  "id": "eat-local-network-other",
+                  "count_ids": []
+                }
+              ]
+            },
+            {
+              "id": "community-care-work",
+              "tasks": [
+                {
+                  "id": "domestic-support",
+                  "count_ids": [
+                    "homes_cleaned",
+                    "in_home_meals_made",
+                    "people_helped_domestic_support"
+                  ]
+                },
+                {
+                  "id": "transportation-service",
+                  "count_ids": [
+                    "rides_provided",
+                    "medical_appointments_driven",
+                    "miles_driven",
+                    "resource_appointments_driven",
+                    "rides_dispatched"
+                  ]
+                },
                 {
                   "id": "other",
                   "count_ids": []
