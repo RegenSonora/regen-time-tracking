@@ -35,6 +35,7 @@ async function phone(roleId: string, rate: number): Promise<{ storage: Storage; 
     counter: await storage.getCounter(),
     app: emptyAppState(),
     persistence: 'unsupported',
+    task_progress: [],
   };
   return { storage, data };
 }

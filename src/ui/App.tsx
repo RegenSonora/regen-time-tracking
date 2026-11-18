@@ -10,6 +10,7 @@ import { Home } from './screens/Home';
 import { InstallGate } from './screens/InstallGate';
 import { InvoicePreview } from './screens/InvoicePreview';
 import { InvoiceReady } from './screens/InvoiceReady';
+import { MyTasks } from './screens/MyTasks';
 import { PastInvoices } from './screens/PastInvoices';
 import { Settings } from './screens/Settings';
 import { Setup } from './screens/Setup';
@@ -60,6 +61,9 @@ function Screens() {
       break;
     case 'report':
       view = <WorkHoursReport />;
+      break;
+    case 'tasks':
+      view = <MyTasks />;
       break;
     default:
       view = data.app.running_timer ? <TimerRunning /> : <Home />;

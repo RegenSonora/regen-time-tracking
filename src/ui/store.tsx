@@ -7,6 +7,9 @@ import {
   findOverlaps,
   fundingChoices,
   invoiceRoleId,
+  newOwnTask,
+  officeProgress,
+  ownTitleProblem,
   roleDefaultLine,
   roleUpdate,
   pauseTimer,
@@ -20,6 +23,9 @@ import {
   type Profile,
   type Role,
   type SourceSettings,
+  type MyTask,
+  type TaskProgress,
+  type TaskStatus,
 } from '../core';
 import { findFundingSource, FUNDING_SOURCES } from '../funding-sources';
 import { COUNT_DEFS, findRole, ROLES } from '../roles';
@@ -57,7 +63,8 @@ export type Screen =
   | 'invoice'
   | 'invoice-ready'
   | 'invoices'
-  | 'report';
+  | 'report'
+  | 'tasks';
 
 const ENTRY_SCREENS: readonly Screen[] = ['times', 'task', 'split', 'counts', 'edit'];
 
@@ -70,6 +77,8 @@ export interface Data {
   counter: InvoiceCounter;
   app: AppState;
   persistence: PersistenceStatus;
+  /** My Tasks status and notes, every role's (decision 0041). */
+  task_progress: TaskProgress[];
 }
 
 /** The invoice the "Invoice created" screen shows: just made, or a past one to share again. */
@@ -158,16 +167,18 @@ function initialSetupDraft(): SetupDraft {
 }
 
 export async function loadData(storage: Storage): Promise<Data> {
-  const [profile, settings, entries, invoices, counter, app, persistence] = await Promise.all([
-    storage.getProfile(),
-    storage.listSourceSettings(),
-    storage.listEntries(),
-    storage.listInvoices(),
-    storage.getCounter(),
-    storage.getAppState(),
-    persistenceStatus(),
-  ]);
-  const data = { profile, settings, entries, invoices, counter, app, persistence };
+  const [profile, settings, entries, invoices, counter, app, persistence, task_progress] =
+    await Promise.all([
+      storage.getProfile(),
+      storage.listSourceSettings(),
+      storage.listEntries(),
+      storage.listInvoices(),
+      storage.getCounter(),
+      storage.getAppState(),
+      persistenceStatus(),
+      storage.listTaskProgress(),
+    ]);
+  const data = { profile, settings, entries, invoices, counter, app, persistence, task_progress };
   return applyRoleUpdate(storage, data);
 }
 
@@ -579,6 +590,70 @@ function useStore(storage: Storage, initial: Data) {
         const undo = toast?.undo;
         setToast(null);
         if (undo) await undo();
+      },
+
+      // --- My Tasks (decision 0041) ----------------------------------------------------------
+
+      /** Status or notes changed: saved at once, so closing the app never loses a word (§10). */
+      saveTask(task: MyTask, change: { status?: TaskStatus; notes?: string }) {
+        const roleId = role()?.id;
+        if (!roleId) return Promise.resolve();
+        const now = phoneNow();
+        const list = d().task_progress;
+        let record = task.progress_id
+          ? list.find((p) => p.id === task.progress_id)
+          : list.find(
+              (p) =>
+                p.role_id === roleId &&
+                p.source.kind === 'office' &&
+                p.source.task_id === task.task_id,
+            );
+        if (!record) {
+          if (task.kind !== 'office' || task.task_id === null) return Promise.resolve();
+          record = officeProgress(roleId, task.task_id, crypto.randomUUID(), now);
+        }
+        const next: TaskProgress = { ...record, ...change, updated_at: now };
+        setData({ ...d(), task_progress: [...list.filter((p) => p.id !== next.id), next] });
+        return serial(() => storage.saveTaskProgress(next));
+      },
+
+      /** Returns a problem in plain words, or null once the task is added. */
+      async addOwnTask(title: string): Promise<string | null> {
+        const roleId = role()?.id;
+        const problem = ownTitleProblem(title);
+        if (problem || !roleId) return problem;
+        const record = newOwnTask(roleId, title, crypto.randomUUID(), phoneNow());
+        setData({ ...d(), task_progress: [...d().task_progress, record] });
+        await serial(() => storage.saveTaskProgress(record));
+        return null;
+      },
+
+      async renameOwnTask(id: string, title: string): Promise<string | null> {
+        const problem = ownTitleProblem(title);
+        if (problem) return problem;
+        const record = d().task_progress.find((p) => p.id === id);
+        if (record?.source.kind !== 'own') return null;
+        const next: TaskProgress = {
+          ...record,
+          source: { kind: 'own', title: title.trim() },
+          updated_at: phoneNow(),
+        };
+        setData({ ...d(), task_progress: d().task_progress.map((p) => (p.id === id ? next : p)) });
+        await serial(() => storage.saveTaskProgress(next));
+        return null;
+      },
+
+      async deleteOwnTask(id: string) {
+        const record = d().task_progress.find((p) => p.id === id);
+        if (record?.source.kind !== 'own') return;
+        const result = await serial(() => storage.deleteOwnTask(id));
+        if (!result.ok) return;
+        setData({ ...d(), task_progress: d().task_progress.filter((p) => p.id !== id) });
+        showToast(`Deleted: ${record.source.title}`, async () => {
+          await serial(() => storage.saveTaskProgress(record));
+          setData({ ...d(), task_progress: [...d().task_progress, record] });
+          showToast('Task restored');
+        });
       },
 
       dismissToast() {
