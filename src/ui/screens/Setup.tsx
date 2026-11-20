@@ -48,6 +48,18 @@ function prefilledRates(role: Role): SetupDraft['sources'] {
   );
 }
 
+/** What's missing on the details step; empty when it's complete. */
+function detailsErrors(form: SetupDraft): Errors {
+  const found: Errors = {};
+  if (!form.name.trim()) found['name'] = 'Enter your name.';
+  if (!normalizeInitials(form.initials)) found['initials'] = 'Use 1 to 4 letters, like CC.';
+  if (validNextNumber(form.next_number) === null) {
+    found['next'] = 'Enter a whole number, like 1.';
+  }
+  if (!form.adopted) found['signature'] = 'Check the box to adopt your signature.';
+  return found;
+}
+
 /** The role's sources, in the role's order. */
 function roleSources(role: Role): FundingSourceConfig[] {
   return role.funding.flatMap((f) => FUNDING_SOURCES.filter((s) => s.id === f.source_id));
@@ -67,8 +79,8 @@ export function Setup() {
     setForm(next);
     void actions.updateSetupDraft(next);
   };
-  const go = (step: SetupDraft['step'], patch: Partial<SetupDraft> = {}) => {
-    setErrors({});
+  const go = (step: SetupDraft['step'], patch: Partial<SetupDraft> = {}, shown: Errors = {}) => {
+    setErrors(shown);
     update({ ...form, ...patch, step });
   };
 
@@ -90,13 +102,7 @@ export function Setup() {
   }
 
   const next = () => {
-    const found: Errors = {};
-    if (!form.name.trim()) found['name'] = 'Enter your name.';
-    if (!normalizeInitials(form.initials)) found['initials'] = 'Use 1 to 4 letters, like CC.';
-    if (validNextNumber(form.next_number) === null) {
-      found['next'] = 'Enter a whole number, like 1.';
-    }
-    if (!form.adopted) found['signature'] = 'Check the box to adopt your signature.';
+    const found = detailsErrors(form);
     setErrors(found);
     if (Object.keys(found).length === 0) go('role');
   };
@@ -252,7 +258,7 @@ function Review({
   form: SetupDraft;
   role: Role;
   update: (next: SetupDraft) => void;
-  go: (step: SetupDraft['step'], patch?: Partial<SetupDraft>) => void;
+  go: (step: SetupDraft['step'], patch?: Partial<SetupDraft>, shown?: Errors) => void;
 }) {
   const { actions } = useApp();
   const [errors, setErrors] = useState<Errors>({});
@@ -275,7 +281,9 @@ function Review({
     setErrors(found);
     if (Object.keys(found).length) return;
     if (!initials || next === null || !form.adopted) {
-      go('details');
+      // A draft from an older version (no signature step yet) lands back on the details step with
+      // what's missing shown, not silently (decision 0046).
+      go('details', {}, detailsErrors(form));
       return;
     }
     const name = form.name.trim();
