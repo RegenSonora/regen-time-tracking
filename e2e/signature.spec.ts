@@ -6,6 +6,7 @@ import {
   adoptBox,
   expectAccessible,
   heading,
+  patchStores,
   setUpWithoutRole,
   sharedFiles,
   stubShare,
@@ -16,35 +17,7 @@ test.use({ timezoneId: ZONE });
 
 /** What a phone set up before decision 0046 has: a profile with no signature. */
 async function dropSignature(page: Page): Promise<void> {
-  await page.evaluate(async () => {
-    const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const req = indexedDB.open('regen-time-tracking');
-      req.onsuccess = () => {
-        resolve(req.result);
-      };
-      req.onerror = () => {
-        reject(req.error ?? new Error('open failed'));
-      };
-    });
-    await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction(['profile'], 'readwrite');
-      const all = tx.objectStore('profile').getAll();
-      all.onsuccess = () => {
-        for (const p of all.result as object[]) {
-          tx.objectStore('profile').put({ ...p, signature: null });
-        }
-      };
-      tx.oncomplete = () => {
-        resolve();
-      };
-      tx.onerror = () => {
-        reject(tx.error ?? new Error('write failed'));
-      };
-    });
-    db.close();
-  });
-  await page.reload();
-  await expect(heading(page, 'Regen Time Tracking')).toBeVisible();
+  await patchStores(page, { profile: { signature: null } });
 }
 
 test('setup waits for the signature to be adopted, and a new name takes it back', async ({
