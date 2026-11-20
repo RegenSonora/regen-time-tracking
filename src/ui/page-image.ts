@@ -1,11 +1,11 @@
 // The picture of PDF page 1 (decision 0018): the shapes `src/files` drew for the PDF, painted on
 // a canvas with the phone's fonts, as a PNG for signing in a photo app.
-import type { Shape } from '../files';
+import type { FontName, Shape } from '../files';
 
 /** 200 dpi: Letter becomes 1700 × 2200 pixels. */
 export const PICTURE_SCALE = 200 / 72;
 const FONTS = 'Helvetica, Arial, sans-serif';
-const CANVAS_STYLE: Record<Extract<Shape, { kind: 'text' }>['font'], string> = {
+const CANVAS_STYLE: Record<FontName, string> = {
   regular: '',
   bold: 'bold ',
   italic: 'italic ',

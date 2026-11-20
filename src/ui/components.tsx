@@ -3,6 +3,7 @@ import type { ComponentChildren, JSX } from 'preact';
 import { useEffect, useId, useRef, useState } from 'preact/hooks';
 import type { Entry, FundingSourceConfig } from '../core';
 import { checkEntryTimes, signatureText } from '../core';
+import { pdfText } from '../files';
 import { dateLabel, hoursLabel, lineName, tasksLabel, timeRangeLabel } from './format';
 import { sourceById, useApp } from './store';
 
@@ -355,9 +356,15 @@ export function AdoptSignature({
   error?: string | undefined;
 }) {
   const id = useId();
+  const stamp = name.trim() ? signatureText(name) : '/s/ Your name';
+  // The PDF font has no accents beyond Western European ones, so say what will print.
+  const printed = pdfText(stamp);
   return (
     <div class="card sig-card">
-      <SignatureStamp text={name.trim() ? signatureText(name) : '/s/ Your name'} />
+      <SignatureStamp
+        text={stamp}
+        detail={printed === stamp ? undefined : `On your files it prints as ${printed}`}
+      />
       <label class="check">
         <input
           type="checkbox"

@@ -46,6 +46,7 @@ export function invoicePageShapes(
 }
 
 export type { Shape } from './pdf/writer';
+export { pdfText, type FontName } from './pdf/fonts';
 export { pdfName, pngName, timesheetCsvName, entriesCsvName } from './names';
 export { entryLogColumns } from './csv/entries-csv';
 export {

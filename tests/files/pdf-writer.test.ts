@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { fitText, textWidth, toWinAnsi, wrapLines, wrapText } from '../../src/files/pdf/fonts';
+import {
+  fitText,
+  pdfText,
+  textWidth,
+  toWinAnsi,
+  wrapLines,
+  wrapText,
+} from '../../src/files/pdf/fonts';
 import { LETTER, LETTER_LANDSCAPE, PdfDocument, pdfDate } from '../../src/files/pdf/writer';
 import { readPdf } from './pdf-reader';
 
@@ -72,9 +79,14 @@ describe('PDF writer', () => {
 
 describe('fonts', () => {
   it('maps text to WinAnsi, with ? for what Helvetica cannot show', () => {
-    expect(toWinAnsi('Aé–’…€\n😀ā')).toEqual([
-      0x41, 0xe9, 0x96, 0x92, 0x85, 0x80, 0x20, 0x3f, 0x3f,
-    ]);
+    expect(toWinAnsi('Aé–’…€\n😀')).toEqual([0x41, 0xe9, 0x96, 0x92, 0x85, 0x80, 0x20, 0x3f]);
+  });
+
+  it('drops accents Helvetica lacks and keeps the ones it has (decision 0046)', () => {
+    expect(pdfText('Nguyễn Văn Ān')).toBe('Nguyen Van An');
+    expect(pdfText('José Peña')).toBe('José Peña');
+    expect(toWinAnsi('ā')).toEqual([0x61]);
+    expect(pdfText('李')).toBe('?');
   });
 
   it('measures with AFM widths', () => {

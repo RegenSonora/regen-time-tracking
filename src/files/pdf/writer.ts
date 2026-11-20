@@ -1,7 +1,7 @@
 // A minimal hand-written PDF 1.4 writer (CLAUDE.md "Dependencies"): pages with text in the
 // built-in Helvetica fonts, lines, rectangles and filled squares. Text stays selectable because
 // it is real text in WinAnsiEncoding. Output is deterministic: same calls, same bytes.
-import { textWidth, toWinAnsi, type FontName } from './fonts';
+import { pdfText, textWidth, toWinAnsi, type FontName } from './fonts';
 
 /** Letter, in points. */
 export const LETTER = { width: 612, height: 792 } as const;
@@ -120,7 +120,18 @@ export class PdfPage {
     const width = textWidth(text, font, style.size);
     const left = style.align === 'right' ? x - width : style.align === 'center' ? x - width / 2 : x;
     const gray = style.gray ?? 0;
-    this.shapes.push({ kind: 'text', x: left, y, text, font, size: style.size, gray, width });
+    // The picture prints what the PDF prints, so the two never disagree (decision 0046).
+    const shown = pdfText(text);
+    this.shapes.push({
+      kind: 'text',
+      x: left,
+      y,
+      text: shown,
+      font,
+      size: style.size,
+      gray,
+      width,
+    });
     this.ops.push(
       `BT /${FONT_RESOURCE[font]} ${num(style.size)} Tf ${num(style.gray ?? 0)} g ` +
         `${num(left)} ${num(this.height - y)} Td ${hex(toWinAnsi(text))} Tj ET`,

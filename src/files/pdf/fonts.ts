@@ -51,18 +51,46 @@ const WIN_ANSI_HIGH: Record<number, number> = {
 const QUESTION = 0x3f;
 const SPACE = 0x20;
 
-/** Text → WinAnsi codes. Line breaks and tabs become spaces; anything the font can't show becomes "?". */
-export function toWinAnsi(text: string): number[] {
+/** The WinAnsi code for a code point, or null if the font can't show it. */
+function codeOf(u: number): number | null {
+  if (u === 0x09 || u === 0x0a || u === 0x0d || u === 0xa0) return SPACE;
+  if (u >= 0x20 && u <= 0x7e) return u;
+  if (u >= 0xa1 && u <= 0xff && u !== 0xad) return u;
+  return WIN_ANSI_HIGH[u] ?? null;
+}
+
+/** The character as the PDF prints it: itself, its letter without accents (ễ → e), or "?". */
+function printable(ch: string): string {
+  if (codeOf(ch.codePointAt(0) ?? QUESTION) !== null) return ch;
+  const base = ch.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return base.length === 1 && codeOf(base.charCodeAt(0)) !== null ? base : '?';
+}
+
+/** Codes for text the font shows as written, or null if some character needs `printable`. */
+function directCodes(text: string): number[] | null {
   const codes: number[] = [];
-  for (const ch of text) {
-    const u = ch.codePointAt(0) ?? QUESTION;
-    if (u === 0x09 || u === 0x0a || u === 0x0d) codes.push(SPACE);
-    else if (u >= 0x20 && u <= 0x7e) codes.push(u);
-    else if (u === 0xa0) codes.push(SPACE);
-    else if (u >= 0xa1 && u <= 0xff && u !== 0xad) codes.push(u);
-    else codes.push(WIN_ANSI_HIGH[u] ?? QUESTION);
+  for (let i = 0; i < text.length; i++) {
+    const code = codeOf(text.charCodeAt(i));
+    if (code === null) return null;
+    codes.push(code);
   }
   return codes;
+}
+
+/** Text as the PDF prints it, so a screen can show the same (decision 0046). */
+export function pdfText(text: string): string {
+  // Widths are measured many times per page: plain text skips the slow path.
+  if (directCodes(text)) return text;
+  return Array.from(text.normalize('NFC'), printable).join('');
+}
+
+/** Text → WinAnsi codes. Line breaks and tabs become spaces; accents the font lacks are dropped
+ * (Nguyễn → Nguyen); anything else it can't show becomes "?". */
+export function toWinAnsi(text: string): number[] {
+  return (
+    directCodes(text) ??
+    Array.from(pdfText(text), (ch) => codeOf(ch.codePointAt(0) ?? QUESTION) ?? QUESTION)
+  );
 }
 
 /** Width of text in points. */
