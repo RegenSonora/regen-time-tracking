@@ -5,6 +5,7 @@ import {
   adoptSignature,
   applySignature,
   signatureText,
+  signedOnInvoiceDate,
   usableSignature,
   withName,
 } from '../../src/core/signature';
@@ -80,5 +81,17 @@ describe('a signed invoice', () => {
     if (!signed.ok || !unsigned.ok) throw new Error('invoice failed');
     expect(signed.invoice.fingerprint).toBe(unsigned.invoice.fingerprint);
     expect(await verifyFingerprint(signed.invoice)).toBe(true);
+  });
+});
+
+describe('signedOnInvoiceDate', () => {
+  it('is true for a signature applied on the invoice date', () => {
+    expect(signedOnInvoiceDate('2026-11-19T00:00:00-07:00', '2026-11-19')).toBe(true);
+    expect(signedOnInvoiceDate('2026-11-19T23:59:59-07:00', '2026-11-19')).toBe(true);
+  });
+
+  it('is false once midnight has passed since Apply was tapped', () => {
+    expect(signedOnInvoiceDate('2026-11-19T23:58:00-07:00', '2026-11-20')).toBe(false);
+    expect(signedOnInvoiceDate('2026-12-31T23:59:00-07:00', '2027-01-01')).toBe(false);
   });
 });

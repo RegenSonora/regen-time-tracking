@@ -33,3 +33,11 @@ export function withName<P extends Pick<Profile, 'name' | 'signature'>>(
 export function applySignature(sig: AdoptedSignature, now: string): InvoiceSignature {
   return { text: sig.text, adopted_at: sig.adopted_at, signed_at: now };
 }
+
+/**
+ * A signature is dated the day Apply was tapped, and must match the invoice date: after midnight
+ * the person applies it again (decision 0046). Both are the phone's local calendar day.
+ */
+export function signedOnInvoiceDate(signedAt: string, invoiceDate: string): boolean {
+  return signedAt.slice(0, 10) === invoiceDate;
+}

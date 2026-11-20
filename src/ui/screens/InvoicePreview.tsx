@@ -151,8 +151,10 @@ export function InvoicePreview() {
     setBusy(true);
     setProblem(null);
     const result = await actions.createInvoice(source.id, signedAt);
-    // On success this screen is replaced; only a problem comes back here.
-    setProblem(result);
+    // On success this screen is replaced; only a problem comes back here. Past midnight the
+    // signature is taken back, so the next tap dates it today (decision 0046).
+    setProblem(result?.text ?? null);
+    if (result?.reapply) setSignedAt(null);
     setBusy(false);
   };
 
@@ -163,6 +165,8 @@ export function InvoicePreview() {
       aside={<span class="bar-code">{source.code}</span>}
       footer={
         <>
+          {/* Next to the button, so it's seen where the person tapped. */}
+          {problem && <ErrorText>{problem}</ErrorText>}
           {!signature ? (
             // Phones set up before decision 0046 adopt a signature first. Gray, but a real button
             // that opens Settings, so screen readers announce what it does.
@@ -228,7 +232,6 @@ export function InvoicePreview() {
         </>
       }
     >
-      {problem && <ErrorText>{problem}</ErrorText>}
       <dl class="card kv">
         <div class="kv-row">
           <dt>{employee ? 'Timesheet #' : 'Invoice #'}</dt>

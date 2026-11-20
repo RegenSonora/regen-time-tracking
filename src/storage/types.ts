@@ -122,6 +122,8 @@ export type GenerateInvoiceResult =
   | { ok: false; reason: 'no_profile' }
   /** A signature was asked for, but none is adopted for the profile's current name. */
   | { ok: false; reason: 'no_signature' }
+  /** The signature was applied on another day than the invoice date: apply it again (0046). */
+  | { ok: false; reason: 'stale_signature' }
   /** Entries, settings or the counter changed while the invoice was being built; nothing was saved. */
   | { ok: false; reason: 'changed' };
 

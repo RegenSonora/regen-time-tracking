@@ -270,6 +270,23 @@ describe.each(adapters)('$name adapter', (adapter) => {
       storage.close();
     });
 
+    it('refuses a signature applied before midnight for an invoice made after, and saves nothing', async () => {
+      const storage = await adapter.make();
+      await seedSample(storage);
+      await storage.saveProfile({ ...profile, signature: adoptSignature(profile.name, NOW) });
+      const result = await storage.generateInvoice({
+        source: tisupp,
+        role: null,
+        count_defs: countDefs,
+        now: NOW,
+        invoice_date: '2026-10-31',
+        signed_at: '2026-10-30T23:58:00-07:00',
+      });
+      expect(result).toEqual({ ok: false, reason: 'stale_signature' });
+      await expectUntouched(storage);
+      storage.close();
+    });
+
     it('re-reads a stored invoice that still verifies (re-share)', async () => {
       const storage = await adapter.make();
       await seedSample(storage);

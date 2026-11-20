@@ -6,7 +6,7 @@
 // outside any transaction, then check nothing moved and write everything in a second one.
 import { createInvoice, uninvoicedEntries } from '../core/invoice';
 import { newCounter } from '../core/invoice-number';
-import { applySignature, usableSignature } from '../core/signature';
+import { applySignature, signedOnInvoiceDate, usableSignature } from '../core/signature';
 import type { Entry, Invoice, InvoiceCounter, Profile, SourceSettings } from '../core/types';
 import { readSingleton, readSourceSettings, unwrap, wrap, type Wrapped } from './records';
 import type { Backend, GenerateInvoiceRequest, GenerateInvoiceResult, Tx } from './types';
@@ -62,6 +62,12 @@ export async function generateInvoice(
   const profile = unwrap(before.profile);
   const adopted = usableSignature(profile);
   if (request.signed_at !== undefined && !adopted) return { ok: false, reason: 'no_signature' };
+  if (
+    request.signed_at !== undefined &&
+    !signedOnInvoiceDate(request.signed_at, request.invoice_date)
+  ) {
+    return { ok: false, reason: 'stale_signature' };
+  }
 
   const result = await createInvoice({
     id: deps.newId(),

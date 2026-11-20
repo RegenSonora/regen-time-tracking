@@ -169,3 +169,36 @@ test('changing the name in Settings removes the signature until it is adopted ag
   await page.getByRole('button', { name: 'Add signature in Settings' }).click();
   await expect(page.getByText('/s/ Carmen Ruiz')).toBeVisible();
 });
+
+test('after midnight the signature is applied again, so it is dated the invoice date', async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await page.clock.install({ time: new Date('2026-11-02T23:40:00-07:00') });
+  await stubShare(page);
+  await setUpWithoutRole(page);
+  await addEntry(page, { date: '2026-10-30', start: '09:00', end: '10:00' });
+
+  await page.getByRole('button', { name: 'Generate Regen Invoice' }).click();
+  await page.getByRole('button', { name: 'Apply signature' }).click();
+  await expect(page.getByText('Signed Nov 2, 2026')).toBeVisible();
+
+  // Past midnight: nothing is created and the signature is taken back.
+  await page.clock.fastForward('00:30:00');
+  await page.getByRole('button', { name: 'Create invoice files' }).click();
+  await expect(page.getByText("It's a new day. Apply your signature again.")).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Create invoice files' })).toHaveCount(0);
+  await expect(heading(page, 'New invoice')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Apply signature' }).click();
+  await expect(page.getByText('Signed Nov 3, 2026')).toBeVisible();
+  await page.getByRole('button', { name: 'Create invoice files' }).click();
+  await expect(heading(page, 'Invoice created')).toBeVisible();
+  await page.getByRole('button', { name: 'Share files' }).click();
+  await expect(page.getByRole('status')).toHaveText('Files shared.');
+  const [files] = await sharedFiles(page);
+  const page1 = (await readPdf(new Uint8Array(files?.[0]?.bytes ?? [])))[0]?.text ?? '';
+  expect(page1).toContain('Invoice date Nov 3, 2026');
+  expect(page1).toContain('Date Nov 3, 2026');
+  expect(page1).not.toContain('Nov 2, 2026');
+});

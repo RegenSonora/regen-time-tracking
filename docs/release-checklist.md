@@ -72,6 +72,7 @@ Mark each step ✅ or ❌. Any ❌ blocks the release until fixed or accepted by
 | 6.6 | As the reviewer: **Markup** the PDF, sign Services received, **Done**, forward it with both CSVs. On a computer, both signatures are there and the text is still selectable. | As the reviewer: **Fill & Sign** in Acrobat Reader, sign Services received, save, forward. Same check. |
 | 6.7 | As the reviewer, sign the picture in Photos (**Edit › Markup**), email it at **Actual Size**. On a computer, both signatures are there and a phone camera still reads the QR code. | Google Photos **Edit › Markup**, same check. |
 | 6.8 | Change your name in **Settings** and save: Your signature asks you to adopt it again, and the preview is gray until you do. | Same. |
+| 6.9 | Just before midnight, tap **Apply signature**; after midnight, tap **Create invoice files**. It says "It's a new day. Apply your signature again." and creates nothing; applying again dates the invoice and the signature today. | Same. |
 
 ## 7. Update flow
 
