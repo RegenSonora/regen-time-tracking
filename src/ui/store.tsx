@@ -16,6 +16,7 @@ import {
   resumeTimer,
   startTimer,
   timerStop,
+  type AdoptedSignature,
   type Entry,
   type FundingSourceConfig,
   type Invoice,
@@ -95,6 +96,7 @@ const CREATE_PROBLEMS: Record<string, string> = {
   no_rate: 'Enter your hourly rate in Settings first.',
   bad_settings: 'Enter your hourly rate in Settings first.',
   no_profile: 'Enter your details in Settings first.',
+  no_signature: 'Add your signature in Settings first.',
   bad_initials: 'Check your initials in Settings.',
   bad_entry: "One entry can't be included. Open it from Home and check its task and times.",
 };
@@ -163,6 +165,7 @@ function initialSetupDraft(): SetupDraft {
     step: 'details',
     role_id: null,
     sources: {},
+    adopted: false,
   };
 }
 
@@ -675,9 +678,10 @@ function useStore(storage: Storage, initial: Data) {
 
       /**
        * Lock the entries, save the invoice and advance the counter in one transaction, then show
-       * the files. Returns what went wrong in plain words, or null.
+       * the files. `signedAt` is when Apply signature was tapped (decision 0046). Returns what
+       * went wrong in plain words, or null.
        */
-      async createInvoice(sourceId: string): Promise<string | null> {
+      async createInvoice(sourceId: string, signedAt: string): Promise<string | null> {
         const now = phoneNow();
         let result;
         try {
@@ -690,6 +694,7 @@ function useStore(storage: Storage, initial: Data) {
               count_defs: COUNT_DEFS,
               now,
               invoice_date: now.slice(0, 10),
+              signed_at: signedAt,
             }),
           );
         } catch {
@@ -747,6 +752,15 @@ function useStore(storage: Storage, initial: Data) {
           counter: await storage.getCounter(),
           app,
         });
+      },
+
+      /** Adopt or remove the typed signature on its own, without the Settings form (0046). */
+      async saveSignature(signature: AdoptedSignature | null) {
+        const profile = d().profile;
+        if (!profile) return;
+        const next = { ...profile, signature };
+        await serial(() => storage.saveProfile(next));
+        setData({ ...d(), profile: next });
       },
 
       async saveSettings(changes: SettingsChanges) {

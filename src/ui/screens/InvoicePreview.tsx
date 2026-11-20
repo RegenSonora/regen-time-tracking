@@ -1,6 +1,6 @@
-// Invoice preview (SPEC §6, §9, wireframe Invoice): what the invoice will say, then
-// "Create invoice files", which locks the entries. Employees preview a timesheet: hours only, no
-// contract limit (decision 0031).
+// Invoice preview (SPEC §6, §9, wireframe Invoice): what the invoice will say, then Apply
+// signature and "Create invoice files", which locks the entries (decision 0046). Employees preview
+// a timesheet: hours only, no contract limit (decision 0031).
 import { useState } from 'preact/hooks';
 import {
   buildInvoiceDraft,
@@ -13,12 +13,13 @@ import {
   invoiceCounts,
   paginateTimesheet,
   uninvoicedEntries,
+  usableSignature,
   type NteStatus,
 } from '../../core';
 import { dateRange, longDate } from '../../files/text';
 import { COUNT_DEFS } from '../../roles';
 import { phoneNow } from '../../storage';
-import { ErrorText, Page, Warning } from '../components';
+import { ErrorText, Page, SignatureStamp, Warning } from '../components';
 import { plural, shortDateLabel } from '../format';
 import { invoiceRoleFor, useApp } from '../store';
 
@@ -82,6 +83,8 @@ export function InvoicePreview() {
   const { data, selectedSource, actions } = useApp();
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
+  /** When Apply signature was tapped; null until then (decision 0046). */
+  const [signedAt, setSignedAt] = useState<string | null>(null);
   const source = selectedSource;
   const profile = data.profile;
   if (!source || !profile) return null;
@@ -142,11 +145,12 @@ export function InvoicePreview() {
     }),
   }));
 
+  const signature = usableSignature(profile);
   const create = async () => {
-    if (busy) return;
+    if (busy || signedAt === null) return;
     setBusy(true);
     setProblem(null);
-    const result = await actions.createInvoice(source.id);
+    const result = await actions.createInvoice(source.id, signedAt);
     // On success this screen is replaced; only a problem comes back here.
     setProblem(result);
     setBusy(false);
@@ -159,15 +163,62 @@ export function InvoicePreview() {
       aside={<span class="bar-code">{source.code}</span>}
       footer={
         <>
-          <button
-            type="button"
-            class="btn"
-            aria-disabled={busy ? 'true' : undefined}
-            onClick={() => void create()}
-          >
-            {busy ? 'Creating files…' : `Create ${noun} files`}
-          </button>
-          <p class="foot-note">These {plural(count, 'entry', 'entries')} will be locked.</p>
+          {!signature ? (
+            // Phones set up before decision 0046 adopt a signature first. Gray, but a real button
+            // that opens Settings, so screen readers announce what it does.
+            <button
+              type="button"
+              class="btn btn-gated"
+              onClick={() => {
+                actions.push('settings');
+              }}
+            >
+              Add signature in Settings
+            </button>
+          ) : signedAt === null ? (
+            <button
+              type="button"
+              class="btn"
+              onClick={() => {
+                setSignedAt(phoneNow());
+              }}
+            >
+              Apply signature
+            </button>
+          ) : (
+            <>
+              <div class="card sig-card-plain">
+                <SignatureStamp
+                  text={signature.text}
+                  detail={`Signed ${longDate(signedAt.slice(0, 10))}`}
+                />
+              </div>
+              <button
+                type="button"
+                class="btn"
+                aria-disabled={busy ? 'true' : undefined}
+                onClick={() => void create()}
+              >
+                {busy ? 'Creating files…' : `Create ${noun} files`}
+              </button>
+              {!busy && (
+                <button
+                  type="button"
+                  class="txt"
+                  onClick={() => {
+                    setSignedAt(null);
+                  }}
+                >
+                  Undo signature
+                </button>
+              )}
+            </>
+          )}
+          <p class="foot-note">
+            {signature
+              ? `These ${plural(count, 'entry', 'entries')} will be locked.`
+              : `Your signature goes on every ${noun}. Adopt it once in Settings.`}
+          </p>
           {later > 0 && (
             <p class="foot-note">
               {plural(later, 'more entry waits', 'more entries wait')} under your new role. Make{' '}

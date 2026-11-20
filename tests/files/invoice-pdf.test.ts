@@ -178,6 +178,7 @@ describe('long invoices still fit', () => {
         mailing_address:
           '12345 West Very Long Street Name Road\nApartment 678\nSuperior, AZ 85173\nUSA',
         logo: null,
+        signature: null,
       },
       entries,
       prior_invoices: [],
@@ -429,5 +430,51 @@ describe('employee timesheet PDF (decision 0031)', () => {
     }
     expect(page1?.text).not.toContain('Gas reimbursement 31');
     expect(page2?.text).toContain('Transportation service (not billed)');
+  });
+});
+
+describe('typed signature on page 1 (decision 0046)', () => {
+  const signature = {
+    text: '/s/ Carmen Cruz',
+    adopted_at: '2026-10-01T08:00:00-07:00',
+    signed_at: '2026-11-02T07:45:00-07:00',
+  };
+  const bytesOf = (invoice: Awaited<ReturnType<typeof sampleInvoice>>) =>
+    new TextDecoder('latin1').decode(buildInvoiceFiles(invoice, tisupp, countDefs)[0]?.bytes);
+  const signHere = (text: string) => text.split('Sign here').length - 1;
+
+  it("fills the Contractor box with the stamp and the day it was applied; the reviewer's stays blank", async () => {
+    const invoice = await invoiceFrom({ signature });
+    const [page1] = await pdfOf(invoice);
+    const text = page1?.text ?? '';
+    expect(text).toContain('/s/ Carmen Cruz');
+    expect(text).toContain('Signed electronically in Regen Time Tracking');
+    expect(text).toContain('Date Nov 2, 2026');
+    expect(signHere(text)).toBe(1);
+    expect(bytesOf(invoice)).toContain('/BaseFont /Helvetica-Oblique');
+  });
+
+  it("fills the Employee box on a timesheet; the supervisor's stays blank", async () => {
+    const invoice = await invoiceFrom({ role: findTestRole('chw-te01'), signature });
+    const [page1] = await pdfOf(invoice);
+    const text = page1?.text ?? '';
+    expect(text).toContain('/s/ Carmen Cruz');
+    expect(text).toContain('Date Nov 2, 2026');
+    expect(signHere(text)).toBe(1);
+  });
+
+  it('leaves an unsigned invoice exactly as before: two empty boxes and no oblique font', async () => {
+    const invoice = await sampleInvoice();
+    const [page1] = await pdfOf(invoice);
+    expect(signHere(page1?.text ?? '')).toBe(2);
+    expect(page1?.text).not.toContain('/s/');
+    expect(bytesOf(invoice)).not.toContain('Helvetica-Oblique');
+  });
+
+  it('gives the same bytes every time for a signed invoice too', async () => {
+    const invoice = await invoiceFrom({ signature });
+    expect(buildInvoiceFiles(invoice, tisupp, countDefs)).toEqual(
+      buildInvoiceFiles(invoice, tisupp, countDefs),
+    );
   });
 });

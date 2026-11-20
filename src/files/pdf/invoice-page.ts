@@ -52,16 +52,40 @@ function caption(c: Ctx, x: number, y: number, s: string, maxWidth: number) {
   text(c, x, y, fitText(s.toUpperCase(), 'bold', 7.5 * c.k, maxWidth), 7.5, 'bold', MUTED);
 }
 
-/** "Label ______" on one baseline, the line running to x + width. */
-function fieldLine(c: Ctx, x: number, y: number, label: string, width: number) {
+/** "Label ______" on one baseline, the line running to x + width, with any value written on it. */
+function fieldLine(c: Ctx, x: number, y: number, label: string, width: number, value?: string) {
   text(c, x, y, label, 8.5, 'regular', MUTED);
   const start = x + textWidth(label, 'regular', 8.5 * c.k) + 6;
   c.page.line(start, y + 2, x + width, y + 2, { width: 0.75, gray: INK });
+  if (value)
+    text(c, start + 4, y, fitText(value, 'regular', 9.5 * c.k, x + width - start - 4), 9.5);
 }
 
-function signBox(c: Ctx, x: number, y: number, width: number, height: number) {
+/** A dashed box to sign in, or holding the person's typed signature (decision 0046). */
+function signBox(c: Ctx, x: number, y: number, width: number, height: number, signature?: string) {
   c.page.rect(x, y, width, height, { width: 1, gray: 0.5, dash: 3 });
-  text(c, x + 6, y + height - 5, 'Sign here', 7.5, 'regular', MUTED);
+  if (!signature) {
+    text(c, x + 6, y + height - 5, 'Sign here', 7.5, 'regular', MUTED);
+    return;
+  }
+  text(
+    c,
+    x + 8,
+    y + height * 0.55,
+    fitText(signature, 'italic', 15 * c.k, width - 16),
+    15,
+    'italic',
+  );
+  const note = 'Signed electronically in Regen Time Tracking';
+  text(
+    c,
+    x + 8,
+    y + height - 5,
+    fitText(note, 'regular', 7 * c.k, width - 16),
+    7,
+    'regular',
+    MUTED,
+  );
 }
 
 /** "40 gal", "2.5", or "40" for a count with no unit (decision 0039). */
@@ -263,11 +287,14 @@ function layout(c: Ctx, invoice: Invoice, pageCount: number, footerTop: number):
   });
   y += certHeight + 18 * k;
 
-  // Signatures. An employee signs first, then the supervisor signs below (decision 0031).
+  // Signatures. An employee signs first, then the supervisor signs below (decision 0031). The
+  // person's own box holds their typed signature when one was applied (decision 0046).
+  const sig = invoice.signature;
+  const signedOn = sig && longDate(sig.signed_at.slice(0, 10));
   if (timesheet) {
     caption(c, LEFT, y, 'Employee', half);
-    signBox(c, LEFT, y + 6 * k, half, 44 * k);
-    fieldLine(c, LEFT, y + 70 * k, 'Date', half);
+    signBox(c, LEFT, y + 6 * k, half, 44 * k, sig?.text);
+    fieldLine(c, LEFT, y + 70 * k, 'Date', half, signedOn);
     y += 88 * k;
     caption(c, LEFT, y, 'Supervisor signature', half);
     signBox(c, LEFT, y + 6 * k, half, 44 * k);
@@ -277,8 +304,8 @@ function layout(c: Ctx, invoice: Invoice, pageCount: number, footerTop: number):
   } else {
     caption(c, LEFT, y, 'Contractor', half);
     caption(c, rightCol, y, 'Services received (reviewer)', half);
-    signBox(c, LEFT, y + 6 * k, half, 44 * k);
-    fieldLine(c, LEFT, y + 70 * k, 'Date', half);
+    signBox(c, LEFT, y + 6 * k, half, 44 * k, sig?.text);
+    fieldLine(c, LEFT, y + 70 * k, 'Date', half, signedOn);
     fieldLine(c, rightCol, y + 20 * k, 'Printed name', half);
     fieldLine(c, rightCol, y + 38 * k, 'Title', half);
     signBox(c, rightCol, y + 44 * k, half, 34 * k);

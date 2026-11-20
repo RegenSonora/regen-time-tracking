@@ -24,9 +24,12 @@ export function heading(page: Page, name: string | RegExp) {
   return page.getByRole('heading', { level: 1, name });
 }
 
+/** Setup's "I adopt this as my electronic signature" box (decision 0046). */
+export const adoptBox = (page: Page) => page.getByRole('checkbox', { name: /^I adopt this/ });
+
 /**
- * Name and initials on setup's first step. In WebKit a fill right after the screen mounts
- * sometimes fires no input event; fill until both values stick.
+ * Name and initials on setup's first step, and the signature adopted. In WebKit a fill right
+ * after the screen mounts sometimes fires no input event; fill until the values stick.
  */
 export async function fillDetails(page: Page): Promise<void> {
   await expect(async () => {
@@ -34,6 +37,8 @@ export async function fillDetails(page: Page): Promise<void> {
     await page.getByLabel('Initials').fill('cc');
     await expect(page.getByLabel('Your name')).toHaveValue('Carmen Cruz', { timeout: 500 });
     await expect(page.getByLabel('Initials')).toHaveValue('cc', { timeout: 500 });
+    await adoptBox(page).check();
+    await expect(adoptBox(page)).toBeChecked({ timeout: 500 });
   }).toPass();
 }
 

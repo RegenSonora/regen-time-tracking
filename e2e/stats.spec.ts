@@ -130,6 +130,7 @@ test('My stats counts invoiced hours; Generate sits under Past invoices', async 
   await expectAccessible(page, 'home with my stats');
 
   await generate.click();
+  await page.getByRole('button', { name: 'Apply signature' }).click();
   await page.getByRole('button', { name: 'Create invoice files' }).click();
   await page.getByRole('button', { name: 'Done' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Done anyway' }).click();

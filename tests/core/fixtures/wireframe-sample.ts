@@ -277,6 +277,7 @@ export function sampleInput(overrides: Partial<InvoiceInput> = {}): InvoiceInput
       initials: 'CC',
       mailing_address: '',
       logo: null,
+      signature: null,
       role_id: null,
     },
     role: null,

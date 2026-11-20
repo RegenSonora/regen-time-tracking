@@ -72,7 +72,7 @@ export type Shape =
       matrix: readonly (readonly boolean[])[];
     };
 
-const FONT_RESOURCE: Record<FontName, string> = { regular: 'F1', bold: 'F2' };
+const FONT_RESOURCE: Record<FontName, string> = { regular: 'F1', bold: 'F2', italic: 'F3' };
 
 /** A number for a content stream: at most 3 decimals, no exponent, no "-0". */
 function num(n: number): string {
@@ -228,6 +228,17 @@ export class PdfDocument {
     const bold = add(
       '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>',
     );
+    // Only files with a typed signature carry the oblique font (decision 0046), so files made
+    // before it come out byte for byte as they always did.
+    const usesItalic = this.pages.some((p) =>
+      p.shapes.some((s) => s.kind === 'text' && s.font === 'italic'),
+    );
+    const italic = usesItalic
+      ? add(
+          '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique /Encoding /WinAnsiEncoding >>',
+        )
+      : null;
+    const italicRef = italic === null ? '' : ` /F3 ${String(italic)} 0 R`;
     const date = infoString(pdfDate(info.created));
     const infoId = add(
       `<< /Title ${infoString(info.title)} /Author ${infoString(info.author)} ` +
@@ -239,7 +250,7 @@ export class PdfDocument {
       return add(
         `<< /Type /Page /Parent ${String(pagesId)} 0 R ` +
           `/MediaBox [0 0 ${num(page.width)} ${num(page.height)}] ` +
-          `/Resources << /Font << /F1 ${String(regular)} 0 R /F2 ${String(bold)} 0 R >> >> ` +
+          `/Resources << /Font << /F1 ${String(regular)} 0 R /F2 ${String(bold)} 0 R${italicRef} >> >> ` +
           `/Contents ${String(content)} 0 R >>`,
       );
     });

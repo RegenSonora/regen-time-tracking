@@ -60,15 +60,18 @@ Mark each step ✅ or ❌. Any ❌ blocks the release until fixed or accepted by
 - [ ] **Generate Regen Invoice** sits under Past invoices, the same height; its light green and gold text are readable outdoors.
 - [ ] **Settings › Work Hours Report** › **Share report**: the share sheet has the PDF, the picture (PNG) and the CSV. The PDF's rows match the ADHS form's 11 core competencies, with hours and dates.
 
-## 6. Signing
+## 6. Signing (decision 0046)
 
 | # | iPhone | Android |
 |---|---|---|
-| 6.1 | Open the PDF from Mail. Tap **Markup**, add a signature on the Contractor line, tap **Done**. | Open the PDF in **Adobe Acrobat Reader**. **Fill & Sign**, add a signature on the Contractor line, save. |
-| 6.2 | Forward the signed PDF and both CSVs to a second address. | Same. |
-| 6.3 | Open the signed PDF on a computer: the signature is there and the text is still selectable. | Same. |
-| 6.4 | Save the picture (PNG) to Photos, **Edit › Markup**, sign the Contractor box, **Done**. | Open the picture in **Google Photos** (or the gallery app), **Edit › Markup**, sign the Contractor box, save. |
-| 6.5 | Email the signed picture with both CSVs, **Actual Size**. On a computer, the signature is there and a phone camera still reads the QR code. | Same. |
+| 6.1 | Setup: **Next** on Your details says "Check the box to adopt your signature." until the box is checked. The card shows `/s/` and the name as typed. | Same. |
+| 6.2 | On a phone set up before this release, the invoice preview's button is gray and says **Add signature in Settings**; tapping it opens Settings at **Your signature**. Adopt it, go back: the button says **Apply signature**. | Same. |
+| 6.3 | **Apply signature** shows the stamp and "Signed" with today's date; **Undo signature** takes it back. Create the files. | Same. |
+| 6.4 | Open the PDF from Mail: the Contractor box shows the signature in italic, "Signed electronically in Regen Time Tracking", and today's date on the Date line. The reviewer's box still says "Sign here". | Open the PDF in **Adobe Acrobat Reader**: same. |
+| 6.5 | Open the picture (PNG): the signature and date match the PDF. | Same. |
+| 6.6 | As the reviewer: **Markup** the PDF, sign Services received, **Done**, forward it with both CSVs. On a computer, both signatures are there and the text is still selectable. | As the reviewer: **Fill & Sign** in Acrobat Reader, sign Services received, save, forward. Same check. |
+| 6.7 | As the reviewer, sign the picture in Photos (**Edit › Markup**), email it at **Actual Size**. On a computer, both signatures are there and a phone camera still reads the QR code. | Google Photos **Edit › Markup**, same check. |
+| 6.8 | Change your name in **Settings** and save: Your signature asks you to adopt it again, and the preview is gray until you do. | Same. |
 
 ## 7. Update flow
 
@@ -105,7 +108,7 @@ Use a clean install for each role: remove the app between roles (this erases its
 - [ ] **Service fees** (R-CC01): a Wednesday dinner service entry shows "Fee for Wednesday dinner service" at 200.00; typing 250 says it can't be more than $200.00; 150 with 3 cakes saves. The invoice shows "Leo's: Wednesday dinner service ×1 up to $200.00 $150.00" and "Leo's: 3 Cakes made $25.00 $75.00"; the entry log's fee column says 150.00; the QR code scans.
 - [ ] **Trip fees** (R-CCC01 at $20.00): a Transportation service entry with no miles won't save ("Enter the miles for this trip."). Type 45 into Miles driven (the number keypad opens; + then makes it 46, − back to 45) to log a 45-mile trip ("Trip fee: $40.00 (31–60 mi) · Gas: $20.00"), a 100-mile trip and 2 hrs of Domestic support. Home shows $200.00. The invoice shows a trip row each for 31–60 mi and 61–160 mi, "Community Care Work: Gas reimbursement $60.00" with no tier, and Amount due $200.00; the entry log's trip_fee and gas_reimbursement columns are on the trip rows; the QR code scans.
 - [ ] **A contractor invoice, signed** (CHW-TC01 or R-TL01): page 1 says **Contractor**; it lists only counts used this period; R-TL01's timesheet pages have no Core competency column.
-- [ ] **An employee timesheet, signed** (CHW-TE01): Home says "Not yet submitted" and **Submit timesheet**. Page 1 says **TIMESHEET**, shows Pay rate and hours with no other dollar amounts, and has the **Supervisor signature** box below the employee's. Sign it as the employee, then sign the same file as the supervisor (PDF on one phone, picture on the other). **Past timesheets** lists it with its hours.
+- [ ] **An employee timesheet, signed** (CHW-TE01): Home says "Not yet submitted" and **Submit timesheet**. Page 1 says **TIMESHEET**, shows Pay rate and hours with no other dollar amounts, and has the **Supervisor signature** box below the employee's. Apply the signature as the employee: it fills the **Employee** box. Then sign the same file as the supervisor (PDF on one phone, picture on the other). **Past timesheets** lists it with its hours.
 - [ ] **My stats** for a CHW Trainee: hours invoiced or submitted, the pay increase and CHW Cert rows, and count totals after the first invoice. For R-TL01: hours and count totals only, with units ("gal").
 - [ ] **Work Hours Report** (CHW Trainee): **Settings › Work Hours Report** shares the PDF, PNG and CSV. R-TL01's Settings has no Work Hours Report.
 - [ ] **A role edit reaches the phone:** after a deploy that changes a task's name or counts for the role, tap **Updated, tap to reload**; the entry steps show the change and existing entries are still there.

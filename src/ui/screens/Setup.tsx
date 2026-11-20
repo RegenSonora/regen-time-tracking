@@ -1,7 +1,8 @@
-// Setup (SPEC §4, decisions 0005, 0027, 0030): your details, pick your role, review the role with
-// its rates prefilled, then storage status.
+// Setup (SPEC §4, decisions 0005, 0027, 0030, 0046): your details and signature, pick your role,
+// review the role with its rates prefilled, then storage status.
 import { useEffect, useState } from 'preact/hooks';
 import {
+  adoptSignature,
   formatDollars,
   formatInvoiceNumber,
   normalizeInitials,
@@ -16,8 +17,8 @@ import {
 } from '../../core';
 import { FUNDING_SOURCES } from '../../funding-sources';
 import { findRole, ROLES_FILE } from '../../roles';
-import type { SetupDraft } from '../../storage';
-import { Field, Page } from '../components';
+import { phoneNow, type SetupDraft } from '../../storage';
+import { AdoptSignature, Field, Page } from '../components';
 import { lineName, roleLabel } from '../format';
 import { sourceById, useApp } from '../store';
 import { StorageStatus } from './StorageStatus';
@@ -95,6 +96,7 @@ export function Setup() {
     if (validNextNumber(form.next_number) === null) {
       found['next'] = 'Enter a whole number, like 1.';
     }
+    if (!form.adopted) found['signature'] = 'Check the box to adopt your signature.';
     setErrors(found);
     if (Object.keys(found).length === 0) go('role');
   };
@@ -128,7 +130,8 @@ export function Setup() {
             autocomplete="name"
             value={form.name}
             onInput={(e) => {
-              update({ ...form, name: e.currentTarget.value });
+              // A new name is a new stamp: adopt it again (decision 0046).
+              update({ ...form, name: e.currentTarget.value, adopted: false });
             }}
           />
         )}
@@ -179,6 +182,18 @@ export function Setup() {
           />
         )}
       </Field>
+      <h2 class="sec">Your signature</h2>
+      <p class="hint">
+        It goes on your invoices and timesheets when you tap Apply signature. Your name changes it.
+      </p>
+      <AdoptSignature
+        name={form.name}
+        checked={form.adopted}
+        error={errors['signature']}
+        onChange={(adopted) => {
+          update({ ...form, adopted });
+        }}
+      />
       <StorageStatus status={data.persistence} setup />
     </Page>
   );
@@ -259,17 +274,19 @@ function Review({
     const next = validNextNumber(form.next_number);
     setErrors(found);
     if (Object.keys(found).length) return;
-    if (!initials || next === null) {
+    if (!initials || next === null || !form.adopted) {
       go('details');
       return;
     }
+    const name = form.name.trim();
     await actions.finishSetup({
       profile: {
-        name: form.name.trim(),
+        name,
         initials,
         mailing_address: form.mailing_address.trim(),
         logo: null,
         role_id: role.id,
+        signature: adoptSignature(name, phoneNow()),
       },
       next_number: next,
       settings,

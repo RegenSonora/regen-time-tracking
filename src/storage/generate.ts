@@ -6,6 +6,7 @@
 // outside any transaction, then check nothing moved and write everything in a second one.
 import { createInvoice, uninvoicedEntries } from '../core/invoice';
 import { newCounter } from '../core/invoice-number';
+import { applySignature, usableSignature } from '../core/signature';
 import type { Entry, Invoice, InvoiceCounter, Profile, SourceSettings } from '../core/types';
 import { readSingleton, readSourceSettings, unwrap, wrap, type Wrapped } from './records';
 import type { Backend, GenerateInvoiceRequest, GenerateInvoiceResult, Tx } from './types';
@@ -58,6 +59,9 @@ export async function generateInvoice(
   const before = await backend.read(STORES, (tx) => readSnapshot(tx, sourceId));
   if (!before.profile) return { ok: false, reason: 'no_profile' };
   if (!before.settings) return { ok: false, reason: 'no_rate' };
+  const profile = unwrap(before.profile);
+  const adopted = usableSignature(profile);
+  if (request.signed_at !== undefined && !adopted) return { ok: false, reason: 'no_signature' };
 
   const result = await createInvoice({
     id: deps.newId(),
@@ -65,13 +69,15 @@ export async function generateInvoice(
     invoice_date: request.invoice_date,
     source: request.source,
     settings: unwrap(before.settings),
-    profile: unwrap(before.profile),
+    profile,
     role: request.role,
     count_defs: request.count_defs,
     ...(request.entry_role_id === undefined ? {} : { entry_role_id: request.entry_role_id }),
     counter: before.counter ? unwrap(before.counter) : newCounter(),
     entries: before.entries,
     prior_invoices: before.invoices,
+    ...(request.signed_at !== undefined &&
+      adopted && { signature: applySignature(adopted, request.signed_at) }),
   });
   if (!result.ok) return result;
 

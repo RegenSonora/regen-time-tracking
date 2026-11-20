@@ -340,6 +340,7 @@ describe('invoice number', () => {
           initials: 'CM',
           mailing_address: '',
           logo: null,
+          signature: null,
           role_id: null,
         },
       }),

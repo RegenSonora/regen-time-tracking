@@ -17,6 +17,7 @@ import {
   v4ToV5,
   v5ToV6,
   v6ToV7,
+  v7ToV8,
   type Schema,
   type Snapshot,
 } from '../../src/storage/upgrades';
@@ -184,6 +185,20 @@ const releasedV6: Schema = {
   steps: { 1: v1ToV2, 2: v2ToV3, 3: v3ToV4, 4: v4ToV5, 5: v5ToV6 },
 };
 
+const releasedV7: Schema = {
+  version: 7,
+  layouts: {
+    1: STORES_V1,
+    2: STORES_V1,
+    3: STORES_V1,
+    4: STORES_V1,
+    5: STORES_V1,
+    6: STORES_V6,
+    7: STORES_V6,
+  },
+  steps: { 1: v1ToV2, 2: v2ToV3, 3: v3ToV4, 4: v4ToV5, 5: v5ToV6, 6: v6ToV7 },
+};
+
 const releasedV5: Schema = {
   version: 5,
   layouts: { 1: STORES_V1, 2: STORES_V1, 3: STORES_V1, 4: STORES_V1, 5: STORES_V1 },
@@ -229,9 +244,9 @@ const v3Profile = {
 const byStart = (entries: readonly Entry[]) =>
   [...entries].sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
 
-describe('data format version 7', () => {
+describe('data format version 8', () => {
   it('is what this release writes', () => {
-    expect(DATA_VERSION).toBe(7);
+    expect(DATA_VERSION).toBe(8);
     expect(SCHEMA.version).toBe(DATA_VERSION);
     expect(SCHEMA.layouts[DATA_VERSION]).toEqual(STORES_V6);
   });
@@ -242,10 +257,10 @@ describe('data format version 7', () => {
     if (!opened.ok) throw new Error(opened.reason);
     opened.storage.close();
     const { version, data } = await rawDump(factory);
-    expect(version).toBe(7);
+    expect(version).toBe(8);
     expect(Object.keys(data).sort()).toEqual([...STORES_V6].sort());
     expect(data['meta']).toEqual([
-      { id: 'data', data_version: 7, created_at: NOW, updated_at: NOW },
+      { id: 'data', data_version: 8, created_at: NOW, updated_at: NOW },
     ]);
   });
 
@@ -311,7 +326,7 @@ describe('upgrading stored data', () => {
     expect(must(data['meta'])[0]).toMatchObject({ data_version: 2 });
   });
 
-  it('the current layout upgrades to a fake v8 and keeps its records', async () => {
+  it('the current layout upgrades to a fake v9 and keeps its records', async () => {
     const factory = new IDBFactory();
     const current = await open(factory);
     if (!current.ok) throw new Error(current.reason);
@@ -319,29 +334,29 @@ describe('upgrading stored data', () => {
     for (const e of sampleEntries) await current.storage.saveEntry(e);
     current.storage.close();
 
-    const v7: Schema = {
-      version: 8,
-      layouts: { 7: STORES_V6, 8: STORES_V6 },
+    const next: Schema = {
+      version: 9,
+      layouts: { 8: STORES_V6, 9: STORES_V6 },
       steps: {
-        7: (s) => ({
+        8: (s) => ({
           ...s,
           entries: (s['entries'] ?? []).map((e) => ({
             ...e,
-            notes: `v7:${(e as StoredRecord & { notes: string }).notes}`,
+            notes: `v8:${(e as StoredRecord & { notes: string }).notes}`,
           })),
         }),
       },
     };
-    const opened = await open(factory, v7);
+    const opened = await open(factory, next);
     if (!opened.ok) throw new Error(opened.reason);
     const entries = await opened.storage.listEntries();
     expect(entries).toHaveLength(sampleEntries.length);
-    expect(entries.every((e) => e.notes.startsWith('v7:'))).toBe(true);
+    expect(entries.every((e) => e.notes.startsWith('v8:'))).toBe(true);
     expect(await opened.storage.getProfile()).toEqual(profile);
     opened.storage.close();
 
     const meta = must(must((await rawDump(factory)).data['meta'])[0]);
-    expect(meta).toMatchObject({ data_version: 8, created_at: NOW });
+    expect(meta).toMatchObject({ data_version: 9, created_at: NOW });
   });
 
   it('a failed upgrade leaves the old data and version untouched', async () => {
@@ -429,8 +444,8 @@ describe('v1 → v2: app state gains draft', () => {
     opened.storage.close();
 
     const { version, data } = await rawDump(factory);
-    expect(version).toBe(7);
-    expect(must(data['meta'])[0]).toMatchObject({ data_version: 7 });
+    expect(version).toBe(DATA_VERSION);
+    expect(must(data['meta'])[0]).toMatchObject({ data_version: DATA_VERSION });
   });
 
   it('a phone with no v1 app state upgrades cleanly', async () => {
@@ -865,7 +880,7 @@ describe('v6 → v7: entries and entry drafts get service fees (decision 0043)',
     if (!opened.ok) throw new Error(opened.reason);
     expect(await opened.storage.listEntries()).toEqual(byStart(splitSampleEntries));
     opened.storage.close();
-    expect((await rawDump(factory)).version).toBe(7);
+    expect((await rawDump(factory)).version).toBe(DATA_VERSION);
   });
 
   it('a failed v6 → v7 upgrade leaves the v6 data untouched', async () => {
@@ -881,6 +896,90 @@ describe('v6 → v7: entries and entry drafts get service fees (decision 0043)',
       steps: {
         ...SCHEMA.steps,
         6: () => {
+          throw new Error('bad step');
+        },
+      },
+    };
+    expect(await open(factory, broken)).toMatchObject({ ok: false, reason: 'upgrade_failed' });
+    expect(await rawDump(factory)).toEqual(before);
+  });
+});
+
+describe('v7 → v8: the profile gets a signature slot (decision 0046)', () => {
+  const base = { id: 's', created_at: NOW, updated_at: NOW };
+
+  it('gives the profile no signature and a setup draft nothing adopted; invoices stay as they are', () => {
+    const after = v7ToV8({
+      profile: [{ ...base, id: 'p', name: 'Carmen Cruz' }] as unknown as StoredRecord[],
+      invoices: [{ id: 'i1', entries: [] } as StoredRecord],
+      app_state: [
+        { ...base, draft: { kind: 'setup', name: 'Carmen' } },
+        { ...base, id: 't', draft: { kind: 'entry' } },
+        { ...base, id: 'u', draft: null },
+      ] as unknown as StoredRecord[],
+    });
+    expect(after['profile']).toEqual([{ ...base, id: 'p', name: 'Carmen Cruz', signature: null }]);
+    expect(after['invoices']).toEqual([{ id: 'i1', entries: [] }]);
+    expect(after['app_state']).toEqual([
+      { ...base, draft: { kind: 'setup', name: 'Carmen', adopted: false } },
+      { ...base, id: 't', draft: { kind: 'entry' } },
+      { ...base, id: 'u', draft: null },
+    ]);
+  });
+
+  it('a phone with released v7 data opens with its profile kept and no signature', async () => {
+    const factory = new IDBFactory();
+    const v7 = await open(factory, releasedV7);
+    if (!v7.ok) throw new Error(v7.reason);
+    v7.storage.close();
+    const v7Profile: Record<string, unknown> = { ...profile };
+    delete v7Profile['signature'];
+    await rawPut(factory, 'profile', [{ id: 'p', created_at: NOW, updated_at: NOW, ...v7Profile }]);
+    const opened = await open(factory);
+    if (!opened.ok) throw new Error(opened.reason);
+    expect(await opened.storage.getProfile()).toEqual({ ...profile, signature: null });
+    opened.storage.close();
+    expect((await rawDump(factory)).version).toBe(8);
+  });
+
+  it('every earlier release upgrades all the way to v8 with no signature', async () => {
+    for (const released of [
+      releasedV1,
+      releasedV2,
+      releasedV3,
+      releasedV4,
+      releasedV5,
+      releasedV6,
+      releasedV7,
+    ]) {
+      const factory = new IDBFactory();
+      const old = await open(factory, released);
+      if (!old.ok) throw new Error(old.reason);
+      old.storage.close();
+      await rawPut(factory, 'profile', [
+        { id: 'p', created_at: NOW, updated_at: NOW, ...v3Profile },
+      ]);
+      const opened = await open(factory);
+      if (!opened.ok) throw new Error(`v${String(released.version)}: ${opened.reason}`);
+      expect(await opened.storage.getProfile()).toMatchObject({ signature: null });
+      opened.storage.close();
+      expect((await rawDump(factory)).version).toBe(DATA_VERSION);
+    }
+  });
+
+  it('a failed v7 → v8 upgrade leaves the v7 data untouched', async () => {
+    const factory = new IDBFactory();
+    const v7 = await open(factory, releasedV7);
+    if (!v7.ok) throw new Error(v7.reason);
+    v7.storage.close();
+    await rawPut(factory, 'profile', [{ id: 'p', created_at: NOW, updated_at: NOW, ...v3Profile }]);
+    const before = await rawDump(factory);
+    expect(before.version).toBe(7);
+    const broken: Schema = {
+      ...SCHEMA,
+      steps: {
+        ...SCHEMA.steps,
+        7: () => {
           throw new Error('bad step');
         },
       },

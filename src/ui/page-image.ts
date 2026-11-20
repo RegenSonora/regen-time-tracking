@@ -5,6 +5,11 @@ import type { Shape } from '../files';
 /** 200 dpi: Letter becomes 1700 × 2200 pixels. */
 export const PICTURE_SCALE = 200 / 72;
 const FONTS = 'Helvetica, Arial, sans-serif';
+const CANVAS_STYLE: Record<Extract<Shape, { kind: 'text' }>['font'], string> = {
+  regular: '',
+  bold: 'bold ',
+  italic: 'italic ',
+};
 
 /** The parts of a 2D canvas context painting uses; tests pass a fake. */
 export type Paint = Pick<
@@ -48,7 +53,7 @@ export function paintPage(ctx: Paint, page: PageShapes, s = PICTURE_SCALE): void
   for (const shape of page.shapes) {
     switch (shape.kind) {
       case 'text':
-        ctx.font = `${shape.font === 'bold' ? 'bold ' : ''}${String(shape.size * s)}px ${FONTS}`;
+        ctx.font = `${CANVAS_STYLE[shape.font]}${String(shape.size * s)}px ${FONTS}`;
         ctx.fillStyle = shape.color ?? gray(shape.gray);
         // Never wider than Helvetica: a wider phone font is squeezed, so nothing overflows.
         ctx.fillText(shape.text, shape.x * s, shape.y * s, shape.width * s);
