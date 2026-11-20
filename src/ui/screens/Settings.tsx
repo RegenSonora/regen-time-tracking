@@ -45,6 +45,8 @@ interface RateQuestion {
   new_rate_cents: number;
 }
 
+const NOT_SAVED = "Your phone couldn't save that. Try again.";
+
 /** "Your signature" (decision 0046): adopt it, or see it and remove it. Saved right away. */
 function SignatureSection({ typedName }: { typedName: string }) {
   const { data, actions } = useApp();
@@ -53,14 +55,13 @@ function SignatureSection({ typedName }: { typedName: string }) {
   const [error, setError] = useState<string | undefined>();
   const [removing, setRemoving] = useState(false);
   const section = useRef<HTMLElement>(null);
-  const missing = !usableSignature(profile);
+  const sig = usableSignature(profile);
   // The invoice preview sends people here to adopt one: bring the section into view.
-  const [scrollOnOpen] = useState(missing);
+  const [scrollOnOpen] = useState(!sig);
   useEffect(() => {
     if (scrollOnOpen) section.current?.scrollIntoView({ block: 'center' });
   }, [scrollOnOpen]);
   if (!profile) return null;
-  const sig = usableSignature(profile);
   const renamed =
     typedName.trim() !== '' && signatureText(typedName) !== signatureText(profile.name);
 
@@ -69,7 +70,10 @@ function SignatureSection({ typedName }: { typedName: string }) {
       setError('Check the box to adopt your signature.');
       return;
     }
-    await actions.saveSignature(adoptSignature(profile.name, phoneNow()));
+    if (!(await actions.saveSignature(adoptSignature(profile.name, phoneNow())))) {
+      setError(NOT_SAVED);
+      return;
+    }
     setChecked(false);
     actions.showToast('Signature adopted');
   };
@@ -136,8 +140,8 @@ function SignatureSection({ typedName }: { typedName: string }) {
           cancel="Keep it"
           onConfirm={() => {
             setRemoving(false);
-            void actions.saveSignature(null).then(() => {
-              actions.showToast('Signature removed');
+            void actions.saveSignature(null).then((ok) => {
+              actions.showToast(ok ? 'Signature removed' : NOT_SAVED);
             });
           }}
           onCancel={() => {

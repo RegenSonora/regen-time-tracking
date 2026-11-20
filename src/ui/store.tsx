@@ -762,12 +762,18 @@ function useStore(storage: Storage, initial: Data) {
       },
 
       /** Adopt or remove the typed signature on its own, without the Settings form (0046). */
-      async saveSignature(signature: AdoptedSignature | null) {
+      /** False when the phone couldn't save it, so the screen can say so. */
+      async saveSignature(signature: AdoptedSignature | null): Promise<boolean> {
         const profile = d().profile;
-        if (!profile) return;
+        if (!profile) return false;
         const next = { ...profile, signature };
-        await serial(() => storage.saveProfile(next));
+        try {
+          await serial(() => storage.saveProfile(next));
+        } catch {
+          return false;
+        }
         setData({ ...d(), profile: next });
+        return true;
       },
 
       async saveSettings(changes: SettingsChanges) {
