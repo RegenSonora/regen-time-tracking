@@ -12,10 +12,10 @@ You adopt it once. In Setup, or in **Settings › Your signature** if you set up
 2. **Share the files to yourself.** Tap **Share files** and email all four files to yourself: the invoice PDF, a picture (PNG) of the invoice page, the timesheet CSV and the entry log CSV. On iPhone Mail, choose **Actual Size** if it asks about image size. Your signature is already in the **Contractor** box of the PDF and the picture.
 3. **Email the PDF or the picture, and both CSV files, to your reviewer.** Send one of the two, not both, and all three files in one email. A picture goes at **Actual Size**.
 4. **The reviewer signs "Services received"** on that file and emails it with both CSV files to the office. Usually the reviewer is the CHW Team Lead. When the Team Lead is the person invoicing, someone else signs, as the office decides.
-   - **PDF on iPhone:** open the PDF from the email, tap the **Markup** button (pen icon), sign in the Services received box, tap **Done**.
-   - **PDF on Android:** open the PDF in **Adobe Acrobat Reader**, tap **Fill & Sign**, sign in the Services received box, save.
-   - **Picture on iPhone:** save the picture to Photos, open it, tap **Edit**, then **Markup** (pen icon), sign, tap **Done**.
-   - **Picture on Android:** open the picture in **Google Photos** (or your gallery app), tap **Edit**, then **Markup**, sign, save a copy.
+   - **PDF on iPhone:** open the PDF from the email, tap the **Markup** button (pen icon), sign in your box, tap **Done**.
+   - **PDF on Android:** open the PDF in **Adobe Acrobat Reader**, tap **Fill & Sign**, sign in your box, save.
+   - **Picture on iPhone:** save the picture to Photos, open it, tap **Edit**, then **Markup** (pen icon), sign in your box, tap **Done**.
+   - **Picture on Android:** open the picture in **Google Photos** (or your gallery app), tap **Edit**, then **Markup**, sign in your box, save a copy.
 5. **The office signs its lines on paper.**
 
 ## Timesheets (employees)
@@ -23,12 +23,12 @@ You adopt it once. In Setup, or in **Settings › Your signature** if you set up
 1. **Create the timesheet in the app.** On Home, tap **Submit timesheet** and check the preview. Tap **Apply signature**, then **Create timesheet files**.
 2. **Share the files to yourself**, as for invoices: the timesheet PDF, a picture (PNG) of the timesheet page, the timesheet CSV and the entry log CSV. Your signature is already in the **Employee** box on the first page (the TIMESHEET page).
 3. **Email the PDF or the picture, and both CSV files, to your supervisor.**
-4. **Your supervisor signs the same page** in the **Supervisor signature** box below yours, the same ways as above, writes their name and the date, and emails it with both CSV files to the office. The supervisor signs the file you sent, not a new copy.
+4. **Your supervisor signs the same page** in the **Supervisor signature** box below yours, with Markup or Fill & Sign as in invoice step 4, writes their name and the date, and emails it with both CSV files to the office. The supervisor signs the file you sent, not a new copy.
 5. **The office signs its lines on paper.**
 
 ## Invoices and timesheets made before in-app signatures
 
-They have an empty Contractor or Employee box. If you share one again, sign it yourself first, the same ways the reviewer does above, then send it on as before.
+They have an empty Contractor or Employee box. If you share one again, sign your own box first, with Markup or Fill & Sign as in invoice step 4, then send it on as before.
 
 ## Rules
 

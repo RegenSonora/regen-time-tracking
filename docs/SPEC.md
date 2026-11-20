@@ -183,8 +183,8 @@ One "Create invoice files" (or "Create timesheet files") action produces four fi
 
 | File | Name | Content |
 |---|---|---|
-| PDF | `<SOURCE>_<INVOICE#>_<first-date>_to_<last-date>.pdf` | Page 1 invoice (or timesheet summary); pages 2+ timesheet. Signed, unless the picture is signed instead. |
-| Picture | `<SOURCE>_<INVOICE#>_invoice.png`, or `_timesheet.png` | Page 1 as a PNG, 200 dpi, for signing in a photo app (decision 0018). Sign the PDF or the picture, not both. |
+| PDF | `<SOURCE>_<INVOICE#>_<first-date>_to_<last-date>.pdf` | Page 1 invoice (or timesheet summary) with your typed signature (decision 0046); pages 2+ timesheet. The reviewer or supervisor signs it, unless they sign the picture instead. |
+| Picture | `<SOURCE>_<INVOICE#>_invoice.png`, or `_timesheet.png` | Page 1 as a PNG, 200 dpi, with the same typed signature, for the reviewer or supervisor to sign in a photo app (decision 0018). They sign the PDF or the picture, not both. |
 | Timesheet CSV | `<SOURCE>_<INVOICE#>_timesheet.csv` | The timesheet grid, same content as the PDF pages |
 | Entry log CSV | `<SOURCE>_<INVOICE#>_entries.csv` | One row per entry, raw start and stop times |
 
