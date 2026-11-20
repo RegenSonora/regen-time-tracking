@@ -1,6 +1,7 @@
 // Invoice created (SPEC §6–§8, wireframe Share): the four files, Share, and the signing steps.
 // The same screen re-shares a past invoice, re-creating its files from stored data. A timesheet
-// shows hours, not dollars, and its steps add the supervisor's signature (decision 0031).
+// shows hours, not dollars, and its steps add the supervisor's signature (decision 0031). A signed
+// one says the person's signature is already on the files (decision 0046).
 import { useLayoutEffect, useMemo, useState } from 'preact/hooks';
 import { formatDollars, paginateTimesheet, shortFingerprint } from '../../core';
 import { buildInvoiceFiles, invoicePageShapes, pngName, type InvoiceFile } from '../../files';
@@ -35,12 +36,18 @@ export function InvoiceReady() {
     const [pdf, timesheet, entries] = buildInvoiceFiles(invoice, source, COUNT_DEFS);
     const png = pagePng(invoicePageShapes(invoice, source));
     const first = invoice.kind === 'timesheet' ? 'Timesheet summary' : 'Invoice';
+    const signer = invoice.kind === 'timesheet' ? 'supervisor' : 'reviewer';
+    const signed = invoice.signature !== undefined;
     const list: { file: InvoiceFile; tag: string; detail: string }[] = [];
     if (pdf) {
       list.push({
         file: pdf,
         tag: 'PDF',
-        detail: `${first} + ${plural(pages, 'timesheet page', 'timesheet pages')}. Sign this or the picture.`,
+        detail: `${first} + ${plural(pages, 'timesheet page', 'timesheet pages')}. ${
+          signed
+            ? `Signed by you. Your ${signer} signs this or the picture.`
+            : 'Sign this or the picture.'
+        }`,
       });
     }
     // The picture of page 1, for signing in a photo app (decision 0018).
@@ -48,7 +55,9 @@ export function InvoiceReady() {
       list.push({
         file: { name: pngName(invoice), type: 'image/png', bytes: png },
         tag: 'PNG',
-        detail: `Picture of the ${first.toLowerCase()} page, for signing in a photo app`,
+        detail: signed
+          ? `Picture of the ${first.toLowerCase()} page, signed by you, for signing in a photo app`
+          : `Picture of the ${first.toLowerCase()} page, for signing in a photo app`,
       });
     }
     if (timesheet) {
@@ -80,6 +89,8 @@ export function InvoiceReady() {
 
   if (!invoice || !files) return null;
   const timesheet = invoice.kind === 'timesheet';
+  const signed = invoice.signature !== undefined;
+  const signer = timesheet ? 'supervisor' : 'reviewer';
   const Noun = timesheet ? 'Timesheet' : 'Invoice';
 
   const share = async () => {
@@ -142,19 +153,32 @@ export function InvoiceReady() {
       <h2 class="sec">Next steps</h2>
       <ol class="next-steps">
         <li>Share the files and email them to yourself.</li>
-        <li>
-          Sign the PDF (Markup on iPhone, or Adobe Acrobat Fill &amp; Sign on Android), or sign the
-          picture in your photo app. Sign one, not both.
-        </li>
-        {timesheet ? (
+        {signed ? (
           <>
-            <li>Email the signed file and both CSV files to your supervisor.</li>
-            <li>Your supervisor signs the same page and sends everything to the office.</li>
+            <li>Your signature is already on the PDF and the picture.</li>
+            <li>Email the PDF or the picture, with both CSV files, to your {signer}.</li>
+            <li>
+              Your {signer} signs {timesheet ? 'the same page' : 'it'} and sends everything to the
+              office.
+            </li>
           </>
         ) : (
           <>
-            <li>Email the signed file and both CSV files to your reviewer.</li>
-            <li>Your reviewer signs and sends everything to the office.</li>
+            <li>
+              Sign the PDF (Markup on iPhone, or Adobe Acrobat Fill &amp; Sign on Android), or sign
+              the picture in your photo app. Sign one, not both.
+            </li>
+            {timesheet ? (
+              <>
+                <li>Email the signed file and both CSV files to your supervisor.</li>
+                <li>Your supervisor signs the same page and sends everything to the office.</li>
+              </>
+            ) : (
+              <>
+                <li>Email the signed file and both CSV files to your reviewer.</li>
+                <li>Your reviewer signs and sends everything to the office.</li>
+              </>
+            )}
           </>
         )}
       </ol>

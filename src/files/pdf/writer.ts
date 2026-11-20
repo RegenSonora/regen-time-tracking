@@ -1,7 +1,7 @@
 // A minimal hand-written PDF 1.4 writer (CLAUDE.md "Dependencies"): pages with text in the
 // built-in Helvetica fonts, lines, rectangles and filled squares. Text stays selectable because
 // it is real text in WinAnsiEncoding. Output is deterministic: same calls, same bytes.
-import { textWidth, toWinAnsi, type FontName } from './fonts';
+import { pdfText, textWidth, toWinAnsi, type FontName } from './fonts';
 
 /** Letter, in points. */
 export const LETTER = { width: 612, height: 792 } as const;
@@ -72,7 +72,7 @@ export type Shape =
       matrix: readonly (readonly boolean[])[];
     };
 
-const FONT_RESOURCE: Record<FontName, string> = { regular: 'F1', bold: 'F2' };
+const FONT_RESOURCE: Record<FontName, string> = { regular: 'F1', bold: 'F2', italic: 'F3' };
 
 /** A number for a content stream: at most 3 decimals, no exponent, no "-0". */
 function num(n: number): string {
@@ -120,7 +120,18 @@ export class PdfPage {
     const width = textWidth(text, font, style.size);
     const left = style.align === 'right' ? x - width : style.align === 'center' ? x - width / 2 : x;
     const gray = style.gray ?? 0;
-    this.shapes.push({ kind: 'text', x: left, y, text, font, size: style.size, gray, width });
+    // The picture prints what the PDF prints, so the two never disagree (decision 0046).
+    const shown = pdfText(text);
+    this.shapes.push({
+      kind: 'text',
+      x: left,
+      y,
+      text: shown,
+      font,
+      size: style.size,
+      gray,
+      width,
+    });
     this.ops.push(
       `BT /${FONT_RESOURCE[font]} ${num(style.size)} Tf ${num(style.gray ?? 0)} g ` +
         `${num(left)} ${num(this.height - y)} Td ${hex(toWinAnsi(text))} Tj ET`,
@@ -228,6 +239,17 @@ export class PdfDocument {
     const bold = add(
       '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>',
     );
+    // Only files with a typed signature carry the oblique font (decision 0046), so files made
+    // before it come out byte for byte as they always did.
+    const usesItalic = this.pages.some((p) =>
+      p.shapes.some((s) => s.kind === 'text' && s.font === 'italic'),
+    );
+    const italic = usesItalic
+      ? add(
+          '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique /Encoding /WinAnsiEncoding >>',
+        )
+      : null;
+    const italicRef = italic === null ? '' : ` /F3 ${String(italic)} 0 R`;
     const date = infoString(pdfDate(info.created));
     const infoId = add(
       `<< /Title ${infoString(info.title)} /Author ${infoString(info.author)} ` +
@@ -239,7 +261,7 @@ export class PdfDocument {
       return add(
         `<< /Type /Page /Parent ${String(pagesId)} 0 R ` +
           `/MediaBox [0 0 ${num(page.width)} ${num(page.height)}] ` +
-          `/Resources << /Font << /F1 ${String(regular)} 0 R /F2 ${String(bold)} 0 R >> >> ` +
+          `/Resources << /Font << /F1 ${String(regular)} 0 R /F2 ${String(bold)} 0 R${italicRef} >> >> ` +
           `/Contents ${String(content)} 0 R >>`,
       );
     });

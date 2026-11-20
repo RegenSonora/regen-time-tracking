@@ -11,8 +11,9 @@ import type { StoreName, StoredRecord, Tx } from './types';
  * v5: entries and the running timer get `breaks`; the timer gets `paused_at` (decision 0037).
  * v6: a `task_progress` store for My Tasks status and notes (decision 0041).
  * v7: entries and entry drafts get `fees`, service fees by task id (decision 0043).
+ * v8: the profile gets `signature` and setup drafts get `adopted` (decision 0046).
  */
-export const DATA_VERSION = 7;
+export const DATA_VERSION = 8;
 
 /** The stores of v1. Later versions keep the same stores. */
 export const STORES_V1: readonly StoreName[] = [

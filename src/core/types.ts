@@ -178,6 +178,22 @@ export interface Profile {
   logo: null;
   /** The role picked at setup (decision 0027); null until one is picked. */
   role_id: string | null;
+  /** The typed signature the person adopted (decision 0046); null until adopted. */
+  signature: AdoptedSignature | null;
+}
+
+/** "/s/ Jane Doe", adopted once in Setup or Settings (decision 0046). */
+export interface AdoptedSignature {
+  /** Exactly the stamp adopted; it must match the current name to be used. */
+  text: string;
+  /** When it was adopted, ISO 8601 with offset. */
+  adopted_at: string;
+}
+
+/** The signature frozen on an invoice when it was created (decision 0046). */
+export interface InvoiceSignature extends AdoptedSignature {
+  /** When Apply signature was tapped, ISO 8601 with offset. Its date prints on the Date line. */
+  signed_at: string;
 }
 
 /** Per funding source the CHW works under (SPEC §4). */
@@ -393,6 +409,8 @@ export interface Invoice {
   /** Labels and units of the counts with a value in either, in list order (decision 0029). */
   count_defs: CountDef[];
   nte: NteStatus;
+  /** The person's signature; absent on invoices made before decision 0046. Not fingerprinted. */
+  signature?: InvoiceSignature;
   canonical_version: number;
   /** SHA-256 of the canonical form, 64 lower-case hex characters. */
   fingerprint: string;

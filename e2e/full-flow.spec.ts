@@ -137,6 +137,7 @@ test('setup → 9 dates of entries → invoice → files → re-share', async ({
   await expectAccessible(page, 'invoice preview');
 
   // Create and share.
+  await page.getByRole('button', { name: 'Apply signature' }).click();
   await page.getByRole('button', { name: 'Create invoice files' }).click();
   await expect(heading(page, 'Invoice created')).toBeVisible();
   await expect(page.getByText('9 entries are now locked.')).toBeVisible();

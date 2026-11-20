@@ -41,6 +41,7 @@ test('create, share and re-share an invoice', async ({ page }) => {
   await expect(page.getByText('Enter your not-to-exceed amount in Settings.')).toBeVisible();
   await expect(page.getByText('These 8 entries will be locked.')).toBeVisible();
 
+  await page.getByRole('button', { name: 'Apply signature' }).click();
   await page.getByRole('button', { name: 'Create invoice files' }).click();
   await expect(heading(page, 'Invoice created')).toBeVisible();
   await expect(page.getByText(/^Invoice CC-\d{4}-001 is ready$/)).toBeVisible();
@@ -108,6 +109,7 @@ test('without file sharing, the files download; leaving unshared asks first', as
   await setUpWithoutRole(page);
   await addEntry(page, { date: '2026-10-30', start: '09:12', end: '10:37' });
   await page.getByRole('button', { name: 'Generate Regen Invoice' }).click();
+  await page.getByRole('button', { name: 'Apply signature' }).click();
   await page.getByRole('button', { name: 'Create invoice files' }).click();
   await expect(heading(page, 'Invoice created')).toBeVisible();
 
@@ -143,6 +145,7 @@ test('Done anyway leaves an unshared invoice; it stays in Past invoices', async 
   await setUpWithoutRole(page);
   await addEntry(page, { date: '2026-10-30', start: '09:12', end: '10:37' });
   await page.getByRole('button', { name: 'Generate Regen Invoice' }).click();
+  await page.getByRole('button', { name: 'Apply signature' }).click();
   await page.getByRole('button', { name: 'Create invoice files' }).click();
   await page.getByRole('button', { name: 'Done' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Done anyway' }).click();

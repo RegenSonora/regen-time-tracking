@@ -84,6 +84,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
       await page.getByRole('button', { name: 'Generate Regen Invoice' }).click();
       await expect(heading(page, 'New invoice')).toBeVisible();
       await expectAccessible(page, 'invoice preview');
+      await page.getByRole('button', { name: 'Apply signature' }).click();
       await page.getByRole('button', { name: 'Create invoice files' }).click();
       await expect(heading(page, 'Invoice created')).toBeVisible();
       await expectAccessible(page, 'invoice created');

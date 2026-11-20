@@ -17,6 +17,7 @@ import type {
   InvoiceFlatLine,
   InvoiceGasLine,
   InvoiceLine,
+  InvoiceSignature,
   InvoiceTripLine,
   NteStatus,
   Profile,
@@ -52,6 +53,8 @@ export interface InvoiceInput {
   entries: readonly Entry[];
   /** All invoices on the phone, for the NTE tracker and all-time counts. */
   prior_invoices: readonly Invoice[];
+  /** The person's applied signature (decision 0046). Left off, the invoice is unsigned. */
+  signature?: InvoiceSignature;
 }
 
 export type InvoiceProblem =
@@ -286,6 +289,7 @@ export function buildInvoiceDraft(input: InvoiceInput): InvoiceDraftResult {
       counts_all_time: countsAllTime,
       count_defs: input.count_defs.filter((c) => hasValue(c.id)).map((c) => structuredClone(c)),
       nte,
+      ...(input.signature && { signature: { ...input.signature } }),
       canonical_version: CANONICAL_VERSION,
       created_at: input.now,
       updated_at: input.now,

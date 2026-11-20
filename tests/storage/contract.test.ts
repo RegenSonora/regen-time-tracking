@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { emptyCounts } from '../../src/core/counts';
 import { verifyFingerprint } from '../../src/core/fingerprint';
 import { newOwnTask, officeProgress } from '../../src/core/my-tasks';
+import { adoptSignature } from '../../src/core/signature';
 import type { Entry } from '../../src/core/types';
 import { emptyAppState, rememberPicks } from '../../src/storage/storage';
 import { RECENT_TASKS_MAX, type AppState, type Storage } from '../../src/storage/types';
@@ -226,6 +227,63 @@ describe.each(adapters)('$name adapter', (adapter) => {
       expect(await storage.getCounter()).toEqual({ next: 5, locked: true });
       const entries = await storage.listEntries();
       expect(entries.every((e) => e.invoice_id === invoice.id && e.updated_at === NOW)).toBe(true);
+      storage.close();
+    });
+
+    it('freezes the adopted signature with the time it was applied (decision 0046)', async () => {
+      const storage = await adapter.make();
+      await seedSample(storage);
+      const adopted = adoptSignature(profile.name, '2026-10-01T08:00:00-07:00');
+      await storage.saveProfile({ ...profile, signature: adopted });
+      const signedAt = '2026-10-31T15:59:00-07:00';
+      const result = await storage.generateInvoice({
+        source: tisupp,
+        role: null,
+        count_defs: countDefs,
+        now: NOW,
+        invoice_date: '2026-10-31',
+        signed_at: signedAt,
+      });
+      if (!result.ok) throw new Error(result.reason);
+      expect(result.invoice.signature).toEqual({ ...adopted, signed_at: signedAt });
+      expect(await storage.getInvoice(result.invoice.id)).toEqual(result.invoice);
+      expect(await verifyFingerprint(result.invoice)).toBe(true);
+      storage.close();
+    });
+
+    it('refuses to sign without a signature for the current name, and saves nothing', async () => {
+      const storage = await adapter.make();
+      await seedSample(storage);
+      const sign = () =>
+        storage.generateInvoice({
+          source: tisupp,
+          role: null,
+          count_defs: countDefs,
+          now: NOW,
+          invoice_date: '2026-10-31',
+          signed_at: NOW,
+        });
+      expect(await sign()).toEqual({ ok: false, reason: 'no_signature' });
+      await storage.saveProfile({ ...profile, signature: adoptSignature('Someone Else', NOW) });
+      expect(await sign()).toEqual({ ok: false, reason: 'no_signature' });
+      await expectUntouched(storage);
+      storage.close();
+    });
+
+    it('refuses a signature applied before midnight for an invoice made after, and saves nothing', async () => {
+      const storage = await adapter.make();
+      await seedSample(storage);
+      await storage.saveProfile({ ...profile, signature: adoptSignature(profile.name, NOW) });
+      const result = await storage.generateInvoice({
+        source: tisupp,
+        role: null,
+        count_defs: countDefs,
+        now: NOW,
+        invoice_date: '2026-10-31',
+        signed_at: '2026-10-30T23:58:00-07:00',
+      });
+      expect(result).toEqual({ ok: false, reason: 'stale_signature' });
+      await expectUntouched(storage);
       storage.close();
     });
 

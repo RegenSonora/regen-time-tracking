@@ -1,7 +1,8 @@
-// Setup (SPEC §4, decisions 0005, 0027, 0030): your details, pick your role, review the role with
-// its rates prefilled, then storage status.
+// Setup (SPEC §4, decisions 0005, 0027, 0030, 0046): your details and signature, pick your role,
+// review the role with its rates prefilled, then storage status.
 import { useEffect, useState } from 'preact/hooks';
 import {
+  adoptSignature,
   formatDollars,
   formatInvoiceNumber,
   normalizeInitials,
@@ -16,8 +17,8 @@ import {
 } from '../../core';
 import { FUNDING_SOURCES } from '../../funding-sources';
 import { findRole, ROLES_FILE } from '../../roles';
-import type { SetupDraft } from '../../storage';
-import { Field, Page } from '../components';
+import { phoneNow, type SetupDraft } from '../../storage';
+import { AdoptSignature, Field, Page } from '../components';
 import { lineName, roleLabel } from '../format';
 import { sourceById, useApp } from '../store';
 import { StorageStatus } from './StorageStatus';
@@ -47,6 +48,18 @@ function prefilledRates(role: Role): SetupDraft['sources'] {
   );
 }
 
+/** What's missing on the details step; empty when it's complete. */
+function detailsErrors(form: SetupDraft): Errors {
+  const found: Errors = {};
+  if (!form.name.trim()) found['name'] = 'Enter your name.';
+  if (!normalizeInitials(form.initials)) found['initials'] = 'Use 1 to 4 letters, like CC.';
+  if (validNextNumber(form.next_number) === null) {
+    found['next'] = 'Enter a whole number, like 1.';
+  }
+  if (!form.adopted) found['signature'] = 'Check the box to adopt your signature.';
+  return found;
+}
+
 /** The role's sources, in the role's order. */
 function roleSources(role: Role): FundingSourceConfig[] {
   return role.funding.flatMap((f) => FUNDING_SOURCES.filter((s) => s.id === f.source_id));
@@ -66,8 +79,8 @@ export function Setup() {
     setForm(next);
     void actions.updateSetupDraft(next);
   };
-  const go = (step: SetupDraft['step'], patch: Partial<SetupDraft> = {}) => {
-    setErrors({});
+  const go = (step: SetupDraft['step'], patch: Partial<SetupDraft> = {}, shown: Errors = {}) => {
+    setErrors(shown);
     update({ ...form, ...patch, step });
   };
 
@@ -89,12 +102,7 @@ export function Setup() {
   }
 
   const next = () => {
-    const found: Errors = {};
-    if (!form.name.trim()) found['name'] = 'Enter your name.';
-    if (!normalizeInitials(form.initials)) found['initials'] = 'Use 1 to 4 letters, like CC.';
-    if (validNextNumber(form.next_number) === null) {
-      found['next'] = 'Enter a whole number, like 1.';
-    }
+    const found = detailsErrors(form);
     setErrors(found);
     if (Object.keys(found).length === 0) go('role');
   };
@@ -128,7 +136,8 @@ export function Setup() {
             autocomplete="name"
             value={form.name}
             onInput={(e) => {
-              update({ ...form, name: e.currentTarget.value });
+              // A new name is a new stamp: adopt it again (decision 0046).
+              update({ ...form, name: e.currentTarget.value, adopted: false });
             }}
           />
         )}
@@ -179,6 +188,18 @@ export function Setup() {
           />
         )}
       </Field>
+      <h2 class="sec">Your signature</h2>
+      <p class="hint">
+        It goes on your invoices and timesheets when you tap Apply signature. Your name changes it.
+      </p>
+      <AdoptSignature
+        name={form.name}
+        checked={form.adopted}
+        error={errors['signature']}
+        onChange={(adopted) => {
+          update({ ...form, adopted });
+        }}
+      />
       <StorageStatus status={data.persistence} setup />
     </Page>
   );
@@ -237,7 +258,7 @@ function Review({
   form: SetupDraft;
   role: Role;
   update: (next: SetupDraft) => void;
-  go: (step: SetupDraft['step'], patch?: Partial<SetupDraft>) => void;
+  go: (step: SetupDraft['step'], patch?: Partial<SetupDraft>, shown?: Errors) => void;
 }) {
   const { actions } = useApp();
   const [errors, setErrors] = useState<Errors>({});
@@ -259,17 +280,21 @@ function Review({
     const next = validNextNumber(form.next_number);
     setErrors(found);
     if (Object.keys(found).length) return;
-    if (!initials || next === null) {
-      go('details');
+    if (!initials || next === null || !form.adopted) {
+      // A draft from an older version (no signature step yet) lands back on the details step with
+      // what's missing shown, not silently (decision 0046).
+      go('details', {}, detailsErrors(form));
       return;
     }
+    const name = form.name.trim();
     await actions.finishSetup({
       profile: {
-        name: form.name.trim(),
+        name,
         initials,
         mailing_address: form.mailing_address.trim(),
         logo: null,
         role_id: role.id,
+        signature: adoptSignature(name, phoneNow()),
       },
       next_number: next,
       settings,

@@ -23,6 +23,7 @@ async function phone(roleId: string, rate: number): Promise<{ storage: Storage; 
     initials: 'CC',
     mailing_address: '',
     logo: null,
+    signature: null,
     role_id: roleId,
   };
   await storage.saveProfile(profile);

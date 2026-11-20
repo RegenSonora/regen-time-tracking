@@ -657,6 +657,44 @@ p {
   color: var(--muted);
 }
 
+/* Decision 0046: the typed signature, shown as it prints. */
+.sig-stamp {
+  padding: 14px 16px 12px;
+  border-bottom: 1px dashed var(--border);
+}
+
+.sig-text {
+  margin: 0;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 24px;
+  font-style: italic;
+  overflow-wrap: anywhere;
+}
+
+.sig-detail {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.sig-card .error {
+  margin: 0 16px 12px;
+}
+
+.sig-adopt {
+  font-size: 16px;
+}
+
+.sig-card-plain .sig-stamp {
+  border-bottom: none;
+}
+
+.btn.btn-gated {
+  background: var(--disabled-bg);
+  border-color: var(--border);
+  color: var(--disabled-fg);
+}
+
 .storage {
   padding: 12px 16px;
   display: flex;

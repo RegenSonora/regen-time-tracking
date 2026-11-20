@@ -202,6 +202,22 @@ export const v6ToV7: UpgradeStep = (snapshot) => ({
   }),
 });
 
+/**
+ * v7 → v8 (decision 0046): the profile has no signature until the person adopts one, and a
+ * half-done setup hasn't adopted it. Frozen invoices are not rewritten: no `signature` means
+ * unsigned.
+ */
+export const v7ToV8: UpgradeStep = (snapshot) => ({
+  ...snapshot,
+  profile: (snapshot['profile'] ?? []).map((record) => ({ ...record, signature: null })),
+  app_state: (snapshot['app_state'] ?? []).map((record) => {
+    const state = record as StoredRecord & { draft: { kind: string } | null };
+    return state.draft?.kind === 'setup'
+      ? { ...state, draft: { ...state.draft, adopted: false } }
+      : state;
+  }),
+});
+
 export const SCHEMA: Schema = {
   version: DATA_VERSION,
   layouts: {
@@ -212,8 +228,9 @@ export const SCHEMA: Schema = {
     5: STORES_V1,
     6: STORES_V6,
     7: STORES_V6,
+    8: STORES_V6,
   },
-  steps: { 1: v1ToV2, 2: v2ToV3, 3: v3ToV4, 4: v4ToV5, 5: v5ToV6, 6: v6ToV7 },
+  steps: { 1: v1ToV2, 2: v2ToV3, 3: v3ToV4, 4: v4ToV5, 5: v5ToV6, 6: v6ToV7, 7: v7ToV8 },
 };
 
 /** Run every step from `from` up to `to`. Throws if one is missing or fails. */

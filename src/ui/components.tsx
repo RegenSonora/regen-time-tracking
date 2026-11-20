@@ -2,7 +2,8 @@
 import type { ComponentChildren, JSX } from 'preact';
 import { useEffect, useId, useRef, useState } from 'preact/hooks';
 import type { Entry, FundingSourceConfig } from '../core';
-import { checkEntryTimes } from '../core';
+import { checkEntryTimes, signatureText } from '../core';
+import { pdfText } from '../files';
 import { dateLabel, hoursLabel, lineName, tasksLabel, timeRangeLabel } from './format';
 import { sourceById, useApp } from './store';
 
@@ -326,6 +327,58 @@ interface FieldProps {
     'aria-invalid'?: 'true';
     'aria-describedby'?: string;
   }) => JSX.Element;
+}
+
+// --- Signature (decision 0046) -----------------------------------------------------------------
+
+/** The typed signature as it prints on the files. */
+export function SignatureStamp({ text, detail }: { text: string; detail?: string | undefined }) {
+  return (
+    <div class="sig-stamp">
+      <p class="sig-text">{text}</p>
+      {detail && <p class="sig-detail">{detail}</p>}
+    </div>
+  );
+}
+
+export const ADOPT_TEXT = 'I adopt this as my electronic signature on invoices and timesheets.';
+
+/** The stamp for a name with the "I adopt this" check box, in Setup and Settings. */
+export function AdoptSignature({
+  name,
+  checked,
+  onChange,
+  error,
+}: {
+  name: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  error?: string | undefined;
+}) {
+  const id = useId();
+  const stamp = name.trim() ? signatureText(name) : '/s/ Your name';
+  // The PDF font has no accents beyond Western European ones, so say what will print.
+  const printed = pdfText(stamp);
+  return (
+    <div class="card sig-card">
+      <SignatureStamp
+        text={stamp}
+        detail={printed === stamp ? undefined : `On your files it prints as ${printed}`}
+      />
+      <label class="check">
+        <input
+          type="checkbox"
+          checked={checked}
+          {...(error ? { 'aria-invalid': 'true', 'aria-describedby': `${id}-error` } : {})}
+          onChange={(e) => {
+            onChange(e.currentTarget.checked);
+          }}
+        />
+        <span class="sig-adopt">{ADOPT_TEXT}</span>
+      </label>
+      {error && <ErrorText id={`${id}-error`}>{error}</ErrorText>}
+    </div>
+  );
 }
 
 /** Label, input, hint and an error in plain words next to the field (SPEC §10). */

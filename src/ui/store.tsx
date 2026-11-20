@@ -16,6 +16,7 @@ import {
   resumeTimer,
   startTimer,
   timerStop,
+  type AdoptedSignature,
   type Entry,
   type FundingSourceConfig,
   type Invoice,
@@ -95,6 +96,8 @@ const CREATE_PROBLEMS: Record<string, string> = {
   no_rate: 'Enter your hourly rate in Settings first.',
   bad_settings: 'Enter your hourly rate in Settings first.',
   no_profile: 'Enter your details in Settings first.',
+  no_signature: 'Add your signature in Settings first.',
+  stale_signature: "It's a new day. Apply your signature again.",
   bad_initials: 'Check your initials in Settings.',
   bad_entry: "One entry can't be included. Open it from Home and check its task and times.",
 };
@@ -163,6 +166,7 @@ function initialSetupDraft(): SetupDraft {
     step: 'details',
     role_id: null,
     sources: {},
+    adopted: false,
   };
 }
 
@@ -675,9 +679,14 @@ function useStore(storage: Storage, initial: Data) {
 
       /**
        * Lock the entries, save the invoice and advance the counter in one transaction, then show
-       * the files. Returns what went wrong in plain words, or null.
+       * the files. `signedAt` is when Apply signature was tapped (decision 0046). Returns what
+       * went wrong in plain words, and whether the signature must be applied again because a new
+       * day started since; null on success.
        */
-      async createInvoice(sourceId: string): Promise<string | null> {
+      async createInvoice(
+        sourceId: string,
+        signedAt: string,
+      ): Promise<{ text: string; reapply: boolean } | null> {
         const now = phoneNow();
         let result;
         try {
@@ -690,6 +699,7 @@ function useStore(storage: Storage, initial: Data) {
               count_defs: COUNT_DEFS,
               now,
               invoice_date: now.slice(0, 10),
+              signed_at: signedAt,
             }),
           );
         } catch {
@@ -702,10 +712,12 @@ function useStore(storage: Storage, initial: Data) {
         ]);
         setData({ ...d(), entries, invoices, counter });
         if (!result?.ok) {
-          return (
-            (result && CREATE_PROBLEMS[result.reason]) ??
-            "The files couldn't be created. Nothing was locked. Try again."
-          );
+          return {
+            text:
+              (result && CREATE_PROBLEMS[result.reason]) ??
+              "The files couldn't be created. Nothing was locked. Try again.",
+            reapply: result?.reason === 'stale_signature',
+          };
         }
         setViewing({ invoice_id: result.invoice.id, created: true });
         replaceTop('invoice-ready');
@@ -747,6 +759,21 @@ function useStore(storage: Storage, initial: Data) {
           counter: await storage.getCounter(),
           app,
         });
+      },
+
+      /** Adopt or remove the typed signature on its own, without the Settings form (0046). */
+      /** False when the phone couldn't save it, so the screen can say so. */
+      async saveSignature(signature: AdoptedSignature | null): Promise<boolean> {
+        const profile = d().profile;
+        if (!profile) return false;
+        const next = { ...profile, signature };
+        try {
+          await serial(() => storage.saveProfile(next));
+        } catch {
+          return false;
+        }
+        setData({ ...d(), profile: next });
+        return true;
       },
 
       async saveSettings(changes: SettingsChanges) {

@@ -1,15 +1,21 @@
-// The two built-in PDF fonts the files use, Helvetica and Helvetica-Bold, in WinAnsiEncoding.
+// The built-in PDF fonts the files use, Helvetica, Helvetica-Bold and Helvetica-Oblique (the typed
+// signature, decision 0046), in WinAnsiEncoding.
 // Widths are the standard Adobe AFM metrics (1/1000 em) for codes 32–255; codes WinAnsi leaves
 // undefined have width 0 and are never written.
 
-export type FontName = 'regular' | 'bold';
+export type FontName = 'regular' | 'bold' | 'italic';
 
 // prettier-ignore
 const HELVETICA = [278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584,0,556,0,222,556,333,1000,556,556,333,1000,667,333,1000,0,611,0,0,222,222,333,333,350,556,1000,333,1000,500,333,944,0,500,667,278,333,556,556,556,556,260,556,333,737,370,556,584,333,737,333,400,584,333,333,333,556,537,278,333,333,365,556,834,834,834,611,667,667,667,667,667,667,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,500,556,556,556,556,278,278,278,278,556,556,556,556,556,556,556,584,611,556,556,556,556,500,556,500];
 // prettier-ignore
 const HELVETICA_BOLD = [278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584,0,556,0,278,556,500,1000,556,556,333,1000,667,333,1000,0,611,0,0,278,278,500,500,350,556,1000,333,1000,556,333,944,0,500,667,278,333,556,556,556,556,280,556,333,737,370,556,584,333,737,333,400,584,333,333,333,611,556,278,333,333,365,556,834,834,834,611,722,722,722,722,722,722,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,556,556,556,556,556,278,278,278,278,611,611,611,611,611,611,611,584,611,611,611,611,611,556,611,556];
 
-const WIDTHS: Record<FontName, readonly number[]> = { regular: HELVETICA, bold: HELVETICA_BOLD };
+// Helvetica-Oblique is Helvetica slanted: the same widths.
+const WIDTHS: Record<FontName, readonly number[]> = {
+  regular: HELVETICA,
+  bold: HELVETICA_BOLD,
+  italic: HELVETICA,
+};
 
 /** WinAnsi codes 128–159 that are not the same number in Unicode. */
 const WIN_ANSI_HIGH: Record<number, number> = {
@@ -45,18 +51,46 @@ const WIN_ANSI_HIGH: Record<number, number> = {
 const QUESTION = 0x3f;
 const SPACE = 0x20;
 
-/** Text → WinAnsi codes. Line breaks and tabs become spaces; anything the font can't show becomes "?". */
-export function toWinAnsi(text: string): number[] {
+/** The WinAnsi code for a code point, or null if the font can't show it. */
+function codeOf(u: number): number | null {
+  if (u === 0x09 || u === 0x0a || u === 0x0d || u === 0xa0) return SPACE;
+  if (u >= 0x20 && u <= 0x7e) return u;
+  if (u >= 0xa1 && u <= 0xff && u !== 0xad) return u;
+  return WIN_ANSI_HIGH[u] ?? null;
+}
+
+/** The character as the PDF prints it: itself, its letter without accents (ễ → e), or "?". */
+function printable(ch: string): string {
+  if (codeOf(ch.codePointAt(0) ?? QUESTION) !== null) return ch;
+  const base = ch.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return base.length === 1 && codeOf(base.charCodeAt(0)) !== null ? base : '?';
+}
+
+/** Codes for text the font shows as written, or null if some character needs `printable`. */
+function directCodes(text: string): number[] | null {
   const codes: number[] = [];
-  for (const ch of text) {
-    const u = ch.codePointAt(0) ?? QUESTION;
-    if (u === 0x09 || u === 0x0a || u === 0x0d) codes.push(SPACE);
-    else if (u >= 0x20 && u <= 0x7e) codes.push(u);
-    else if (u === 0xa0) codes.push(SPACE);
-    else if (u >= 0xa1 && u <= 0xff && u !== 0xad) codes.push(u);
-    else codes.push(WIN_ANSI_HIGH[u] ?? QUESTION);
+  for (let i = 0; i < text.length; i++) {
+    const code = codeOf(text.charCodeAt(i));
+    if (code === null) return null;
+    codes.push(code);
   }
   return codes;
+}
+
+/** Text as the PDF prints it, so a screen can show the same (decision 0046). */
+export function pdfText(text: string): string {
+  // Widths are measured many times per page: plain text skips the slow path.
+  if (directCodes(text)) return text;
+  return Array.from(text.normalize('NFC'), printable).join('');
+}
+
+/** Text → WinAnsi codes. Line breaks and tabs become spaces; accents the font lacks are dropped
+ * (Nguyễn → Nguyen); anything else it can't show becomes "?". */
+export function toWinAnsi(text: string): number[] {
+  return (
+    directCodes(text) ??
+    Array.from(pdfText(text), (ch) => codeOf(ch.codePointAt(0) ?? QUESTION) ?? QUESTION)
+  );
 }
 
 /** Width of text in points. */

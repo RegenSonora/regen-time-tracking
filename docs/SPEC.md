@@ -125,8 +125,9 @@ Each funding source is a JSON file in the repo, validated against a JSON Schema 
 
 ## 4. Profile and settings
 
-- **Setup (decision 0027):** your details, then **Pick your role** (active roles by code and name, under bold headings: Community Care Team, Community Resilience, Other Roles; decision 0044; the Community Care Contractor is under Community Care Team, decision 0045), then a review of the role's sources, budget lines and tasks with a rate per source prefilled (decision 0030): **This is my role** or **Pick a different role**. Wording is neutral (decision 0034).
+- **Setup (decision 0027):** your details, then **Pick your role** (active roles by code and name, under bold headings: Community Care Team, Community Resilience, Other Roles; decision 0044; the Community Care Contractor is under Community Care Team, decision 0045), then a review of the role's sources, budget lines and tasks with a rate per source prefilled (decision 0030): **This is my role** or **Pick a different role**. Wording is neutral (decision 0034). The details step ends with **Your signature**: the stamp `/s/ <name>` and a check box to adopt it; Next waits for the check (decision 0046).
 - **Your details:** name, initials, mailing address. No agreement # and no service area.
+- **Your signature (decision 0046):** Settings shows the adopted stamp with **Remove signature**, or the check box and **Adopt signature** when none is adopted. Saving a different name removes the signature until it is adopted again.
 - **Role:** shown read-only in Settings, "Set at setup. Ask the office to change it." It can't be changed on the phone.
 - **Per funding source of the role:** hourly rate (prefilled, editable) and, for contractors on a source with an NTE, the NTE amount (prefilled from the role, editable). Employees have no NTE field. There is no "Add a funding source"; the role's sources are set up at setup and after an office change.
 - **Phones set up before roles (decision 0027):** keep working with no role and the 0.10.0 behavior until the app is cleared and set up again.
@@ -173,6 +174,7 @@ Each funding source is a JSON file in the repo, validated against a JSON Schema 
 - **NTE tracker (TISUPP contractors only; none on timesheets):** NTE amount; billed before this invoice (sum of earlier invoices for this source on this phone); this invoice; remaining. Over the limit: a warning only ("OVER CONTRACT LIMIT: do not pay without an amendment" on the PDF), never a block. No NTE entered: "Enter your not-to-exceed amount in Settings."
 - **Counts (decision 0029):** only counts with a value this period, each with its all-time total for this funding source on this phone (including this invoice). The record freezes the labels and units of its counts.
 - **Role and kind:** the record freezes its role (id, code, name, employment, `chw`) and its kind, `invoice` or `timesheet`.
+- **Signature (decision 0046):** the preview's main button is **Apply signature**; once tapped it shows the stamp and today's date and becomes **Create invoice files** (Create timesheet files), with **Undo signature**. With no signature adopted it is gray, reads "Add signature in Settings" and opens Settings. Applied before midnight and created after, nothing is created and the preview asks: "It's a new day. Apply your signature again.", so the signed date is always the invoice date. The invoice freezes the stamp and the date it was applied; neither is in the fingerprint.
 - **After generating:** the entries are locked. The app can re-create and re-share any past invoice from stored data.
 
 ## 7. Output files
@@ -181,18 +183,18 @@ One "Create invoice files" (or "Create timesheet files") action produces four fi
 
 | File | Name | Content |
 |---|---|---|
-| PDF | `<SOURCE>_<INVOICE#>_<first-date>_to_<last-date>.pdf` | Page 1 invoice (or timesheet summary); pages 2+ timesheet. Signed, unless the picture is signed instead. |
-| Picture | `<SOURCE>_<INVOICE#>_invoice.png`, or `_timesheet.png` | Page 1 as a PNG, 200 dpi, for signing in a photo app (decision 0018). Sign the PDF or the picture, not both. |
+| PDF | `<SOURCE>_<INVOICE#>_<first-date>_to_<last-date>.pdf` | Page 1 invoice (or timesheet summary) with your typed signature (decision 0046); pages 2+ timesheet. The reviewer or supervisor signs it, unless they sign the picture instead. |
+| Picture | `<SOURCE>_<INVOICE#>_invoice.png`, or `_timesheet.png` | Page 1 as a PNG, 200 dpi, with the same typed signature, for the reviewer or supervisor to sign in a photo app (decision 0018). They sign the PDF or the picture, not both. |
 | Timesheet CSV | `<SOURCE>_<INVOICE#>_timesheet.csv` | The timesheet grid, same content as the PDF pages |
 | Entry log CSV | `<SOURCE>_<INVOICE#>_entries.csv` | One row per entry, raw start and stop times |
 
 ### PDF page 1 (invoice)
 
-Title and funding source name; invoice #, invoice date, service period; From (contractor name, mailing address); Bill to (Regenerating Sonora, Inc., PO Box 154, Superior, AZ 85173); lines by budget line, flat-rate rows and amount due, with any hours tracked, not billed (decision 0039); counts with a value this period, with all-time totals and units (at most 10; decision 0029); NTE tracker (when the source has one); certification text; **Contractor** signature box and date (decision 0034); **Services received (reviewer)** printed name, title, signature box, date; office box: Reviewed by / Date, Approved by / Date, Payment date / Check or transaction #; QR code; fingerprint; "Page 1 of N".
+Title and funding source name; invoice #, invoice date, service period; From (contractor name, mailing address); Bill to (Regenerating Sonora, Inc., PO Box 154, Superior, AZ 85173); lines by budget line, flat-rate rows and amount due, with any hours tracked, not billed (decision 0039); counts with a value this period, with all-time totals and units (at most 10; decision 0029); NTE tracker (when the source has one); certification text; **Contractor** signature box and date (decision 0034), filled with the typed signature and the date it was applied (decision 0046); **Services received (reviewer)** printed name, title, signature box, date; office box: Reviewed by / Date, Approved by / Date, Payment date / Check or transaction #; QR code; fingerprint; "Page 1 of N".
 
 ### PDF page 1 (timesheet summary, employees; decision 0031)
 
-"TIMESHEET" and funding source name; timesheet #, date, service period, **Pay rate**; From (employee), Employer; hours by budget line and **Total hours**, with no rates or amounts; counts as above; the employee certification text; **Employee** signature box and date, then **Supervisor signature** box, **Supervisor name** and **Date**, blank; office box: Reviewed by / Date, Approved by / Date; QR code; fingerprint; "Page 1 of N". No NTE box and no dollar amounts besides the pay rate.
+"TIMESHEET" and funding source name; timesheet #, date, service period, **Pay rate**; From (employee), Employer; hours by budget line and **Total hours**, with no rates or amounts; counts as above; the employee certification text; **Employee** signature box and date, filled as on the invoice (decision 0046), then **Supervisor signature** box, **Supervisor name** and **Date**, blank; office box: Reviewed by / Date, Approved by / Date; QR code; fingerprint; "Page 1 of N". No NTE box and no dollar amounts besides the pay rate.
 
 ### PDF timesheet pages
 
@@ -274,16 +276,18 @@ Total hours,,,1.50,1.50,
 - **Fingerprint:** SHA-256 over a canonical JSON form of the invoice (header, entries, lines, totals, rate). Shown short on the PDF (`3F9A-21C7`), full in both CSVs and the QR code. The canonical form is versioned and must never change silently. v1 has one task per entry; v2 (decision 0024) lists each entry's task shares; v3 (decision 0031) adds the kind, the role, the certification text and counts by id; v4 (decision 0037) adds each entry's breaks; v5 (decision 0039) adds each task share's billed flag, the flat-rate rows and the unbilled hours; v6 (decision 0043) adds each entry's service fees and the fee rows; v7 (decision 0045) adds each entry's trip, the trip rows and the gas rows. Invoices keep the version they were made with.
 - **QR code:** invoice #, period, hours and amount by budget line, fingerprint. Invoices with flat-rate rows use payload v2, which adds them (decision 0039); invoices with service-fee rows use v3, which adds those too (decision 0043); invoices with trip or gas rows use v4, which adds those as well (decision 0045). Readable after printing or scanning so a later system can match paper to data.
 
-## 8. Signatures (outside the app)
+## 8. Signatures
 
-Option A, no in-app signing:
+The person's own signature is applied in the app (decision 0046); everyone after them signs outside it:
 
-1. The CHW shares the files and emails them to themselves.
-2. The CHW signs the PDF (iPhone Markup, or Adobe Acrobat Reader Fill & Sign on Android), or the picture of page 1 in a photo app (decision 0018).
-3. The CHW emails the signed file and both CSVs to the reviewer.
-4. The reviewer signs and sends everything to the office.
+1. The CHW adopts a typed signature once (Setup or Settings) and taps **Apply signature** on the preview. The files come out signed and dated.
+2. The CHW shares the files and emails them to themselves.
+3. The CHW emails the PDF or the picture (decision 0018) and both CSVs to the reviewer.
+4. The reviewer signs that file (iPhone Markup, Adobe Acrobat Reader Fill & Sign on Android, or a photo app for the picture) and sends everything to the office.
 
-Employees (decision 0031): the employee signs the timesheet summary page (PDF or picture), emails it with both CSVs to their supervisor, and the supervisor signs the same page below the employee's signature and sends everything to the office.
+Employees (decision 0031): the employee's signature is on the timesheet summary page; they email the PDF or picture with both CSVs to their supervisor, and the supervisor signs the same page below it and sends everything to the office.
+
+Invoices made before decision 0046 have no signature; the person signs them outside the app as before.
 
 Guardrails, written in a one-page procedure (`docs/signing-procedure.md`, CC BY 4.0): email only, never edit a signed file (corrections are a new invoice from the app), the office keeps the final PDF with its email thread. Office lines are signed on paper.
 
@@ -304,7 +308,7 @@ Install gate (iPhone) · Setup: details, Pick your role, Your role (review) · H
 
 ## 11. Out of scope
 
-Expenses or mileage (time only, except flat-rate tasks, service fees and trip fees with their gas, decisions 0039, 0043, 0045) · "nature of the activity" field · service area · agreement # · backup and restore · server, sync or push notifications · in-app signatures · Excel export · Spanish · logo (slot only) · supplemental invoices for retroactive raises · contractor onboarding documents.
+Expenses or mileage (time only, except flat-rate tasks, service fees and trip fees with their gas, decisions 0039, 0043, 0045) · "nature of the activity" field · service area · agreement # · backup and restore · server, sync or push notifications · drawn signatures, and in-app signing by reviewers, supervisors or the office · Excel export · Spanish · logo (slot only) · supplemental invoices for retroactive raises · contractor onboarding documents.
 
 ## 12. Open questions (ask Chris before building the affected part)
 

@@ -48,6 +48,7 @@ export const profile = {
   initials: 'CC',
   mailing_address: '',
   logo: null,
+  signature: null,
   role_id: null,
 } as const;
 

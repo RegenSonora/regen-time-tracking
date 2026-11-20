@@ -1,7 +1,8 @@
-// Settings (SPEC §4, decisions 0005, 0010, 0023, 0027): details, role, next number, rates and NTE,
-// storage, version.
-import { useLayoutEffect, useState } from 'preact/hooks';
+// Settings (SPEC §4, decisions 0005, 0010, 0023, 0027, 0046): details, signature, role, next
+// number, rates and NTE, storage, version.
+import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import {
+  adoptSignature,
   entryFeeNotes,
   flatRateNotes,
   formatDollars,
@@ -9,13 +10,18 @@ import {
   normalizeInitials,
   parseDollars,
   rateChangeCheck,
+  signatureText,
   tripFeeNotes,
   uninvoicedEntries,
+  usableSignature,
+  withName,
   type SourceSettings,
 } from '../../core';
 import { FUNDING_SOURCES } from '../../funding-sources';
 import { COUNT_DEFS } from '../../roles';
-import { Confirm, Field, Page } from '../components';
+import { phoneNow } from '../../storage';
+import { longDate } from '../../files/text';
+import { AdoptSignature, Confirm, Field, Page, SignatureStamp } from '../components';
 import { paperWord, plural, roleLabel, versionLabel } from '../format';
 import { sourceById, useApp } from '../store';
 import { raiseHint, validNextNumber } from './Setup';
@@ -37,6 +43,114 @@ interface RateQuestion {
   count: number;
   old_rate_cents: number;
   new_rate_cents: number;
+}
+
+const NOT_SAVED = "Your phone couldn't save that. Try again.";
+
+/** "Your signature" (decision 0046): adopt it, or see it and remove it. Saved right away. */
+function SignatureSection({ typedName }: { typedName: string }) {
+  const { data, actions } = useApp();
+  const profile = data.profile;
+  const [checked, setChecked] = useState(false);
+  const [error, setError] = useState<string | undefined>();
+  const [removing, setRemoving] = useState(false);
+  const section = useRef<HTMLElement>(null);
+  const sig = usableSignature(profile);
+  // The invoice preview sends people here to adopt one: bring the section into view.
+  const [scrollOnOpen] = useState(!sig);
+  useEffect(() => {
+    if (scrollOnOpen) section.current?.scrollIntoView({ block: 'center' });
+  }, [scrollOnOpen]);
+  if (!profile) return null;
+  const renamed =
+    typedName.trim() !== '' && signatureText(typedName) !== signatureText(profile.name);
+
+  const adopt = async () => {
+    if (!checked) {
+      setError('Check the box to adopt your signature.');
+      return;
+    }
+    if (!(await actions.saveSignature(adoptSignature(profile.name, phoneNow())))) {
+      setError(NOT_SAVED);
+      return;
+    }
+    setChecked(false);
+    actions.showToast('Signature adopted');
+  };
+
+  return (
+    <section ref={section} aria-labelledby="sec-signature">
+      <h2 class="sec" id="sec-signature">
+        Your signature
+      </h2>
+      {sig ? (
+        <>
+          <div class="card sig-card-plain">
+            <SignatureStamp
+              text={sig.text}
+              detail={`Adopted ${longDate(sig.adopted_at.slice(0, 10))}`}
+            />
+          </div>
+          {renamed && (
+            <p class="hint">Saving your new name removes this signature. Adopt it again after.</p>
+          )}
+          <button
+            type="button"
+            class="txt txt-left"
+            onClick={() => {
+              setRemoving(true);
+            }}
+          >
+            Remove signature
+          </button>
+        </>
+      ) : (
+        <>
+          <p class="hint">
+            You need it to make invoices and timesheets. It goes on them when you tap Apply
+            signature.
+          </p>
+          <AdoptSignature
+            name={profile.name}
+            checked={checked}
+            error={error}
+            onChange={(next) => {
+              setChecked(next);
+              setError(undefined);
+            }}
+          />
+          {renamed && (
+            <p class="hint">This uses your saved name. To sign with the new one, save it first.</p>
+          )}
+          <button type="button" class="btn2" onClick={() => void adopt()}>
+            Adopt signature
+          </button>
+        </>
+      )}
+      {removing && (
+        <Confirm
+          title="Remove your signature?"
+          body={
+            <p>
+              You'll adopt it again before your next invoice or timesheet. Past ones keep their
+              signature.
+            </p>
+          }
+          confirm="Remove signature"
+          cancel="Keep it"
+          onConfirm={() => {
+            setRemoving(false);
+            void actions.saveSignature(null).then((ok) => {
+              actions.showToast(ok ? 'Signature removed' : NOT_SAVED);
+            });
+          }}
+          onCancel={() => {
+            setRemoving(false);
+          }}
+        />
+      )}
+    </section>
+  );
 }
 
 export function Settings() {
@@ -94,9 +208,9 @@ export function Settings() {
       return old ? { ...s, rate_cents: old.rate_cents } : s;
     });
     await actions.saveSettings({
+      // A new name removes a signature that no longer matches it (decision 0046).
       profile: {
-        ...profile,
-        name: form.name.trim(),
+        ...withName(profile, form.name.trim()),
         initials,
         mailing_address: form.mailing_address.trim(),
       },
@@ -291,6 +405,8 @@ export function Settings() {
           )}
         </Field>
       )}
+
+      <SignatureSection typedName={form.name} />
 
       {Object.entries(form.sources).map(([id, s]) => {
         const source = sourceById(id);

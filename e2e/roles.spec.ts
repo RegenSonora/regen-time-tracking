@@ -163,6 +163,7 @@ test("a Team Lead entry: the role's lines, tasks and counts with units", async (
   await expect(page.getByText('No counts yet.')).toBeVisible();
 
   await page.getByRole('button', { name: 'Generate Regen Invoice' }).click();
+  await page.getByRole('button', { name: 'Apply signature' }).click();
   await page.getByRole('button', { name: 'Create invoice files' }).click();
   await expect(heading(page, 'Invoice created')).toBeVisible();
   await page.getByRole('button', { name: 'Done' }).click();
@@ -271,9 +272,14 @@ test('an employee submits a timesheet: summary page, no amounts, supervisor line
   await expect(page.getByText('$30.00')).toHaveCount(0);
   await expectAccessible(page, 'timesheet preview');
 
+  await page.getByRole('button', { name: 'Apply signature' }).click();
   await page.getByRole('button', { name: 'Create timesheet files' }).click();
   await expect(heading(page, 'Timesheet created')).toBeVisible();
-  await expect(page.getByText(/our supervisor/)).toHaveCount(2);
+  // Signed by the employee (decision 0046): the PDF's line and two next steps name the supervisor.
+  await expect(
+    page.getByText('Your signature is already on the PDF and the picture.'),
+  ).toBeVisible();
+  await expect(page.getByText(/our supervisor/)).toHaveCount(3);
   await page.getByRole('button', { name: 'Share files' }).click();
   await expect(page.getByRole('status')).toHaveText('Files shared.');
   const [files] = await sharedFiles(page);
@@ -362,6 +368,7 @@ test("a Certified CHW: both sources, Leo's tasks, a timesheet with no core compe
 
   await page.getByRole('button', { name: 'Submit timesheet' }).click();
   await expect(heading(page, 'New timesheet')).toBeVisible();
+  await page.getByRole('button', { name: 'Apply signature' }).click();
   await page.getByRole('button', { name: 'Create timesheet files' }).click();
   await expect(heading(page, 'Timesheet created')).toBeVisible();
   await page.getByRole('button', { name: 'Share files' }).click();
@@ -435,6 +442,7 @@ test('a Regen Generalist: LEHR resets paid per reset, their hours tracked, not b
   ).toContainText('$350.00');
   await expect(page.getByText('0.50 hrs of LEHR reset tracked, not billed')).toBeVisible();
   await expectAccessible(page, 'generalist invoice preview');
+  await page.getByRole('button', { name: 'Apply signature' }).click();
   await page.getByRole('button', { name: 'Create invoice files' }).click();
   await expect(heading(page, 'Invoice created')).toBeVisible();
   await page.getByRole('button', { name: 'Share files' }).click();
@@ -493,6 +501,7 @@ test('a Resilience Contractor: LEHR resets on Maintenance labor, paid per reset'
 
   await page.getByRole('button', { name: 'Generate Regen Invoice' }).click();
   await expect(page.getByText('2.00 hrs of LEHR reset tracked, not billed')).toBeVisible();
+  await page.getByRole('button', { name: 'Apply signature' }).click();
   await page.getByRole('button', { name: 'Create invoice files' }).click();
   await expect(heading(page, 'Invoice created')).toBeVisible();
   await page.getByRole('button', { name: 'Share files' }).click();
@@ -557,6 +566,7 @@ test('a Regen Catering Contractor: a lowered dinner fee, cakes, and an hourly ta
   );
   await expect(page.getByRole('row', { name: /Leo's: 3 Cakes made/ })).toContainText('$75.00');
   await expectAccessible(page, 'catering invoice preview');
+  await page.getByRole('button', { name: 'Apply signature' }).click();
   await page.getByRole('button', { name: 'Create invoice files' }).click();
   await expect(heading(page, 'Invoice created')).toBeVisible();
   await page.getByRole('button', { name: 'Share files' }).click();
@@ -647,6 +657,7 @@ test('a Community Care Contractor: trips paid by distance with gas, Domestic sup
     page.getByRole('row', { name: 'Community Care Work: Gas reimbursement' }),
   ).toContainText('$40.00');
   await expectAccessible(page, 'community care invoice preview');
+  await page.getByRole('button', { name: 'Apply signature' }).click();
   await page.getByRole('button', { name: 'Create invoice files' }).click();
   await expect(heading(page, 'Invoice created')).toBeVisible();
   await page.getByRole('button', { name: 'Share files' }).click();
@@ -736,6 +747,7 @@ test('a role no longer in the roles file takes no new time; waiting hours still 
 
   // The waiting hour goes out under the role it was logged with.
   await page.getByRole('button', { name: 'Generate Regen Invoice' }).click();
+  await page.getByRole('button', { name: 'Apply signature' }).click();
   await page.getByRole('button', { name: 'Create invoice files' }).click();
   await expect(heading(page, 'Invoice created')).toBeVisible();
 });

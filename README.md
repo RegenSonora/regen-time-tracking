@@ -1,6 +1,6 @@
 # Regen Time Tracking
 
-A lightweight, offline phone app for people who work for Regenerating Sonora, Inc.: Community Health Workers and other roles, as contractors or employees. You log time against your role's funding sources, then create an invoice (contractors) or a timesheet (employees) as a PDF, a picture of its first page and two CSV files, to sign and email.
+A lightweight, offline phone app for people who work for Regenerating Sonora, Inc.: Community Health Workers and other roles, as contractors or employees. You log time against your role's funding sources, then create an invoice (contractors) or a timesheet (employees), signed with your typed signature, as a PDF, a picture of its first page and two CSV files to email.
 
 - Live app: https://regensonora.github.io/regen-time-tracking/
 - Status: **0.15.0.** Community Care Contractor role, with trips paid by distance and gas on longer trips (decision 0045). Regen Catering Contractor role, with $200.00 service fees the contractor can lower and $25.00 per cake and per generator (decisions 0042, 0043), and roles grouped under headings on Pick your role (decision 0044). My Tasks for Resilience Team Leads came in 0.14.0: office tasks with a priority, your own tasks, status and notes, shared as pictures (decision 0041). Regen Generalist Contractor and Resilience Contractor roles, with LEHR resets paid $140.00 per reset in 0.25 steps and their hours tracked, not billed, came in 0.13.0 (decisions 0038–0040). Pause and resume on the timer (decision 0037). Certified CHW (Employee) and CHW Trainee (Employee) on Regen General Operating came in 0.12.0 (decisions 0035, 0036). Roles, counts per task, employee timesheets and grant periods came in 0.11.0 (decisions 0027–0034, [roles plan](docs/roles-plan.md)). Split from CHW Time Tracker Historic (decision 0020).
@@ -44,17 +44,17 @@ Your role can't be changed later on the phone. If you picked the wrong one, invo
 
 ### Invoices (contractors)
 
-1. On Home, tap **Generate Regen Invoice** (under Past invoices). Check the preview, then tap **Create invoice files**.
+1. On Home, tap **Generate Regen Invoice** (under Past invoices). Check the preview, tap **Apply signature**, then **Create invoice files**. Your typed signature (adopted once in Setup or **Settings › Your signature**) and today's date go in the Contractor box.
 2. Tap **Share files** and email the four files to yourself.
-3. Sign the PDF, or the picture (PNG) of the invoice page in your photo app. Sign one, not both. Email the signed file with both CSV files to your reviewer.
+3. Email the PDF, or the picture (PNG) of the invoice page, with both CSV files to your reviewer, who signs it.
 
 ### Timesheets (employees)
 
-1. On Home, tap **Submit timesheet**. Check the preview, then tap **Create timesheet files**.
+1. On Home, tap **Submit timesheet**. Check the preview, tap **Apply signature**, then **Create timesheet files**. Your signature goes in the Employee box.
 2. Tap **Share files** and email the four files to yourself.
-3. Sign the PDF, or the picture (PNG) of the timesheet page. Email the signed file with both CSV files to your supervisor, who signs the same page under your signature and sends it to the office.
+3. Email the PDF, or the picture (PNG) of the timesheet page, with both CSV files to your supervisor, who signs the same page under your signature and sends it to the office.
 
-The full steps, with how to sign on iPhone and Android: [docs/signing-procedure.md](docs/signing-procedure.md). Need the files again? **Past invoices** (or **Past timesheets**) on Home.
+The full steps, with how your reviewer or supervisor signs on iPhone and Android: [docs/signing-procedure.md](docs/signing-procedure.md). Need the files again? **Past invoices** (or **Past timesheets**) on Home.
 
 ### Work Hours Report (CHW Trainees)
 

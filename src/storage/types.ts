@@ -78,6 +78,8 @@ export interface SetupDraft {
   role_id: string | null;
   /** Per funding source id: the rate as typed, prefilled when the role is picked (0030). */
   sources: Record<string, { rate: string }>;
+  /** "I adopt this as my electronic signature" is checked (decision 0046). */
+  adopted: boolean;
 }
 
 export interface SourcePicks {
@@ -107,12 +109,21 @@ export interface GenerateInvoiceRequest {
   now: string;
   /** YYYY-MM-DD, the day it is generated. */
   invoice_date: string;
+  /**
+   * When Apply signature was tapped (decision 0046). The profile's adopted signature is frozen
+   * on the invoice with this time. Left off, the invoice is unsigned.
+   */
+  signed_at?: string;
 }
 
 export type GenerateInvoiceResult =
   | InvoiceResult
   /** No profile saved yet. */
   | { ok: false; reason: 'no_profile' }
+  /** A signature was asked for, but none is adopted for the profile's current name. */
+  | { ok: false; reason: 'no_signature' }
+  /** The signature was applied on another day than the invoice date: apply it again (0046). */
+  | { ok: false; reason: 'stale_signature' }
   /** Entries, settings or the counter changed while the invoice was being built; nothing was saved. */
   | { ok: false; reason: 'changed' };
 
